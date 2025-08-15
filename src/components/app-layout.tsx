@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from 'next/link';
@@ -21,6 +22,9 @@ import type { User } from '@/lib/mock-data';
 import { users } from '@/lib/mock-data';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Button } from './ui/button';
+import { useEffect, useState } from 'react';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -29,7 +33,26 @@ interface AppLayoutProps {
 
 export function AppLayout({ children, userRole }: AppLayoutProps) {
   const pathname = usePathname();
-  const currentUser = users.find(u => u.role === userRole)!;
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+        const supabase = createClientComponentClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+            const role = user.user_metadata.role || 'student';
+            const fetchedUser: User = {
+                id: user.id,
+                name: user.user_metadata.full_name,
+                email: user.email!,
+                role: role,
+                avatarUrl: `https://placehold.co/100x100.png`
+            };
+            setCurrentUser(fetchedUser);
+        }
+    };
+    fetchUser();
+  }, []);
 
   const teacherNav = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -48,8 +71,20 @@ export function AppLayout({ children, userRole }: AppLayoutProps) {
   const navItems = userRole === 'teacher' ? teacherNav : studentNav;
 
   const isActive = (href: string) => {
+    // Special handling for /classes/[id] pages
+    if (href === '/classes' && pathname.startsWith('/classes/')) {
+        return true;
+    }
     return pathname.startsWith(href);
   };
+  
+  if (!currentUser) {
+      return (
+          <div className="flex min-h-screen bg-background items-center justify-center">
+              <div>Loading...</div>
+          </div>
+      )
+  }
 
   return (
     <SidebarProvider>

@@ -1,7 +1,8 @@
+
 "use client";
 
 import { useSearchParams } from 'next/navigation';
-import { Suspense, useState } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { AppLayout } from '@/components/app-layout';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -18,13 +19,35 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { Textarea } from '@/components/ui/textarea';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
 function MessagesContent() {
   const searchParams = useSearchParams();
   const userRole = searchParams.get('role') === 'student' ? 'student' : 'teacher';
-  const currentUser = users.find((u) => u.role === userRole)!;
+  
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
 
-  const conversations = Array.from(
+  useEffect(() => {
+    const fetchUser = async () => {
+        const supabase = createClientComponentClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+            const role = user.user_metadata.role || 'student';
+            const fetchedUser: User = {
+                id: user.id,
+                name: user.user_metadata.full_name,
+                email: user.email!,
+                role: role,
+                avatarUrl: `https://placehold.co/100x100.png`
+            };
+            setCurrentUser(fetchedUser);
+        }
+    };
+    fetchUser();
+  }, []);
+
+  const conversations = currentUser ? Array.from(
     new Set(
       messages
         .filter((m) => m.senderId === currentUser.id || m.receiverId === currentUser.id)
@@ -36,11 +59,11 @@ function MessagesContent() {
       .filter((m) => (m.senderId === currentUser.id && m.receiverId === userId) || (m.senderId === userId && m.receiverId === currentUser.id))
       .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0];
     return { otherUser, lastMessage };
-  });
+  }) : [];
 
   const [selectedConversation, setSelectedConversation] = useState<User | null>(conversations[0]?.otherUser || null);
 
-  const activeMessages = selectedConversation
+  const activeMessages = (selectedConversation && currentUser)
     ? messages.filter(
         (m) =>
           (m.senderId === currentUser.id && m.receiverId === selectedConversation.id) ||
@@ -48,8 +71,12 @@ function MessagesContent() {
       )
     : [];
 
+    if (!currentUser) {
+        return <div>Loading...</div>;
+    }
+
   return (
-    <AppLayout userRole={userRole}>
+    <AppLayout userRole={currentUser.role}>
       <div className="h-[calc(100vh-5rem)]">
         <div className="grid h-full grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
           <div className="flex flex-col border-r">
@@ -183,12 +210,6 @@ function MessagesContent() {
     </AppLayout>
   );
 }
-
-
-function Textarea(props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
-  return <textarea {...props} />;
-}
-
 
 export default function MessagesPage() {
     return (

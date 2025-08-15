@@ -1,3 +1,4 @@
+
 "use client"
 
 import Link from "next/link"
@@ -20,7 +21,11 @@ import {
 import type { User } from "@/lib/mock-data"
 import { logout } from "@/app/auth/actions"
 
-export function UserNav({ user }: { user: User }) {
+export function UserNav({ user }: { user: User | null }) {
+  if (!user) {
+    return null;
+  }
+  
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -54,9 +59,8 @@ export function UserNav({ user }: { user: User }) {
         <DropdownMenuSeparator />
         <form action={logout}>
             <DropdownMenuItem asChild>
-                <button className="w-full">
+                <button className="w-full text-left">
                     Log out
-                    <DropdownMenuShortcut>⇧⌘Q</DropdownMenuShortcut>
                 </button>
             </DropdownMenuItem>
         </form>

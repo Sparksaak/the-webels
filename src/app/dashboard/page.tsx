@@ -1,8 +1,9 @@
+
 "use client";
 
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Suspense } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import {
   ArrowLeft,
   Bell,
@@ -26,29 +27,50 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import {
-  announcements,
-  assignments,
-  classes,
-  enrollments,
-  submissions,
-  users,
-} from '@/lib/mock-data';
+import { announcements, classes, enrollments, submissions, users, type User } from '@/lib/mock-data';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
 function DashboardContent() {
   const searchParams = useSearchParams();
   const userRole = searchParams.get('role') === 'student' ? 'student' : 'teacher';
-  const currentUser = users.find((u) => u.role === userRole)!;
+
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+        const supabase = createClientComponentClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+            const role = user.user_metadata.role || 'student';
+            const fetchedUser: User = {
+                id: user.id,
+                name: user.user_metadata.full_name,
+                email: user.email!,
+                role: role,
+                avatarUrl: `https://placehold.co/100x100.png`
+            };
+            setCurrentUser(fetchedUser);
+        }
+    };
+    fetchUser();
+  }, []);
+
+
   const teacher = users.find((u) => u.role === 'teacher')!;
 
-  const teacherClasses = classes.filter((c) => c.teacherId === currentUser.id);
-  const studentEnrollments = enrollments.filter((e) => e.userId === currentUser.id);
+  const teacherClasses = classes.filter((c) => c.teacherId === currentUser?.id);
+  const studentEnrollments = currentUser ? enrollments.filter((e) => e.userId === currentUser.id) : [];
   const studentClasses = classes.filter((c) => studentEnrollments.some((e) => e.classId === c.id));
   const studentAssignments = assignments.filter(a => studentClasses.some(sc => sc.id === a.classId));
-  const pendingSubmissionsCount = submissions.filter(s => s.studentId === currentUser.id && s.status === 'pending').length;
+  const pendingSubmissionsCount = currentUser ? submissions.filter(s => s.studentId === currentUser.id && s.status === 'pending').length : 0;
+  
+  if (!currentUser) {
+    return <div>Loading...</div>;
+  }
+
 
   return (
-    <AppLayout userRole={userRole}>
+    <AppLayout userRole={currentUser.role}>
       <div className="flex flex-col gap-8">
         <div>
             <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
@@ -60,22 +82,22 @@ function DashboardContent() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
-                {userRole === 'teacher' ? 'Total Classes' : 'Enrolled Classes'}
+                {currentUser.role === 'teacher' ? 'Total Classes' : 'Enrolled Classes'}
               </CardTitle>
               <BookOpen className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {userRole === 'teacher' ? teacherClasses.length : studentClasses.length}
+                {currentUser.role === 'teacher' ? teacherClasses.length : studentClasses.length}
               </div>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
-                {userRole === 'teacher' ? 'Total Students' : 'Pending Assignments'}
+                {currentUser.role === 'teacher' ? 'Total Students' : 'Pending Assignments'}
               </CardTitle>
-              {userRole === 'teacher' ? (
+              {currentUser.role === 'teacher' ? (
                  <Users className="h-4 w-4 text-muted-foreground" />
               ) : (
                 <ClipboardList className="h-4 w-4 text-muted-foreground" />
@@ -83,7 +105,7 @@ function DashboardContent() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {userRole === 'teacher'
+                {currentUser.role === 'teacher'
                   ? enrollments.filter(e => teacherClasses.some(tc => tc.id === e.classId)).length
                   : pendingSubmissionsCount
                 }
@@ -118,7 +140,7 @@ function DashboardContent() {
                 <CardTitle>My Classes</CardTitle>
                 <CardDescription>An overview of your current classes.</CardDescription>
               </div>
-              {userRole === 'teacher' && (
+              {currentUser.role === 'teacher' && (
                 <Button size="sm">
                   <PlusCircle className="mr-2 h-4 w-4" />
                   Create Class
@@ -127,8 +149,8 @@ function DashboardContent() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {(userRole === 'teacher' ? teacherClasses : studentClasses).map((cls) => (
-                  <Link key={cls.id} href={`/classes/${cls.id}?role=${userRole}`} className="block">
+                {(currentUser.role === 'teacher' ? teacherClasses : studentClasses).map((cls) => (
+                  <Link key={cls.id} href={`/classes/${cls.id}?role=${currentUser!.role}`} className="block">
                     <div className="flex items-center space-x-4 rounded-md border p-4 transition-all hover:bg-muted/50">
                         <div className={`h-2 w-2 rounded-full ${cls.color}`} />
                         <div className="flex-1 space-y-1">

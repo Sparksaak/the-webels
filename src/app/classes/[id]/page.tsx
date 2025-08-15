@@ -1,7 +1,8 @@
+
 "use client";
 
 import { useSearchParams } from 'next/navigation';
-import { Suspense } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { AppLayout } from '@/components/app-layout';
 import {
@@ -12,6 +13,7 @@ import {
   enrollments,
   submissions,
   users,
+  type User,
 } from '@/lib/mock-data';
 import {
   ArrowLeft,
@@ -40,7 +42,6 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Calendar } from '@/components/ui/calendar';
-import { useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   Popover,
@@ -50,33 +51,58 @@ import {
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { Checkbox } from '@/components/ui/checkbox';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+
 
 function ClassPageContent({ params }: { params: { id: string } }) {
   const searchParams = useSearchParams();
   const userRole = searchParams.get('role') === 'student' ? 'student' : 'teacher';
+  
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+        const supabase = createClientComponentClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+            const role = user.user_metadata.role || 'student';
+            const fetchedUser: User = {
+                id: user.id,
+                name: user.user_metadata.full_name,
+                email: user.email!,
+                role: role,
+                avatarUrl: `https://placehold.co/100x100.png`
+            };
+            setCurrentUser(fetchedUser);
+        }
+    };
+    fetchUser();
+  }, []);
+
+  
   const classInfo = classes.find((c) => c.id === params.id);
   const classAnnouncements = announcements.filter((a) => a.classId === params.id);
   const classAssignments = assignments.filter((a) => a.classId === params.id);
   const classEnrollments = enrollments.filter((e) => e.classId === params.id);
   const classStudents = users.filter((u) => classEnrollments.some((e) => e.userId === u.id));
-  const currentUser = users.find(u => u.role === userRole)!;
+  
   const [date, setDate] = useState<Date | undefined>(new Date());
   const formattedDate = date ? format(date, "yyyy-MM-dd") : format(new Date(), "yyyy-MM-dd");
 
-  const studentAttendance = attendance.filter(a => a.studentId === currentUser.id && a.classId === params.id);
+  const studentAttendance = currentUser ? attendance.filter(a => a.studentId === currentUser.id && a.classId === params.id) : [];
 
-  if (!classInfo) {
-    return <div>Class not found</div>;
+  if (!classInfo || !currentUser) {
+    return <div>Loading...</div>;
   }
 
   const teacher = users.find((u) => u.id === classInfo.teacherId);
 
   return (
-    <AppLayout userRole={userRole}>
+    <AppLayout userRole={currentUser.role}>
       <div className="flex flex-col gap-6">
         <div>
           <Button variant="ghost" asChild className='mb-2'>
-              <Link href={`/dashboard?role=${userRole}`}><ArrowLeft className="mr-2 h-4 w-4" />Back to Dashboard</Link>
+              <Link href={`/dashboard?role=${currentUser.role}`}><ArrowLeft className="mr-2 h-4 w-4" />Back to Dashboard</Link>
           </Button>
           <div className='flex items-center justify-between'>
             <div>
@@ -98,17 +124,17 @@ function ClassPageContent({ params }: { params: { id: string } }) {
             <TabsList>
               <TabsTrigger value="announcements">Announcements</TabsTrigger>
               <TabsTrigger value="assignments">Assignments</TabsTrigger>
-              {userRole === 'teacher' && (
+              {currentUser.role === 'teacher' && (
                 <>
                   <TabsTrigger value="students">Students</TabsTrigger>
                   <TabsTrigger value="attendance">Attendance</TabsTrigger>
                 </>
               )}
-               {userRole === 'student' && (
+               {currentUser.role === 'student' && (
                   <TabsTrigger value="attendance">My Attendance</TabsTrigger>
               )}
             </TabsList>
-            {userRole === 'teacher' && (
+            {currentUser.role === 'teacher' && (
               <div className="space-x-2">
                 <Button size="sm"><PlusCircle className="mr-2 h-4 w-4" /> Add Student</Button>
                 <Button size="sm"><PlusCircle className="mr-2 h-4 w-4" /> New Assignment</Button>
@@ -151,22 +177,22 @@ function ClassPageContent({ params }: { params: { id: string } }) {
                       <TableHead>Type</TableHead>
                       <TableHead>Title</TableHead>
                       <TableHead>Due Date</TableHead>
-                      {userRole === 'student' && <TableHead>Status</TableHead>}
-                      {userRole === 'student' && <TableHead>Grade</TableHead>}
+                      {currentUser.role === 'student' && <TableHead>Status</TableHead>}
+                      {currentUser.role === 'student' && <TableHead>Grade</TableHead>}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {classAssignments.map((assign) => {
-                      const submission = submissions.find(s => s.assignmentId === assign.id && s.studentId === currentUser.id);
+                      const submission = submissions.find(s => s.assignmentId === assign.id && s.studentId === currentUser!.id);
                       return (
                         <TableRow key={assign.id}>
                           <TableCell><Badge variant={assign.type === 'homework' ? 'secondary' : 'default'} className="capitalize">{assign.type}</Badge></TableCell>
                           <TableCell className="font-medium">{assign.title}</TableCell>
                           <TableCell>{new Date(assign.dueDate).toLocaleDateString()}</TableCell>
-                          {userRole === 'student' && (
+                          {currentUser.role === 'student' && (
                             <TableCell><Badge variant={submission?.status === 'submitted' ? 'success' : 'outline'} className="capitalize">{submission?.status || 'Pending'}</Badge></TableCell>
                           )}
-                          {userRole === 'student' && (
+                          {currentUser.role === 'student' && (
                             <TableCell>{submission?.grade || 'N/A'}</TableCell>
                           )}
                         </TableRow>
@@ -177,7 +203,7 @@ function ClassPageContent({ params }: { params: { id: string } }) {
               </CardContent>
             </Card>
           </TabsContent>
-          {userRole === 'teacher' && (
+          {currentUser.role === 'teacher' && (
             <>
               <TabsContent value="students" className="mt-4">
                 <Card>
@@ -249,7 +275,7 @@ function ClassPageContent({ params }: { params: { id: string } }) {
               </TabsContent>
             </>
           )}
-          {userRole === 'student' && (
+          {currentUser.role === 'student' && (
               <TabsContent value="attendance" className="mt-4">
                   <Card>
                       <CardHeader><CardTitle>My Attendance</CardTitle></CardHeader>
