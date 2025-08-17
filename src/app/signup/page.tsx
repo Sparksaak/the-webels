@@ -3,8 +3,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { useFormState } from 'react-dom';
-import { useEffect } from 'react';
+import { useActionState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { signup } from '@/app/auth/actions';
 import { Button } from '@/components/ui/button';
@@ -20,7 +19,7 @@ import {
 import { Logo } from '@/components/logo';
 
 export default function SignupPage() {
-  const [state, formAction] = useFormState(signup, null);
+  const [state, formAction] = useActionState(signup, null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -110,4 +109,3 @@ export default function SignupPage() {
     </div>
   );
 }
-

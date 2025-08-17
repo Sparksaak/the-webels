@@ -7,13 +7,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Logo } from '@/components/logo';
-import { useFormState } from 'react-dom';
+import { useActionState } from 'react';
 import { login } from '@/app/auth/actions';
 import { useToast } from '@/hooks/use-toast';
 import { useEffect } from 'react';
 
 export default function LoginPage() {
-  const [state, formAction] = useFormState(login, null);
+  const [state, formAction] = useActionState(login, null);
   const { toast } = useToast();
 
   useEffect(() => {
