@@ -5,16 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { AppLayout } from '@/components/app-layout';
-import {
-  announcements,
-  assignments,
-  attendance,
-  classes,
-  enrollments,
-  submissions,
-  users,
-  type User,
-} from '@/lib/mock-data';
+
 import {
   ArrowLeft,
   Bell,
@@ -52,6 +43,7 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { Checkbox } from '@/components/ui/checkbox';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import type { User } from '@/lib/mock-data';
 
 
 function ClassPageContent({ params }: { params: { id: string } }) {
@@ -80,22 +72,16 @@ function ClassPageContent({ params }: { params: { id: string } }) {
   }, []);
 
   
-  const classInfo = classes.find((c) => c.id === params.id);
-  const classAnnouncements = announcements.filter((a) => a.classId === params.id);
-  const classAssignments = assignments.filter((a) => a.classId === params.id);
-  const classEnrollments = enrollments.filter((e) => e.classId === params.id);
-  const classStudents = users.filter((u) => classEnrollments.some((e) => e.userId === u.id));
-  
   const [date, setDate] = useState<Date | undefined>(new Date());
   const formattedDate = date ? format(date, "yyyy-MM-dd") : format(new Date(), "yyyy-MM-dd");
 
-  const studentAttendance = currentUser ? attendance.filter(a => a.studentId === currentUser.id && a.classId === params.id) : [];
-
-  if (!classInfo || !currentUser) {
+  if (!currentUser) {
     return <div>Loading...</div>;
   }
+  
+  const classInfo = { id: params.id, name: "Intro to React", description: "A sample class description", teacherId: "teacher-id" };
+  const teacher = { name: "Dr. Evelyn Reed", avatarUrl: "https://placehold.co/100x100.png" };
 
-  const teacher = users.find((u) => u.id === classInfo.teacherId);
 
   return (
     <AppLayout userRole={currentUser.role}>
@@ -149,18 +135,7 @@ function ClassPageContent({ params }: { params: { id: string } }) {
                 <CardDescription>Updates and important information from your teacher.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {classAnnouncements.map((ann) => (
-                  <div key={ann.id} className="flex items-start space-x-4 rounded-md border p-4">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent text-accent-foreground mt-1">
-                      <Bell className="h-4 w-4" />
-                    </div>
-                    <div>
-                      <p className="font-semibold">{ann.title}</p>
-                      <p className="text-sm text-muted-foreground">{ann.content}</p>
-                      <p className="text-xs text-muted-foreground mt-2">{new Date(ann.date).toLocaleString()}</p>
-                    </div>
-                  </div>
-                ))}
+                {/* Mock data removed */}
               </CardContent>
             </Card>
           </TabsContent>
@@ -182,22 +157,7 @@ function ClassPageContent({ params }: { params: { id: string } }) {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {classAssignments.map((assign) => {
-                      const submission = submissions.find(s => s.assignmentId === assign.id && s.studentId === currentUser!.id);
-                      return (
-                        <TableRow key={assign.id}>
-                          <TableCell><Badge variant={assign.type === 'homework' ? 'secondary' : 'default'} className="capitalize">{assign.type}</Badge></TableCell>
-                          <TableCell className="font-medium">{assign.title}</TableCell>
-                          <TableCell>{new Date(assign.dueDate).toLocaleDateString()}</TableCell>
-                          {currentUser.role === 'student' && (
-                            <TableCell><Badge variant={submission?.status === 'submitted' ? 'success' : 'outline'} className="capitalize">{submission?.status || 'Pending'}</Badge></TableCell>
-                          )}
-                          {currentUser.role === 'student' && (
-                            <TableCell>{submission?.grade || 'N/A'}</TableCell>
-                          )}
-                        </TableRow>
-                      );
-                    })}
+                    {/* Mock data removed */}
                   </TableBody>
                 </Table>
               </CardContent>
@@ -212,15 +172,7 @@ function ClassPageContent({ params }: { params: { id: string } }) {
                     <Table>
                         <TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Email</TableHead></TableRow></TableHeader>
                         <TableBody>
-                            {classStudents.map(student => (
-                                <TableRow key={student.id}>
-                                    <TableCell className="font-medium flex items-center gap-2">
-                                        <Avatar className="h-6 w-6" data-ai-hint="person portrait"><AvatarImage src={student.avatarUrl} /><AvatarFallback>{student.name.charAt(0)}</AvatarFallback></Avatar>
-                                        {student.name}
-                                    </TableCell>
-                                    <TableCell>{student.email}</TableCell>
-                                </TableRow>
-                            ))}
+                           {/* Mock data removed */}
                         </TableBody>
                     </Table>
                   </CardContent>
@@ -258,16 +210,7 @@ function ClassPageContent({ params }: { params: { id: string } }) {
                     <Table>
                         <TableHeader><TableRow><TableHead>Student</TableHead><TableHead>Present</TableHead><TableHead>Late</TableHead><TableHead>Absent</TableHead></TableRow></TableHeader>
                         <TableBody>
-                            {classStudents.map(student => {
-                                const attendanceRecord = attendance.find(a => a.studentId === student.id && a.date === formattedDate);
-                                return (
-                                <TableRow key={student.id}>
-                                    <TableCell>{student.name}</TableCell>
-                                    <TableCell><Checkbox checked={attendanceRecord?.status === 'present'} /></TableCell>
-                                    <TableCell><Checkbox checked={attendanceRecord?.status === 'late'} /></TableCell>
-                                    <TableCell><Checkbox checked={attendanceRecord?.status === 'absent'} /></TableCell>
-                                </TableRow>
-                            )})}
+                           {/* Mock data removed */}
                         </TableBody>
                     </Table>
                   </CardContent>
@@ -283,12 +226,7 @@ function ClassPageContent({ params }: { params: { id: string } }) {
                           <Table>
                               <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Status</TableHead></TableRow></TableHeader>
                               <TableBody>
-                                  {studentAttendance.map(att => (
-                                      <TableRow key={att.date}>
-                                          <TableCell>{format(new Date(att.date), "PPP")}</TableCell>
-                                          <TableCell><Badge className="capitalize">{att.status}</Badge></TableCell>
-                                      </TableRow>
-                                  ))}
+                                  {/* Mock data removed */}
                               </TableBody>
                           </Table>
                       </CardContent>

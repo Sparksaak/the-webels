@@ -9,7 +9,7 @@
     pkgs.zulu
   ];
   # Sets environment variables in the workspace
-  env = {};
+  env = {NEXT_PUBLIC_SUPABASE_URL="https://hgumvqnqfiiofqeszuxf.supabase.co"; NEXT_PUBLIC_SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhndW12cW5xZmlpb2ZxZXN6dXhmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUyMjMwNjAsImV4cCI6MjA3MDc5OTA2MH0.0w3j0s6TBYNWQoj0f-d1OnvcHPcFxYQ76lBxtYGlRIU";};
   # This adds a file watcher to startup the firebase emulators. The emulators will only start if
   # a firebase.json file is written into the user's directory
   services.firebase.emulators = {

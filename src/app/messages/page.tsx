@@ -10,7 +10,6 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
-import { messages, users } from '@/lib/mock-data';
 import type { User, Message } from '@/lib/mock-data';
 import { Paperclip, Send } from 'lucide-react';
 import {
@@ -47,29 +46,9 @@ function MessagesContent() {
     fetchUser();
   }, []);
 
-  const conversations = currentUser ? Array.from(
-    new Set(
-      messages
-        .filter((m) => m.senderId === currentUser.id || m.receiverId === currentUser.id)
-        .map((m) => (m.senderId === currentUser.id ? m.receiverId : m.senderId))
-    )
-  ).map((userId) => {
-    const otherUser = users.find((u) => u.id === userId)!;
-    const lastMessage = messages
-      .filter((m) => (m.senderId === currentUser.id && m.receiverId === userId) || (m.senderId === userId && m.receiverId === currentUser.id))
-      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0];
-    return { otherUser, lastMessage };
-  }) : [];
+  
+  const [selectedConversation, setSelectedConversation] = useState<User | null>(null);
 
-  const [selectedConversation, setSelectedConversation] = useState<User | null>(conversations[0]?.otherUser || null);
-
-  const activeMessages = (selectedConversation && currentUser)
-    ? messages.filter(
-        (m) =>
-          (m.senderId === currentUser.id && m.receiverId === selectedConversation.id) ||
-          (m.senderId === selectedConversation.id && m.receiverId === currentUser.id)
-      )
-    : [];
 
     if (!currentUser) {
         return <div>Loading...</div>;
@@ -87,31 +66,7 @@ function MessagesContent() {
             <Separator />
             <ScrollArea className="flex-1">
               <div className="flex flex-col gap-1 p-2">
-                {conversations.map(({ otherUser, lastMessage }) => (
-                  <button
-                    key={otherUser.id}
-                    className={cn(
-                      'flex items-center gap-3 rounded-lg p-3 text-left text-sm transition-all hover:bg-muted',
-                      selectedConversation?.id === otherUser.id && 'bg-muted'
-                    )}
-                    onClick={() => setSelectedConversation(otherUser)}
-                  >
-                    <Avatar className="h-10 w-10" data-ai-hint="person portrait">
-                      <AvatarImage src={otherUser.avatarUrl} alt={otherUser.name} />
-                      <AvatarFallback>{otherUser.name.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
-                      <p className="font-semibold">{otherUser.name}</p>
-                      <p className="text-xs text-muted-foreground truncate">
-                        {lastMessage.senderId === currentUser.id && 'You: '}
-                        {lastMessage.content}
-                      </p>
-                    </div>
-                    {lastMessage.read === false && lastMessage.senderId !== currentUser.id && (
-                        <div className="h-2 w-2 rounded-full bg-primary" />
-                    )}
-                  </button>
-                ))}
+                {/* Mock data removed */}
               </div>
             </ScrollArea>
           </div>
@@ -130,41 +85,7 @@ function MessagesContent() {
                 </div>
                 <ScrollArea className="flex-1 p-4">
                   <div className="flex flex-col gap-4">
-                    {activeMessages.map((message) => (
-                      <div
-                        key={message.id}
-                        className={cn(
-                          'flex items-end gap-2',
-                          message.senderId === currentUser.id && 'justify-end'
-                        )}
-                      >
-                        {message.senderId !== currentUser.id && (
-                          <Avatar className="h-8 w-8" data-ai-hint="person portrait">
-                            <AvatarImage src={selectedConversation.avatarUrl} alt={selectedConversation.name} />
-                            <AvatarFallback>{selectedConversation.name.charAt(0)}</AvatarFallback>
-                          </Avatar>
-                        )}
-                        <div
-                          className={cn(
-                            'max-w-xs rounded-lg p-3 text-sm md:max-w-md',
-                            message.senderId === currentUser.id
-                              ? 'bg-primary text-primary-foreground'
-                              : 'bg-muted'
-                          )}
-                        >
-                          <p>{message.content}</p>
-                          <p className={cn("text-xs mt-1", message.senderId === currentUser.id ? 'text-primary-foreground/70' : 'text-muted-foreground')}>
-                              {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </p>
-                        </div>
-                        {message.senderId === currentUser.id && (
-                          <Avatar className="h-8 w-8" data-ai-hint="person portrait">
-                            <AvatarImage src={currentUser.avatarUrl} alt={currentUser.name} />
-                            <AvatarFallback>{currentUser.name.charAt(0)}</AvatarFallback>
-                          </Avatar>
-                        )}
-                      </div>
-                    ))}
+                    {/* Mock data removed */}
                   </div>
                 </ScrollArea>
                 <div className="border-t p-4">

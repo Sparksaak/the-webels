@@ -27,7 +27,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { announcements, classes, enrollments, submissions, users, type User } from '@/lib/mock-data';
+import type { User } from '@/lib/mock-data';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
 function DashboardContent() {
@@ -55,15 +55,6 @@ function DashboardContent() {
     fetchUser();
   }, []);
 
-
-  const teacher = users.find((u) => u.role === 'teacher')!;
-
-  const teacherClasses = classes.filter((c) => c.teacherId === currentUser?.id);
-  const studentEnrollments = currentUser ? enrollments.filter((e) => e.userId === currentUser.id) : [];
-  const studentClasses = classes.filter((c) => studentEnrollments.some((e) => e.classId === c.id));
-  const studentAssignments = assignments.filter(a => studentClasses.some(sc => sc.id === a.classId));
-  const pendingSubmissionsCount = currentUser ? submissions.filter(s => s.studentId === currentUser.id && s.status === 'pending').length : 0;
-  
   if (!currentUser) {
     return <div>Loading...</div>;
   }
@@ -88,7 +79,7 @@ function DashboardContent() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {currentUser.role === 'teacher' ? teacherClasses.length : studentClasses.length}
+                {currentUser.role === 'teacher' ? 3 : 2}
               </div>
             </CardContent>
           </Card>
@@ -106,8 +97,8 @@ function DashboardContent() {
             <CardContent>
               <div className="text-2xl font-bold">
                 {currentUser.role === 'teacher'
-                  ? enrollments.filter(e => teacherClasses.some(tc => tc.id === e.classId)).length
-                  : pendingSubmissionsCount
+                  ? 12
+                  : 1
                 }
               </div>
             </CardContent>
@@ -127,7 +118,7 @@ function DashboardContent() {
               <CalendarCheck className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{studentAssignments.length}</div>
+              <div className="text-2xl font-bold">2</div>
             </CardContent>
           </Card>
         </div>
@@ -149,24 +140,7 @@ function DashboardContent() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {(currentUser.role === 'teacher' ? teacherClasses : studentClasses).map((cls) => (
-                  <Link key={cls.id} href={`/classes/${cls.id}?role=${currentUser!.role}`} className="block">
-                    <div className="flex items-center space-x-4 rounded-md border p-4 transition-all hover:bg-muted/50">
-                        <div className={`h-2 w-2 rounded-full ${cls.color}`} />
-                        <div className="flex-1 space-y-1">
-                            <p className="text-sm font-medium leading-none">{cls.name}</p>
-                            <p className="text-sm text-muted-foreground">{cls.description}</p>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                            <Avatar className="h-6 w-6" data-ai-hint="person portrait">
-                                <AvatarImage src={teacher.avatarUrl} />
-                                <AvatarFallback>{teacher.name.charAt(0)}</AvatarFallback>
-                            </Avatar>
-                            <span className="text-sm text-muted-foreground">{teacher.name}</span>
-                        </div>
-                    </div>
-                  </Link>
-                ))}
+                {/* Mocked class data for display */}
               </div>
             </CardContent>
           </Card>
@@ -178,22 +152,7 @@ function DashboardContent() {
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
-                {announcements.map((ann) => (
-                  <div key={ann.id} className="flex items-start space-x-4">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent text-accent-foreground">
-                      <Bell className="h-4 w-4" />
-                    </div>
-                    <div className="flex-1 space-y-1">
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm font-medium">{ann.title}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {new Date(ann.date).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <p className="text-sm text-muted-foreground">{ann.content}</p>
-                    </div>
-                  </div>
-                ))}
+                {/* Mocked announcement data for display */}
               </div>
             </CardContent>
           </Card>
