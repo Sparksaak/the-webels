@@ -8,14 +8,26 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Logo } from '@/components/logo';
 import { useActionState, useEffect } from 'react';
-import { login } from '@/app/auth/actions';
+import { login, loginWithGoogle } from '@/app/auth/actions';
 import { useToast } from '@/hooks/use-toast';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 export default function LoginPage() {
   const [state, formAction] = useActionState(login, null);
   const { toast } = useToast();
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const error = searchParams.get('error');
+    if (error) {
+      toast({
+        title: "Error",
+        description: error,
+        variant: "destructive",
+      });
+    }
+  }, [searchParams, toast]);
 
   useEffect(() => {
     if (state?.error) {
@@ -42,36 +54,40 @@ export default function LoginPage() {
               Enter your email below to login to your account
             </p>
           </div>
-          <form action={formAction} className="grid gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                placeholder="m@example.com"
-                required
-              />
-            </div>
-            <div className="grid gap-2">
-              <div className="flex items-center">
-                <Label htmlFor="password">Password</Label>
-                <Link
-                  href="#"
-                  className="ml-auto inline-block text-sm underline"
-                >
-                  Forgot your password?
-                </Link>
+          <div className="grid gap-4">
+            <form action={formAction}>
+              <div className="grid gap-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  placeholder="m@example.com"
+                  required
+                />
               </div>
-              <Input id="password" name="password" type="password" required />
-            </div>
-            <Button type="submit" className="w-full">
-              Login
-            </Button>
-            <Button variant="outline" className="w-full">
-              Login with Google
-            </Button>
-          </form>
+              <div className="grid gap-2 mt-4">
+                <div className="flex items-center">
+                  <Label htmlFor="password">Password</Label>
+                  <Link
+                    href="#"
+                    className="ml-auto inline-block text-sm underline"
+                  >
+                    Forgot your password?
+                  </Link>
+                </div>
+                <Input id="password" name="password" type="password" required />
+              </div>
+              <Button type="submit" className="w-full mt-4">
+                Login
+              </Button>
+            </form>
+             <form action={loginWithGoogle}>
+                <Button variant="outline" className="w-full" type="submit">
+                Login with Google
+                </Button>
+            </form>
+          </div>
           <div className="mt-4 text-center text-sm">
             Don&apos;t have an account?{' '}
             <Link href="/signup" className="underline">
@@ -93,7 +109,7 @@ export default function LoginPage() {
          <div className="absolute inset-0 flex items-center justify-center p-12">
           <div className="text-white text-center bg-black bg-opacity-30 p-8 rounded-lg backdrop-blur-sm">
             <h2 className="mt-4 text-4xl font-bold">Welcome Back</h2>
-            <p className="mt-2 text-xl">Sign in to continue to Classroom Central.</p>
+            <p className="mt-2 text-xl">Sign in to continue to The Webels.</p>
           </div>
         </div>
       </div>

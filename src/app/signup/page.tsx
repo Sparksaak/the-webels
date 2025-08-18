@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useActionState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { signup } from '@/app/auth/actions';
+import { signup, loginWithGoogle } from '@/app/auth/actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -40,47 +40,51 @@ export default function SignupPage() {
             <Logo className="mx-auto" />
             <h1 className="text-3xl font-bold">Sign Up</h1>
             <p className="text-balance text-muted-foreground">
-              Create an account to get started with Classroom Central.
+              Create an account to get started with The Webels.
             </p>
           </div>
-          <form action={formAction} className="grid gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="full-name">Full Name</Label>
-              <Input id="full-name" name="name" placeholder="John Doe" required />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                placeholder="m@example.com"
-                required
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="password">Password</Label>
-              <Input id="password" name="password" type="password" required />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="role">I am a...</Label>
-              <Select name="role" required defaultValue="student">
-                <SelectTrigger>
-                  <SelectValue placeholder="Select your role" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="student">Student</SelectItem>
-                  <SelectItem value="teacher">Teacher</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <Button type="submit" className="w-full">
-              Create an account
-            </Button>
-            <Button variant="outline" className="w-full">
-              Sign up with Google
-            </Button>
-          </form>
+          <div className="grid gap-4">
+            <form action={formAction}>
+              <div className="grid gap-2">
+                <Label htmlFor="full-name">Full Name</Label>
+                <Input id="full-name" name="name" placeholder="John Doe" required />
+              </div>
+              <div className="grid gap-2 mt-4">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  placeholder="m@example.com"
+                  required
+                />
+              </div>
+              <div className="grid gap-2 mt-4">
+                <Label htmlFor="password">Password</Label>
+                <Input id="password" name="password" type="password" required />
+              </div>
+              <div className="grid gap-2 mt-4">
+                <Label htmlFor="role">I am a...</Label>
+                <Select name="role" required defaultValue="student">
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select your role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="student">Student</SelectItem>
+                    <SelectItem value="teacher">Teacher</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button type="submit" className="w-full mt-4">
+                Create an account
+              </Button>
+            </form>
+            <form action={loginWithGoogle}>
+                <Button variant="outline" className="w-full" type="submit">
+                Sign up with Google
+                </Button>
+            </form>
+          </div>
           <div className="mt-4 text-center text-sm">
             Already have an account?{' '}
             <Link href="/login" className="underline">

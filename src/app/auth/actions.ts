@@ -60,3 +60,29 @@ export async function logout() {
     await supabase.auth.signOut();
     redirect('/login');
 }
+
+export async function loginWithGoogle() {
+    const supabase = createClient();
+    const origin = process.env.NEXT_PUBLIC_SITE_URL;
+
+    const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+            redirectTo: `${origin}/auth/callback`,
+            queryParams: {
+                access_type: 'offline',
+                prompt: 'consent',
+            },
+        },
+    });
+
+    if (error) {
+        console.error('Google login error:', error.message);
+        // This will be caught by the page and displayed in a toast.
+        redirect('/login?error=Could not authenticate with Google');
+    }
+
+    if (data.url) {
+        redirect(data.url);
+    }
+}
