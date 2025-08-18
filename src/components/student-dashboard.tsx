@@ -16,8 +16,15 @@ import {
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import type { User } from '@/lib/mock-data';
 import { Button } from './ui/button';
+
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: 'teacher' | 'student';
+  avatarUrl: string;
+}
 
 interface StudentDashboardProps {
     user: User;
@@ -80,7 +87,7 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
               <div className="text-center text-muted-foreground py-12">
                 <p>You are not enrolled in any classes yet.</p>
                 <Button variant="link" asChild>
-                    <Link href="/classes">Browse Classes</Link>
+                    <Link href="#">Browse Classes</Link>
                 </Button>
               </div>
             </CardContent>

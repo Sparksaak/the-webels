@@ -13,7 +13,7 @@ export default function HomePage() {
       <header className="px-4 lg:px-6 h-14 flex items-center shadow-sm">
         <Link href="#" className="flex items-center justify-center" prefetch={false}>
           <Logo className="size-8" />
-          <span className="ml-2 text-xl font-bold">The Webels</span>
+          <span className="ml-2 text-xl font-bold">Classroom Central</span>
         </Link>
         <nav className="ml-auto flex gap-4 sm:gap-6">
           <Link href="#features" className="text-sm font-medium hover:underline underline-offset-4" prefetch={false}>
@@ -23,7 +23,7 @@ export default function HomePage() {
             <Link href="/login">Login</Link>
           </Button>
           <Button asChild size="sm">
-            <Link href="/signup">Start Learning</Link>
+            <Link href="/signup">Sign Up</Link>
           </Button>
         </nav>
       </header>
@@ -34,15 +34,15 @@ export default function HomePage() {
               <div className="flex flex-col justify-center space-y-4">
                 <div className="space-y-2">
                   <h1 className="text-3xl font-bold tracking-tighter sm:text-5xl xl:text-6xl/none">
-                    Unlock Your Coding Potential with The Webels
+                    The Modern Classroom Management Tool
                   </h1>
                   <p className="max-w-[600px] text-muted-foreground md:text-xl">
-                    Join our free, comprehensive course on Python and Web Development. Go from beginner to builder with hands-on projects and expert guidance.
+                    Classroom Central provides teachers and students with a powerful, streamlined platform for managing classes, assignments, and communication.
                   </p>
                 </div>
                 <div className="flex flex-col gap-2 min-[400px]:flex-row">
                   <Button asChild size="lg">
-                    <Link href="/signup">Start Learning for Free</Link>
+                    <Link href="/signup">Get Started for Free</Link>
                   </Button>
                 </div>
               </div>
@@ -50,9 +50,9 @@ export default function HomePage() {
                 src="https://placehold.co/600x400.png"
                 width="600"
                 height="400"
-                alt="Student learning to code on a laptop"
+                alt="Teacher helping student on a laptop"
                 className="mx-auto aspect-video overflow-hidden rounded-xl object-cover sm:w-full lg:order-last"
-                data-ai-hint="coding laptop"
+                data-ai-hint="classroom teacher student"
               />
             </div>
           </div>
@@ -61,10 +61,10 @@ export default function HomePage() {
           <div className="container px-4 md:px-6">
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
               <div className="space-y-2">
-                <div className="inline-block rounded-lg bg-muted px-3 py-1 text-sm">Why Learn with Us?</div>
-                <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">Everything You Need to Launch Your Tech Career</h2>
+                <div className="inline-block rounded-lg bg-muted px-3 py-1 text-sm">Key Features</div>
+                <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">Everything You Need for a Seamless Classroom Experience</h2>
                 <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
-                  Our platform is designed to provide an interactive and effective learning experience.
+                  Our platform is designed to be intuitive for both teachers and students, fostering a more organized and engaging learning environment.
                 </p>
               </div>
             </div>
@@ -73,27 +73,27 @@ export default function HomePage() {
                   <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary text-primary-foreground mb-4">
                     <Code className="h-8 w-8" />
                   </div>
-                <h3 className="text-xl font-bold">Hands-On Projects</h3>
+                <h3 className="text-xl font-bold">Effortless Class Management</h3>
                 <p className="text-muted-foreground">
-                  Learn by doing. Build real-world applications and a portfolio that will impress employers and demonstrate your skills.
+                  Teachers can easily create classes, manage student enrollment, post announcements, and create assignments all in one place.
                 </p>
               </div>
               <div className="grid gap-2 text-center">
                 <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary text-primary-foreground mb-4">
                     <Bot className="h-8 w-8" />
                   </div>
-                <h3 className="text-xl font-bold">Expert-Led Curriculum</h3>
+                <h3 className="text-xl font-bold">Streamlined Student View</h3>
                 <p className="text-muted-foreground">
-                  Our curriculum is crafted by industry experts to cover the most in-demand skills in Python and Web Development.
+                  Students get a clear overview of their classes, upcoming assignments, and recent announcements, helping them stay on track.
                 </p>
               </div>
                <div className="grid gap-2 text-center">
                 <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary text-primary-foreground mb-4">
                     <Users className="h-8 w-8" />
                   </div>
-                <h3 className="text-xl font-bold">Community & Support</h3>
+                <h3 className="text-xl font-bold">Direct Communication</h3>
                 <p className="text-muted-foreground">
-                  Join a thriving community of learners. Collaborate on projects, ask questions, and get support from peers and mentors.
+                  A built-in messaging system allows for direct and private communication between teachers and students, making it easy to ask questions and provide feedback.
                 </p>
               </div>
             </div>
@@ -101,7 +101,7 @@ export default function HomePage() {
         </section>
       </main>
       <footer className="flex flex-col gap-2 sm:flex-row py-6 w-full shrink-0 items-center px-4 md:px-6 border-t">
-        <p className="text-xs text-muted-foreground">&copy; 2024 The Webels. All rights reserved.</p>
+        <p className="text-xs text-muted-foreground">&copy; 2024 Classroom Central. All rights reserved.</p>
         <nav className="sm:ml-auto flex gap-4 sm:gap-6">
           <Link href="#" className="text-xs hover:underline underline-offset-4" prefetch={false}>
             Terms of Service

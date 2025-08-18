@@ -16,7 +16,14 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import type { User } from '@/lib/mock-data';
+
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: 'teacher' | 'student';
+  avatarUrl: string;
+}
 
 interface TeacherDashboardProps {
     user: User;
