@@ -8,11 +8,8 @@ import { AppLayout } from '@/components/app-layout';
 
 import {
   ArrowLeft,
-  Bell,
-  BookMarked,
   Calendar as CalendarIcon,
   PlusCircle,
-  Users as UsersIcon,
 } from 'lucide-react';
 import {
   Card,
@@ -31,7 +28,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
 import { Calendar } from '@/components/ui/calendar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -41,20 +37,16 @@ import {
 } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
-import { Checkbox } from '@/components/ui/checkbox';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@/lib/supabase/client';
 import type { User } from '@/lib/mock-data';
 
 
 function ClassPageContent({ params }: { params: { id: string } }) {
-  const searchParams = useSearchParams();
-  const userRole = searchParams.get('role') === 'student' ? 'student' : 'teacher';
-  
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   useEffect(() => {
     const fetchUser = async () => {
-        const supabase = createClientComponentClient();
+        const supabase = createClient();
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
             const role = user.user_metadata.role || 'student';
@@ -73,7 +65,6 @@ function ClassPageContent({ params }: { params: { id: string } }) {
 
   
   const [date, setDate] = useState<Date | undefined>(new Date());
-  const formattedDate = date ? format(date, "yyyy-MM-dd") : format(new Date(), "yyyy-MM-dd");
 
   if (!currentUser) {
     return <div>Loading...</div>;
@@ -88,7 +79,7 @@ function ClassPageContent({ params }: { params: { id: string } }) {
       <div className="flex flex-col gap-6">
         <div>
           <Button variant="ghost" asChild className='mb-2'>
-              <Link href={`/dashboard?role=${currentUser.role}`}><ArrowLeft className="mr-2 h-4 w-4" />Back to Dashboard</Link>
+              <Link href={`/dashboard`}><ArrowLeft className="mr-2 h-4 w-4" />Back to Dashboard</Link>
           </Button>
           <div className='flex items-center justify-between'>
             <div>

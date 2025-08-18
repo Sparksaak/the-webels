@@ -2,8 +2,9 @@
 "use client";
 
 import { Suspense, useEffect, useState } from 'react';
+import type { User as SupabaseUser } from '@supabase/supabase-js';
 import type { User } from '@/lib/mock-data';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@/lib/supabase/client';
 import { AppLayout } from '@/components/app-layout';
 import { TeacherDashboard } from '@/components/teacher-dashboard';
 import { StudentDashboard } from '@/components/student-dashboard';
@@ -16,7 +17,7 @@ function DashboardContent() {
 
   useEffect(() => {
     const fetchUser = async () => {
-        const supabase = createClientComponentClient();
+        const supabase = createClient();
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
             const role = user.user_metadata.role || 'student';

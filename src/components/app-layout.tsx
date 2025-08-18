@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BookOpen, BookMarked, ClipboardList, Home, LayoutDashboard, MessageSquare, Settings, Users } from 'lucide-react';
+import { BookOpen, ClipboardList, LayoutDashboard, MessageSquare } from 'lucide-react';
 import {
   SidebarProvider,
   Sidebar,
@@ -19,12 +19,8 @@ import {
 import { UserNav } from '@/components/user-nav';
 import { Logo } from '@/components/logo';
 import type { User } from '@/lib/mock-data';
-import { users } from '@/lib/mock-data';
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { Button } from './ui/button';
 import { useEffect, useState } from 'react';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-
+import { createClient } from '@/lib/supabase/client';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -37,7 +33,7 @@ export function AppLayout({ children, userRole }: AppLayoutProps) {
 
   useEffect(() => {
     const fetchUser = async () => {
-        const supabase = createClientComponentClient();
+        const supabase = createClient();
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
             const role = user.user_metadata.role || 'student';
@@ -100,7 +96,7 @@ export function AppLayout({ children, userRole }: AppLayoutProps) {
             <SidebarMenu>
               {navItems.map((item) => (
                 <SidebarMenuItem key={item.href}>
-                  <Link href={`${item.href}?role=${userRole}`}>
+                  <Link href={`${item.href}`}>
                     <SidebarMenuButton 
                       isActive={isActive(item.href)}
                       tooltip={{children: item.label, side: "right"}}

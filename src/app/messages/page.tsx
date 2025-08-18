@@ -1,7 +1,6 @@
 
 "use client";
 
-import { useSearchParams } from 'next/navigation';
 import { Suspense, useState, useEffect } from 'react';
 import { AppLayout } from '@/components/app-layout';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -9,8 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { cn } from '@/lib/utils';
-import type { User, Message } from '@/lib/mock-data';
+import type { User } from '@/lib/mock-data';
 import { Paperclip, Send } from 'lucide-react';
 import {
   Tooltip,
@@ -19,17 +17,14 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { Textarea } from '@/components/ui/textarea';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@/lib/supabase/client';
 
 function MessagesContent() {
-  const searchParams = useSearchParams();
-  const userRole = searchParams.get('role') === 'student' ? 'student' : 'teacher';
-  
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   useEffect(() => {
     const fetchUser = async () => {
-        const supabase = createClientComponentClient();
+        const supabase = createClient();
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
             const role = user.user_metadata.role || 'student';

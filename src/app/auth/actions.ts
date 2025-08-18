@@ -1,29 +1,11 @@
 
 'use server';
 
-import { createServerClient, type CookieOptions } from '@supabase/ssr'
-import { cookies } from 'next/headers'
+import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 
 export async function signup(prevState: { error: string } | null, formData: FormData) {
-  const cookieStore = cookies()
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value
-        },
-        set(name: string, value: string, options: CookieOptions) {
-          cookieStore.set({ name, value, ...options })
-        },
-        remove(name: string, options: CookieOptions) {
-          cookieStore.set({ name, value: '', ...options })
-        },
-      },
-    }
-  )
+  const supabase = createClient();
 
   const name = formData.get('name') as string;
   const email = formData.get('email') as string;
@@ -48,35 +30,17 @@ export async function signup(prevState: { error: string } | null, formData: Form
   }
   
   // For now, redirect to dashboard. In a real app, you'd want to show a "check your email" message.
-  redirect(`/dashboard?role=${role}`);
+  redirect(`/dashboard`);
 }
 
 
 export async function login(prevState: { error: string } | null, formData: FormData) {
-  const cookieStore = cookies()
-
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value
-        },
-        set(name: string, value: string, options: CookieOptions) {
-          cookieStore.set({ name, value, ...options })
-        },
-        remove(name: string, options: CookieOptions) {
-          cookieStore.set({ name, value: '', ...options })
-        },
-      },
-    }
-  )
+  const supabase = createClient();
 
   const email = formData.get('email') as string
   const password = formData.get('password') as string
 
-  const { data, error } = await supabase.auth.signInWithPassword({
+  const { error } = await supabase.auth.signInWithPassword({
     email,
     password,
   })
@@ -86,30 +50,11 @@ export async function login(prevState: { error: string } | null, formData: FormD
     return { error: 'Could not authenticate user' };
   }
   
-  const role = data.user?.user_metadata.role || 'student';
-  
-  return redirect(`/dashboard?role=${role}`);
+  return redirect(`/dashboard`);
 }
 
 export async function logout() {
-    const cookieStore = cookies()
-    const supabase = createServerClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-        {
-          cookies: {
-            get(name: string) {
-              return cookieStore.get(name)?.value
-            },
-            set(name: string, value: string, options: CookieOptions) {
-              cookieStore.set({ name, value, ...options })
-            },
-            remove(name: string, options: CookieOptions) {
-              cookieStore.set({ name, value: '', ...options })
-            },
-          },
-        }
-      )
-    await supabase.auth.signOut()
-    redirect('/login')
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    redirect('/login');
 }

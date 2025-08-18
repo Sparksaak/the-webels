@@ -16,7 +16,6 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import type { User } from '@/lib/mock-data';
 
 interface TeacherDashboardProps {
@@ -101,11 +100,11 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
                     <div key={c.id}>
                         <div className="flex items-center justify-between">
                             <div className="flex flex-col">
-                                <Link href={`/classes/${c.id}?role=teacher`} className="font-semibold hover:underline">{c.name}</Link>
+                                <Link href={`/classes/${c.id}`} className="font-semibold hover:underline">{c.name}</Link>
                                 <span className="text-sm text-muted-foreground">{c.studentCount} students</span>
                             </div>
                             <Button variant="outline" size="sm" asChild>
-                                <Link href={`/classes/${c.id}?role=teacher`}>Manage</Link>
+                                <Link href={`/classes/${c.id}`}>Manage</Link>
                             </Button>
                         </div>
                         {index < teacherClasses.length - 1 && <Separator className="my-4" />}

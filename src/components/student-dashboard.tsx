@@ -7,7 +7,6 @@ import {
   MessageSquare,
   Bell
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -93,7 +92,7 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
                     <div key={c.id}>
                         <div className="flex items-center justify-between">
                             <div className="flex flex-col">
-                                <Link href={`/classes/${c.id}?role=student`} className="font-semibold hover:underline">{c.name}</Link>
+                                <Link href={`/classes/${c.id}`} className="font-semibold hover:underline">{c.name}</Link>
                                 <span className="text-sm text-muted-foreground">Taught by {c.teacher}</span>
                             </div>
                             <div className='text-right'>
