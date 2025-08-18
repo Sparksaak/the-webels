@@ -3,6 +3,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
+import { headers } from 'next/headers';
 
 export async function signup(prevState: { error: string } | null, formData: FormData) {
   const supabase = createClient();
@@ -12,7 +13,7 @@ export async function signup(prevState: { error: string } | null, formData: Form
   const password = formData.get('password') as string;
   const role = formData.get('role') as string;
 
-  const origin = process.env.NEXT_PUBLIC_SITE_URL;
+  const origin = headers().get('origin');
   const emailRedirectTo = `${origin}/auth/callback`;
 
   const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
