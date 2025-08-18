@@ -12,6 +12,9 @@ export async function signup(prevState: { error: string } | null, formData: Form
   const password = formData.get('password') as string;
   const role = formData.get('role') as string;
 
+  // Use the NEXT_PUBLIC_SITE_URL for the redirect
+  const emailRedirectTo = `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`;
+
   const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
     email,
     password,
@@ -20,7 +23,7 @@ export async function signup(prevState: { error: string } | null, formData: Form
         full_name: name,
         role: role,
       },
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
+      emailRedirectTo: emailRedirectTo,
     },
   });
 
@@ -78,7 +81,6 @@ export async function loginWithGoogle() {
 
     if (error) {
         console.error('Google login error:', error.message);
-        // This will be caught by the page and displayed in a toast.
         redirect('/login?error=Could not authenticate with Google');
     }
 
