@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, MessageSquare } from 'lucide-react';
+import { LayoutDashboard, MessageSquare, Users, FileText, Megaphone } from 'lucide-react';
 import {
   SidebarProvider,
   Sidebar,
@@ -52,6 +52,9 @@ export function AppLayout({ children, userRole }: AppLayoutProps) {
 
   const navItems = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { href: '/classes', label: 'Classes', icon: Users },
+    { href: '/assignments', label: 'Assignments', icon: FileText },
+    { href: '/announcements', label: 'Announcements', icon: Megaphone },
     { href: '/messages', label: 'Messages', icon: MessageSquare },
   ];
   

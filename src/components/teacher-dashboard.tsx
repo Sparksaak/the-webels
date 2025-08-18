@@ -1,8 +1,9 @@
 
 import {
   Users,
-  MessageSquare,
-  Monitor,
+  FileText,
+  Megaphone,
+  MessageSquare
 } from 'lucide-react';
 import {
   Card,
@@ -11,6 +12,8 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import Link from 'next/link';
+import { Button } from './ui/button';
 
 interface User {
   id: string;
@@ -26,9 +29,8 @@ interface TeacherDashboardProps {
 
 export function TeacherDashboard({ user }: TeacherDashboardProps) {
   // In the future, we would fetch these counts from the database.
+  const totalClasses = 0;
   const totalStudents = 0;
-  const onlineStudents = 0;
-  const inPersonStudents = 0;
 
   return (
     <div className="flex flex-col gap-8">
@@ -40,6 +42,15 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Classes</CardTitle>
+                <Users className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                <div className="text-2xl font-bold">{totalClasses}</div>
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Total Students</CardTitle>
                 <Users className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
@@ -49,20 +60,11 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
             </Card>
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Online Students</CardTitle>
-                <Monitor className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium">Pending Assignments</CardTitle>
+                <FileText className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                <div className="text-2xl font-bold">{onlineStudents}</div>
-                </CardContent>
-            </Card>
-             <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">In-Person Students</CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                <div className="text-2xl font-bold">{inPersonStudents}</div>
+                <div className="text-2xl font-bold">0</div>
                 </CardContent>
             </Card>
             <Card>
@@ -78,13 +80,21 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
 
         <div className="grid gap-6">
           <Card>
-            <CardHeader>
-              <CardTitle>Student Roster</CardTitle>
-              <CardDescription>An overview of all enrolled students.</CardDescription>
+            <CardHeader className="flex justify-between items-center">
+              <div>
+                <CardTitle>My Classes</CardTitle>
+                <CardDescription>An overview of all your classes.</CardDescription>
+              </div>
+              <Button asChild>
+                <Link href="/classes/create">Create Class</Link>
+              </Button>
             </CardHeader>
             <CardContent>
                 <div className="text-center text-muted-foreground py-12">
-                    <p>No students have enrolled yet.</p>
+                    <p>You haven't created any classes yet.</p>
+                    <Button asChild variant="link">
+                        <Link href="/classes/create">Create your first class</Link>
+                    </Button>
                 </div>
             </CardContent>
           </Card>

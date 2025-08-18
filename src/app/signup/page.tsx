@@ -41,7 +41,7 @@ export default function SignupPage() {
             <Logo className="mx-auto" />
             <h1 className="text-3xl font-bold">Sign Up</h1>
             <p className="text-balance text-muted-foreground">
-              Create an account to get started with The Webels.
+              Create an account to get started with Classroom Central.
             </p>
           </div>
           <div className="grid gap-4">
@@ -76,20 +76,6 @@ export default function SignupPage() {
                   </SelectContent>
                 </Select>
               </div>
-              {role === 'student' && (
-                <div className="grid gap-2 mt-4">
-                  <Label htmlFor="learningPreference">Learning Preference</Label>
-                  <Select name="learningPreference" required defaultValue="online">
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select your preference" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="online">Online</SelectItem>
-                      <SelectItem value="in-person">In-Person</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
               <Button type="submit" className="w-full mt-4">
                 Create an account
               </Button>

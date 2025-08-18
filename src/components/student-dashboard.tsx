@@ -1,10 +1,10 @@
 
 import Link from 'next/link';
 import {
-  MessageSquare,
-  User,
-  Monitor,
-  Users
+  Users,
+  FileText,
+  Megaphone,
+  MessageSquare
 } from 'lucide-react';
 import {
   Card,
@@ -21,7 +21,6 @@ interface AppUser {
   email: string;
   role: 'teacher' | 'student';
   avatarUrl: string;
-  learningPreference?: 'online' | 'in-person';
 }
 
 interface StudentDashboardProps {
@@ -29,8 +28,6 @@ interface StudentDashboardProps {
 }
 
 export function StudentDashboard({ user }: StudentDashboardProps) {
-  const isOnline = user.learningPreference === 'online';
-
   return (
     <div className="flex flex-col gap-8">
         <div>
@@ -41,33 +38,66 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">My Learning Track</CardTitle>
-              {isOnline ? <Monitor className="h-4 w-4 text-muted-foreground" /> : <Users className="h-4 w-4 text-muted-foreground" />}
+              <CardTitle className="text-sm font-medium">My Classes</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold capitalize">{user.learningPreference || 'Not set'}</div>
+              <div className="text-2xl font-bold">0</div>
+              <p className="text-xs text-muted-foreground">classes enrolled</p>
             </CardContent>
           </Card>
           <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Assignments Due</CardTitle>
+              <FileText className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">0</div>
+               <p className="text-xs text-muted-foreground">assignments upcoming</p>
+            </CardContent>
+          </Card>
+           <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Recent Announcements</CardTitle>
+              <Megaphone className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">0</div>
+               <p className="text-xs text-muted-foreground">new announcements</p>
+            </CardContent>
+          </Card>
+           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Unread Messages</CardTitle>
               <MessageSquare className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">0</div>
+               <p className="text-xs text-muted-foreground">messages from teachers</p>
             </CardContent>
           </Card>
         </div>
 
-        <div className="grid gap-6">
+        <div className="grid gap-6 lg:grid-cols-2">
           <Card>
             <CardHeader>
-              <CardTitle>Welcome</CardTitle>
-              <CardDescription>You are enrolled in the {user.learningPreference} learning track.</CardDescription>
+              <CardTitle>Upcoming Assignments</CardTitle>
+              <CardDescription>A list of your upcoming assignments.</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="text-center text-muted-foreground py-12">
-                <p>Course content and materials will appear here soon.</p>
+                <p>No upcoming assignments.</p>
+              </div>
+            </CardContent>
+          </Card>
+           <Card>
+            <CardHeader>
+              <CardTitle>Recent Announcements</CardTitle>
+              <CardDescription>Stay up to date with class news.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center text-muted-foreground py-12">
+                <p>No new announcements.</p>
               </div>
             </CardContent>
           </Card>

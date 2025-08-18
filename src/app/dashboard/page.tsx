@@ -2,7 +2,6 @@
 "use client";
 
 import { Suspense, useEffect, useState } from 'react';
-import type { User as SupabaseUser } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/client';
 import { AppLayout } from '@/components/app-layout';
 import { TeacherDashboard } from '@/components/teacher-dashboard';
@@ -15,7 +14,6 @@ type AppUser = {
     role: 'teacher' | 'student';
     name: string;
     avatarUrl: string;
-    learningPreference?: 'online' | 'in-person';
 };
 
 
@@ -32,7 +30,6 @@ function DashboardContent() {
         if (user) {
             const role = user.user_metadata?.role || 'student';
             const name = user.user_metadata?.full_name || user.email;
-            const learningPreference = user.user_metadata?.learning_preference;
 
             const fetchedUser: AppUser = {
                 id: user.id,
@@ -40,7 +37,6 @@ function DashboardContent() {
                 email: user.email!,
                 role: role,
                 avatarUrl: `https://placehold.co/100x100.png`,
-                learningPreference: learningPreference
             };
             setCurrentUser(fetchedUser);
         } else {

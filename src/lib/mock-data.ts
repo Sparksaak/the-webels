@@ -5,7 +5,6 @@ export type User = {
   email: string;
   role: 'teacher' | 'student';
   avatarUrl: string;
-  learningPreference?: 'online' | 'in-person';
 };
 
 export type Message = {
@@ -19,8 +18,8 @@ export type Message = {
 
 export const users: User[] = [
   { id: 'user-1', name: 'Dr. Evelyn Reed', email: 'teacher@example.com', role: 'teacher', avatarUrl: 'https://placehold.co/100x100.png' },
-  { id: 'user-2', name: 'Liam Carter', email: 'student@example.com', role: 'student', avatarUrl: 'https://placehold.co/100x100.png', learningPreference: 'online' },
-  { id: 'user-3', name: 'Olivia Chen', email: 'olivia.chen@example.com', role: 'student', avatarUrl: 'https://placehold.co/100x100.png', learningPreference: 'in-person' },
+  { id: 'user-2', name: 'Liam Carter', email: 'student@example.com', role: 'student', avatarUrl: 'https://placehold.co/100x100.png' },
+  { id: 'user-3', name: 'Olivia Chen', email: 'olivia.chen@example.com', role: 'student', avatarUrl: 'https://placehold.co/100x100.png' },
 ];
 
 export const messages: Message[] = [

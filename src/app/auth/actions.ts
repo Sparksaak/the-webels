@@ -12,7 +12,6 @@ export async function signup(prevState: { error: string } | null, formData: Form
   const email = formData.get('email') as string;
   const password = formData.get('password') as string;
   const role = formData.get('role') as string;
-  const learningPreference = formData.get('learningPreference') as string;
 
   const origin = headers().get('origin');
   const emailRedirectTo = `${origin}/auth/callback`;
@@ -24,7 +23,6 @@ export async function signup(prevState: { error: string } | null, formData: Form
       data: {
         full_name: name,
         role: role,
-        learning_preference: role === 'student' ? learningPreference : null,
       },
       emailRedirectTo: emailRedirectTo,
     },
