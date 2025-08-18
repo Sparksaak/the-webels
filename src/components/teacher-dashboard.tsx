@@ -22,19 +22,6 @@ interface TeacherDashboardProps {
     user: User;
 }
 
-// Mock data for demonstration - replace with actual data fetching
-const teacherClasses = [
-    { id: 'class-1', name: 'Intro to React', studentCount: 25 },
-    { id: 'class-2', name: 'Advanced NodeJS', studentCount: 18 },
-    { id: 'class-3', name: 'UI/UX Design Principles', studentCount: 32 },
-];
-
-const teacherAnnouncements = [
-    { class: 'Intro to React', title: 'Welcome!', date: 'May 10' },
-    { class: 'Advanced NodeJS', title: 'Project 1 Deadline Extended', date: 'May 12' },
-];
-
-
 export function TeacherDashboard({ user }: TeacherDashboardProps) {
   return (
     <div className="flex flex-col gap-8">
@@ -50,7 +37,7 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
                 <BookOpen className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                <div className="text-2xl font-bold">3</div>
+                <div className="text-2xl font-bold">0</div>
                 </CardContent>
             </Card>
             <Card>
@@ -59,7 +46,7 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
                 <Users className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                <div className="text-2xl font-bold">75</div>
+                <div className="text-2xl font-bold">0</div>
                 </CardContent>
             </Card>
             <Card>
@@ -68,7 +55,7 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
                 <MessageSquare className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                <div className="text-2xl font-bold">5</div>
+                <div className="text-2xl font-bold">0</div>
                 </CardContent>
             </Card>
              <Card>
@@ -77,7 +64,7 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
                 <Bell className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                <div className="text-2xl font-bold">12</div>
+                <div className="text-2xl font-bold">0</div>
                 </CardContent>
             </Card>
         </div>
@@ -95,22 +82,9 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
               </Button>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {teacherClasses.map((c, index) => (
-                    <div key={c.id}>
-                        <div className="flex items-center justify-between">
-                            <div className="flex flex-col">
-                                <Link href={`/classes/${c.id}`} className="font-semibold hover:underline">{c.name}</Link>
-                                <span className="text-sm text-muted-foreground">{c.studentCount} students</span>
-                            </div>
-                            <Button variant="outline" size="sm" asChild>
-                                <Link href={`/classes/${c.id}`}>Manage</Link>
-                            </Button>
-                        </div>
-                        {index < teacherClasses.length - 1 && <Separator className="my-4" />}
-                    </div>
-                ))}
-              </div>
+                <div className="text-center text-muted-foreground py-12">
+                    <p>You haven't created any classes yet.</p>
+                </div>
             </CardContent>
           </Card>
 
@@ -119,19 +93,9 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
               <CardTitle>Recent Announcements</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-6">
-                {teacherAnnouncements.map((ann, index) => (
-                    <div key={index} className="flex items-start gap-4">
-                        <div className="bg-primary/10 text-primary p-2 rounded-full">
-                            <Bell className="h-5 w-5" />
-                        </div>
-                        <div className="flex-1">
-                            <p className="text-sm font-medium">{ann.title}</p>
-                            <p className="text-xs text-muted-foreground">{ann.class} &middot; {ann.date}</p>
-                        </div>
-                    </div>
-                ))}
-              </div>
+                <div className="text-center text-muted-foreground py-12">
+                    <p>You haven't posted any announcements.</p>
+                </div>
             </CardContent>
           </Card>
         </div>
