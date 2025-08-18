@@ -1,11 +1,10 @@
 
 import Link from 'next/link';
 import {
-  BookOpen,
-  ClipboardList,
-  CalendarCheck,
   MessageSquare,
-  Bell
+  User,
+  Monitor,
+  Users
 } from 'lucide-react';
 import {
   Card,
@@ -14,23 +13,24 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import { Button } from './ui/button';
 
-interface User {
+interface AppUser {
   id: string;
   name: string;
   email: string;
   role: 'teacher' | 'student';
   avatarUrl: string;
+  learningPreference?: 'online' | 'in-person';
 }
 
 interface StudentDashboardProps {
-    user: User;
+    user: AppUser;
 }
 
 export function StudentDashboard({ user }: StudentDashboardProps) {
+  const isOnline = user.learningPreference === 'online';
+
   return (
     <div className="flex flex-col gap-8">
         <div>
@@ -41,20 +41,11 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Enrolled Classes</CardTitle>
-              <BookOpen className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium">My Learning Track</CardTitle>
+              {isOnline ? <Monitor className="h-4 w-4 text-muted-foreground" /> : <Users className="h-4 w-4 text-muted-foreground" />}
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">0</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pending Assignments</CardTitle>
-              <ClipboardList className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">0</div>
+              <div className="text-2xl font-bold capitalize">{user.learningPreference || 'Not set'}</div>
             </CardContent>
           </Card>
           <Card>
@@ -66,40 +57,17 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
               <div className="text-2xl font-bold">0</div>
             </CardContent>
           </Card>
-           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Upcoming Deadlines</CardTitle>
-              <CalendarCheck className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">0</div>
-            </CardContent>
-          </Card>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-3">
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <CardTitle>My Classes</CardTitle>
-              <CardDescription>An overview of your current classes.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center text-muted-foreground py-12">
-                <p>You are not enrolled in any classes yet.</p>
-                <Button variant="link" asChild>
-                    <Link href="#">Browse Classes</Link>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
+        <div className="grid gap-6">
           <Card>
             <CardHeader>
-              <CardTitle>Recent Announcements</CardTitle>
+              <CardTitle>Welcome</CardTitle>
+              <CardDescription>You are enrolled in the {user.learningPreference} learning track.</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="text-center text-muted-foreground py-12">
-                <p>No new announcements.</p>
+                <p>Course content and materials will appear here soon.</p>
               </div>
             </CardContent>
           </Card>

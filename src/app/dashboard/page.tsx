@@ -9,13 +9,13 @@ import { TeacherDashboard } from '@/components/teacher-dashboard';
 import { StudentDashboard } from '@/components/student-dashboard';
 import { useRouter } from 'next/navigation';
 
-// We need a specific type for the user object that includes the role and full name
 type AppUser = {
     id: string;
     email: string;
     role: 'teacher' | 'student';
     name: string;
     avatarUrl: string;
+    learningPreference?: 'online' | 'in-person';
 };
 
 
@@ -30,16 +30,17 @@ function DashboardContent() {
         const { data: { user } } = await supabase.auth.getUser();
 
         if (user) {
-            // The role and full_name are stored in user_metadata
             const role = user.user_metadata?.role || 'student';
-            const name = user.user_metadata?.full_name || user.email; // Fallback to email if name is not set
+            const name = user.user_metadata?.full_name || user.email;
+            const learningPreference = user.user_metadata?.learning_preference;
 
             const fetchedUser: AppUser = {
                 id: user.id,
                 name: name,
                 email: user.email!,
                 role: role,
-                avatarUrl: `https://placehold.co/100x100.png`
+                avatarUrl: `https://placehold.co/100x100.png`,
+                learningPreference: learningPreference
             };
             setCurrentUser(fetchedUser);
         } else {
@@ -59,8 +60,6 @@ function DashboardContent() {
   }
 
   if (!currentUser) {
-      // This case is handled by the redirect in useEffect, but it's good practice
-      // to have a fallback UI state.
       return null;
   }
 

@@ -1,13 +1,9 @@
 
-import Link from 'next/link';
 import {
-  BookOpen,
-  PlusCircle,
   Users,
   MessageSquare,
-  Bell
+  Monitor,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -15,7 +11,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
 
 interface User {
   id: string;
@@ -30,6 +25,11 @@ interface TeacherDashboardProps {
 }
 
 export function TeacherDashboard({ user }: TeacherDashboardProps) {
+  // In the future, we would fetch these counts from the database.
+  const totalStudents = 0;
+  const onlineStudents = 0;
+  const inPersonStudents = 0;
+
   return (
     <div className="flex flex-col gap-8">
         <div>
@@ -40,20 +40,29 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Classes</CardTitle>
-                <BookOpen className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                <div className="text-2xl font-bold">0</div>
-                </CardContent>
-            </Card>
-            <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Total Students</CardTitle>
                 <Users className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                <div className="text-2xl font-bold">0</div>
+                <div className="text-2xl font-bold">{totalStudents}</div>
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Online Students</CardTitle>
+                <Monitor className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                <div className="text-2xl font-bold">{onlineStudents}</div>
+                </CardContent>
+            </Card>
+             <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">In-Person Students</CardTitle>
+                <Users className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                <div className="text-2xl font-bold">{inPersonStudents}</div>
                 </CardContent>
             </Card>
             <Card>
@@ -65,43 +74,17 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
                 <div className="text-2xl font-bold">0</div>
                 </CardContent>
             </Card>
-             <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">New Submissions</CardTitle>
-                <Bell className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                <div className="text-2xl font-bold">0</div>
-                </CardContent>
-            </Card>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-3">
-          <Card className="lg:col-span-2">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle>My Classes</CardTitle>
-                <CardDescription>An overview of your current classes.</CardDescription>
-              </div>
-              <Button size="sm">
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Create Class
-              </Button>
-            </CardHeader>
-            <CardContent>
-                <div className="text-center text-muted-foreground py-12">
-                    <p>You haven't created any classes yet.</p>
-                </div>
-            </CardContent>
-          </Card>
-
+        <div className="grid gap-6">
           <Card>
             <CardHeader>
-              <CardTitle>Recent Announcements</CardTitle>
+              <CardTitle>Student Roster</CardTitle>
+              <CardDescription>An overview of all enrolled students.</CardDescription>
             </CardHeader>
             <CardContent>
                 <div className="text-center text-muted-foreground py-12">
-                    <p>You haven't posted any announcements.</p>
+                    <p>No students have enrolled yet.</p>
                 </div>
             </CardContent>
           </Card>

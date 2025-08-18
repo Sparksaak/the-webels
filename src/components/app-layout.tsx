@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BookOpen, ClipboardList, LayoutDashboard, MessageSquare } from 'lucide-react';
+import { LayoutDashboard, MessageSquare } from 'lucide-react';
 import {
   SidebarProvider,
   Sidebar,
@@ -50,27 +50,12 @@ export function AppLayout({ children, userRole }: AppLayoutProps) {
     fetchUser();
   }, []);
 
-  const teacherNav = [
+  const navItems = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/classes', label: 'Classes', icon: BookOpen },
-    { href: '/assignments', label: 'Assignments', icon: ClipboardList },
     { href: '/messages', label: 'Messages', icon: MessageSquare },
   ];
   
-  const studentNav = [
-    { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/classes', label: 'My Classes', icon: BookOpen },
-    { href: '/assignments', label: 'My Assignments', icon: ClipboardList },
-    { href: '/messages', label: 'Messages', icon: MessageSquare },
-  ];
-
-  const navItems = userRole === 'teacher' ? teacherNav : studentNav;
-
   const isActive = (href: string) => {
-    // Special handling for /classes/[id] pages
-    if (href === '/classes' && pathname.startsWith('/classes/')) {
-        return true;
-    }
     return pathname.startsWith(href);
   };
   
