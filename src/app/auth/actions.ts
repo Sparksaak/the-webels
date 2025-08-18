@@ -88,7 +88,7 @@ export async function login(prevState: { error: string } | null, formData: FormD
   
   const role = data.user?.user_metadata.role || 'student';
   
-  redirect(`/dashboard?role=${role}`);
+  return redirect(`/dashboard?role=${role}`);
 }
 
 export async function logout() {
