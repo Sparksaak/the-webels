@@ -12,7 +12,7 @@ export async function signup(prevState: { error: string } | null, formData: Form
   const password = formData.get('password') as string;
   const role = formData.get('role') as string;
 
-  const { error } = await supabase.auth.signUp({
+  const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
     email,
     password,
     options: {
@@ -24,9 +24,9 @@ export async function signup(prevState: { error: string } | null, formData: Form
     },
   });
 
-  if (error) {
-    console.error('Signup Error:', error.message);
-    return { error: error.message };
+  if (signUpError) {
+    console.error('Signup Error:', signUpError.message);
+    return { error: signUpError.message };
   }
   
   // For now, redirect to dashboard. In a real app, you'd want to show a "check your email" message.
@@ -34,7 +34,7 @@ export async function signup(prevState: { error: string } | null, formData: Form
 }
 
 
-export async function login(prevState: { error: string } | null, formData: FormData) {
+export async function login(prevState: { error?: string; success?: boolean } | null, formData: FormData) {
   const supabase = createClient();
 
   const email = formData.get('email') as string
@@ -50,7 +50,7 @@ export async function login(prevState: { error: string } | null, formData: FormD
     return { error: 'Could not authenticate user' };
   }
   
-  return redirect(`/dashboard`);
+  return { success: true };
 }
 
 export async function logout() {

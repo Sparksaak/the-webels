@@ -7,14 +7,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Logo } from '@/components/logo';
-import { useActionState } from 'react';
+import { useActionState, useEffect } from 'react';
 import { login } from '@/app/auth/actions';
 import { useToast } from '@/hooks/use-toast';
-import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
   const [state, formAction] = useActionState(login, null);
   const { toast } = useToast();
+  const router = useRouter();
 
   useEffect(() => {
     if (state?.error) {
@@ -24,7 +25,10 @@ export default function LoginPage() {
             variant: "destructive",
         });
     }
-  }, [state, toast]);
+    if (state?.success) {
+      router.push('/dashboard');
+    }
+  }, [state, toast, router]);
 
 
   return (
