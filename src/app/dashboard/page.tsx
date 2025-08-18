@@ -1,17 +1,18 @@
 
 "use client";
 
-import { useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState } from 'react';
 import type { User } from '@/lib/mock-data';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { AppLayout } from '@/components/app-layout';
 import { TeacherDashboard } from '@/components/teacher-dashboard';
 import { StudentDashboard } from '@/components/student-dashboard';
+import { useRouter } from 'next/navigation';
 
 function DashboardContent() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -27,11 +28,13 @@ function DashboardContent() {
                 avatarUrl: `https://placehold.co/100x100.png`
             };
             setCurrentUser(fetchedUser);
+        } else {
+            router.push('/login');
         }
         setLoading(false);
     };
     fetchUser();
-  }, []);
+  }, [router]);
 
   if (loading || !currentUser) {
     return (
