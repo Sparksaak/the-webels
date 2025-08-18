@@ -29,8 +29,7 @@ export async function signup(prevState: { error: string } | null, formData: Form
     return { error: signUpError.message };
   }
   
-  // For now, redirect to dashboard. In a real app, you'd want to show a "check your email" message.
-  redirect(`/dashboard`);
+  redirect(`/auth/confirm-email`);
 }
 
 
@@ -40,13 +39,16 @@ export async function login(prevState: { error?: string; success?: boolean } | n
   const email = formData.get('email') as string
   const password = formData.get('password') as string
 
-  const { error } = await supabase.auth.signInWithPassword({
+  const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
   })
 
   if (error) {
     console.error("Login error:", error.message)
+    if (error.message.includes("Email not confirmed")) {
+        return { error: 'Please confirm your email before logging in.' };
+    }
     return { error: 'Could not authenticate user' };
   }
   
