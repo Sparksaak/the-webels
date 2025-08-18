@@ -13,7 +13,8 @@ export async function signup(prevState: { error: string } | null, formData: Form
   const role = formData.get('role') as string;
 
   // Use the NEXT_PUBLIC_SITE_URL for the redirect
-  const emailRedirectTo = `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`;
+  const origin = process.env.NEXT_PUBLIC_SITE_URL;
+  const emailRedirectTo = `${origin}/auth/callback`;
 
   const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
     email,
