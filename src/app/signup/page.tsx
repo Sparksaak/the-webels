@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useActionState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { signup, loginWithGoogle } from '@/app/auth/actions';
+import { signup } from '@/app/auth/actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -78,11 +78,6 @@ export default function SignupPage() {
               <Button type="submit" className="w-full mt-4">
                 Create an account
               </Button>
-            </form>
-            <form action={loginWithGoogle}>
-                <Button variant="outline" className="w-full" type="submit">
-                Sign up with Google
-                </Button>
             </form>
           </div>
           <div className="mt-4 text-center text-sm">

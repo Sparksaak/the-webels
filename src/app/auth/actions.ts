@@ -12,7 +12,6 @@ export async function signup(prevState: { error: string } | null, formData: Form
   const password = formData.get('password') as string;
   const role = formData.get('role') as string;
 
-  // Use the NEXT_PUBLIC_SITE_URL for the redirect
   const origin = process.env.NEXT_PUBLIC_SITE_URL;
   const emailRedirectTo = `${origin}/auth/callback`;
 
@@ -63,29 +62,4 @@ export async function logout() {
     const supabase = createClient();
     await supabase.auth.signOut();
     redirect('/login');
-}
-
-export async function loginWithGoogle() {
-    const supabase = createClient();
-    const origin = process.env.NEXT_PUBLIC_SITE_URL;
-
-    const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-            redirectTo: `${origin}/auth/callback`,
-            queryParams: {
-                access_type: 'offline',
-                prompt: 'consent',
-            },
-        },
-    });
-
-    if (error) {
-        console.error('Google login error:', error.message);
-        redirect('/login?error=Could not authenticate with Google');
-    }
-
-    if (data.url) {
-        redirect(data.url);
-    }
 }

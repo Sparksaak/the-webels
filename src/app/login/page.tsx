@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Logo } from '@/components/logo';
 import { useActionState, useEffect } from 'react';
-import { login, loginWithGoogle } from '@/app/auth/actions';
+import { login } from '@/app/auth/actions';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter, useSearchParams } from 'next/navigation';
 
@@ -81,11 +81,6 @@ export default function LoginPage() {
               <Button type="submit" className="w-full mt-4">
                 Login
               </Button>
-            </form>
-             <form action={loginWithGoogle}>
-                <Button variant="outline" className="w-full" type="submit">
-                Login with Google
-                </Button>
             </form>
           </div>
           <div className="mt-4 text-center text-sm">
