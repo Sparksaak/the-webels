@@ -18,9 +18,16 @@ import {
 } from '@/components/ui/sidebar';
 import { UserNav } from '@/components/user-nav';
 import { Logo } from '@/components/logo';
-import type { User } from '@/lib/mock-data';
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
+
+type User = {
+  id: string;
+  name: string;
+  email: string;
+  role: 'teacher' | 'student';
+  avatarUrl: string;
+}
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -52,8 +59,6 @@ export function AppLayout({ children, userRole }: AppLayoutProps) {
 
   const navItems = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/classes', label: 'Classes', icon: Users },
-    { href: '/assignments', label: 'Assignments', icon: FileText },
     { href: '/announcements', label: 'Announcements', icon: Megaphone },
     { href: '/messages', label: 'Messages', icon: MessageSquare },
   ];

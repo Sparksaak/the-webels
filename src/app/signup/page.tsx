@@ -26,7 +26,7 @@ export default function SignupPage() {
   useEffect(() => {
     if (state?.error) {
         toast({
-            title: "Error",
+            title: "Error creating account",
             description: state.error,
             variant: "destructive",
         });
@@ -76,6 +76,22 @@ export default function SignupPage() {
                   </SelectContent>
                 </Select>
               </div>
+
+              {role === 'student' && (
+                <div className="grid gap-2 mt-4">
+                  <Label htmlFor="learningPreference">Learning Preference</Label>
+                  <Select name="learningPreference" required defaultValue="online">
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select your preference" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="online">Online</SelectItem>
+                      <SelectItem value="in-person">In-Person</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              
               <Button type="submit" className="w-full mt-4">
                 Create an account
               </Button>

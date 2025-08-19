@@ -12,24 +12,38 @@ export async function signup(prevState: { error: string } | null, formData: Form
   const email = formData.get('email') as string;
   const password = formData.get('password') as string;
   const role = formData.get('role') as string;
+  const learningPreference = formData.get('learningPreference') as string | null;
+
+  if (password.length < 6) {
+    return { error: 'Password must be at least 6 characters long.' };
+  }
 
   const origin = headers().get('origin');
   const emailRedirectTo = `${origin}/auth/callback`;
+
+  const userData: { [key: string]: any } = {
+    full_name: name,
+    role: role,
+  };
+
+  if (role === 'student' && learningPreference) {
+    userData.learning_preference = learningPreference;
+  }
 
   const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
     email,
     password,
     options: {
-      data: {
-        full_name: name,
-        role: role,
-      },
+      data: userData,
       emailRedirectTo: emailRedirectTo,
     },
   });
 
   if (signUpError) {
     console.error('Signup Error:', signUpError.message);
+    if (signUpError.message.includes('User already registered')) {
+        return { error: 'An account with this email already exists.' };
+    }
     return { error: signUpError.message };
   }
   
@@ -52,6 +66,9 @@ export async function login(prevState: { error?: string; success?: boolean } | n
     console.error("Login error:", error.message)
     if (error.message.includes("Email not confirmed")) {
         return { error: 'Please confirm your email before logging in.' };
+    }
+    if (error.message.includes("Invalid login credentials")) {
+        return { error: 'Invalid email or password.' };
     }
     return { error: 'Could not authenticate user' };
   }
