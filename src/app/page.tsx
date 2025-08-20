@@ -13,7 +13,7 @@ export default function LandingPage() {
           <Logo />
           <span className="ml-2 text-xl font-bold text-foreground">Classroom Central</span>
         </Link>
-        <nav className="ml-auto flex gap-4 sm:gap-6">
+        <nav className="ml-auto flex gap-4 sm:gap-6 items-center">
           <Link
             href="/login"
             className="text-sm font-medium hover:underline underline-offset-4 text-foreground"
