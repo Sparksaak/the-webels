@@ -16,6 +16,8 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+import { useEffect, useState } from 'react';
+import { createClient } from '@/lib/supabase/client';
 
 interface AppUser {
   id: string;
@@ -29,7 +31,36 @@ interface StudentDashboardProps {
     user: AppUser;
 }
 
+interface Teacher {
+  id: string;
+  full_name: string;
+  email: string;
+}
+
 export function StudentDashboard({ user }: StudentDashboardProps) {
+  const [teacher, setTeacher] = useState<Teacher | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchTeacher = async () => {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('users')
+        .select('id, full_name, email')
+        .eq('role', 'teacher')
+        .limit(1)
+        .single();
+      
+      if (error) {
+        console.error('Error fetching teacher:', error);
+      } else {
+        setTeacher(data);
+      }
+      setLoading(false);
+    };
+
+    fetchTeacher();
+  }, []);
   
   return (
     <div className="flex flex-col gap-8">
@@ -88,10 +119,26 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
               <CardDescription>Your primary instructor for your class.</CardDescription>
             </CardHeader>
             <CardContent>
-                
+                {loading ? (
+                  <div className="text-center text-muted-foreground py-12">
+                    <p>Loading teacher information...</p>
+                  </div>
+                ) : teacher ? (
+                  <div className="flex items-center gap-4 pt-4">
+                    <Avatar className="h-12 w-12" data-ai-hint="person portrait">
+                        <AvatarImage src={`https://placehold.co/100x100.png`} alt={teacher.full_name} />
+                        <AvatarFallback>{teacher.full_name?.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                        <p className="font-semibold text-lg">{teacher.full_name}</p>
+                        <p className="text-sm text-muted-foreground">{teacher.email}</p>
+                    </div>
+                  </div>
+                ) : (
                     <div className="text-center text-muted-foreground py-12">
                         <p>Your teacher has not been assigned yet.</p>
                     </div>
+                )}
             </CardContent>
           </Card>
            <Card>

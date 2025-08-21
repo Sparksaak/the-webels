@@ -17,6 +17,8 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { ScrollArea } from './ui/scroll-area';
+import { useEffect, useState } from 'react';
+import { createClient } from '@/lib/supabase/client';
 
 interface User {
   id: string;
@@ -38,8 +40,29 @@ interface TeacherDashboardProps {
 }
 
 export function TeacherDashboard({ user }: TeacherDashboardProps) {
+  const [students, setStudents] = useState<Student[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const students: Student[] = [];
+  useEffect(() => {
+    const fetchStudents = async () => {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('role', 'student');
+
+      if (error) {
+        console.error('Error fetching students:', error);
+      } else {
+        setStudents(data as Student[]);
+      }
+      setLoading(false);
+    };
+
+    fetchStudents();
+  }, []);
+
+
   const onlineStudents = students.filter(s => s.learning_preference === 'online');
   const inPersonStudents = students.filter(s => s.learning_preference === 'in-person');
   const totalStudents = students.length;
@@ -106,10 +129,10 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
                         <TabsTrigger value="in-person">In-Person Students ({inPersonStudents.length})</TabsTrigger>
                     </TabsList>
                     <TabsContent value="online">
-                        <StudentList students={onlineStudents} />
+                        <StudentList students={onlineStudents} loading={loading} />
                     </TabsContent>
                     <TabsContent value="in-person">
-                        <StudentList students={inPersonStudents} />
+                        <StudentList students={inPersonStudents} loading={loading} />
                     </TabsContent>
                 </Tabs>
             </CardContent>
@@ -118,7 +141,14 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
   )
 }
 
-function StudentList({ students }: { students: Student[] }) {
+function StudentList({ students, loading }: { students: Student[], loading: boolean }) {
+    if (loading) {
+        return (
+            <div className="text-center text-muted-foreground py-12">
+                <p>Loading students...</p>
+            </div>
+        )
+    }
     if (students.length === 0) {
         return (
             <div className="text-center text-muted-foreground py-12">
