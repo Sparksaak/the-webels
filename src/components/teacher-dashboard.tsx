@@ -16,8 +16,6 @@ import {
 } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { useEffect, useState } from 'react';
-import { createClient } from '@/lib/supabase/client';
 import { ScrollArea } from './ui/scroll-area';
 
 interface User {
@@ -40,25 +38,8 @@ interface TeacherDashboardProps {
 }
 
 export function TeacherDashboard({ user }: TeacherDashboardProps) {
-    const [students, setStudents] = useState<Student[]>([]);
 
-    useEffect(() => {
-        const fetchStudents = async () => {
-            const supabase = createClient();
-            const { data, error } = await supabase
-                .from('users_with_roles')
-                .select('id, full_name, email, learning_preference')
-                .eq('role', 'student');
-
-            if (error) {
-                console.error("Error fetching students:", error);
-            } else {
-                setStudents(data as Student[]);
-            }
-        };
-        fetchStudents();
-    }, []);
-
+  const students: Student[] = [];
   const onlineStudents = students.filter(s => s.learning_preference === 'online');
   const inPersonStudents = students.filter(s => s.learning_preference === 'in-person');
   const totalStudents = students.length;
@@ -165,4 +146,3 @@ function StudentList({ students }: { students: Student[] }) {
         </ScrollArea>
     );
 }
-
