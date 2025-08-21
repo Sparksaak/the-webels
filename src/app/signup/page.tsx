@@ -7,7 +7,7 @@ export default function SignupPage() {
   return (
     <div className="w-full lg:grid lg:min-h-screen lg:grid-cols-2">
       <div className="flex items-center justify-center py-12">
-        <SignupForm teacherExists={false} />
+        <SignupForm />
       </div>
        <div className="hidden bg-muted lg:block relative">
         <div className="absolute inset-0 bg-gradient-to-br from-primary to-accent opacity-80"></div>
