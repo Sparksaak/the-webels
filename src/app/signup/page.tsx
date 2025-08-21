@@ -1,15 +1,13 @@
 
 import Image from 'next/image';
-import { teacherExists } from '@/app/auth/actions';
 import { SignupForm } from '../signup-form';
 
-export default async function SignupPage() {
-  const teacherAccountExists = await teacherExists();
+export default function SignupPage() {
 
   return (
     <div className="w-full lg:grid lg:min-h-screen lg:grid-cols-2">
       <div className="flex items-center justify-center py-12">
-        <SignupForm teacherExists={teacherAccountExists} />
+        <SignupForm teacherExists={false} />
       </div>
        <div className="hidden bg-muted lg:block relative">
         <div className="absolute inset-0 bg-gradient-to-br from-primary to-accent opacity-80"></div>

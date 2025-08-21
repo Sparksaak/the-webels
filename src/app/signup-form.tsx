@@ -73,14 +73,9 @@ export function SignupForm({ teacherExists }: SignupFormProps) {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="student">Student</SelectItem>
-                {!teacherExists && <SelectItem value="teacher">Teacher</SelectItem>}
+                <SelectItem value="teacher">Teacher</SelectItem>
               </SelectContent>
             </Select>
-             {teacherExists && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  Note: A teacher account already exists, so you can only sign up as a student.
-                </p>
-             )}
           </div>
 
           {role === 'student' && (
@@ -89,7 +84,7 @@ export function SignupForm({ teacherExists }: SignupFormProps) {
               <Select name="learningPreference" required defaultValue="online">
                 <SelectTrigger>
                   <SelectValue placeholder="Select your preference" />
-                </SelectTrigger>
+                </Trigger>
                 <SelectContent>
                   <SelectItem value="online">Online</SelectItem>
                   <SelectItem value="in-person">In-Person</SelectItem>

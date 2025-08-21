@@ -5,18 +5,6 @@ import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { headers } from 'next/headers';
 
-export async function teacherExists(): Promise<boolean> {
-  const supabase = createClient();
-  const { data: users, error } = await supabase.from('users_with_roles').select('id').eq('role', 'teacher').limit(1);
-
-  if (error) {
-    console.error('Error checking for existing teacher:', error.message);
-    return false; // Fail safe
-  }
-  
-  return users && users.length > 0;
-}
-
 export async function signup(prevState: { error: string } | null, formData: FormData) {
   const supabase = createClient();
 
@@ -29,15 +17,6 @@ export async function signup(prevState: { error: string } | null, formData: Form
   if (password.length < 6) {
     return { error: 'Password must be at least 6 characters long.' };
   }
-
-  // Check if a teacher account already exists if the user is trying to sign up as a teacher
-  if (role === 'teacher') {
-    const teacherAccountExists = await teacherExists();
-    if (teacherAccountExists) {
-      return { error: 'A teacher account already exists. Only one teacher account is allowed.' };
-    }
-  }
-
 
   const origin = headers().get('origin');
   const emailRedirectTo = `${origin}/auth/callback`;
