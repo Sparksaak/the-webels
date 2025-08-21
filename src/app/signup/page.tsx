@@ -41,7 +41,7 @@ export default function SignupPage() {
             <Logo className="mx-auto" />
             <h1 className="text-3xl font-bold">Sign Up</h1>
             <p className="text-balance text-muted-foreground">
-              Create an account to get started with Classroom Central.
+              Create an account to get started with Classroom Central. Only one teacher account is allowed.
             </p>
           </div>
           <div className="grid gap-4">
@@ -75,6 +75,9 @@ export default function SignupPage() {
                     <SelectItem value="teacher">Teacher</SelectItem>
                   </SelectContent>
                 </Select>
+                 <p className="text-xs text-muted-foreground mt-1">
+                  Note: If a teacher account already exists, you must sign up as a student.
+                </p>
               </div>
 
               {role === 'student' && (

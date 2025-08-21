@@ -18,6 +18,21 @@ export async function signup(prevState: { error: string } | null, formData: Form
     return { error: 'Password must be at least 6 characters long.' };
   }
 
+  // Check if a teacher account already exists if the user is trying to sign up as a teacher
+  if (role === 'teacher') {
+    const { data: users, error: userError } = await supabase.from('users_with_roles').select('id').eq('role', 'teacher').limit(1);
+
+    if (userError) {
+        console.error('Error checking for existing teacher:', userError.message);
+        return { error: 'An unexpected error occurred. Please try again.' };
+    }
+
+    if (users && users.length > 0) {
+        return { error: 'A teacher account already exists. Only one teacher account is allowed.' };
+    }
+  }
+
+
   const origin = headers().get('origin');
   const emailRedirectTo = `${origin}/auth/callback`;
 
