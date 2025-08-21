@@ -2,7 +2,7 @@
 "use client";
 
 import Link from 'next/link';
-import { useActionState, useEffect, useState } from 'react';
+import { useActionState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { signup } from '@/app/auth/actions';
 import { Button } from '@/components/ui/button';
@@ -20,7 +20,6 @@ import { Logo } from '@/components/logo';
 export function SignupForm() {
   const [state, formAction] = useActionState(signup, null);
   const { toast } = useToast();
-  const [role, setRole] = useState('student');
 
   useEffect(() => {
     if (state?.error) {
@@ -60,32 +59,19 @@ export function SignupForm() {
             <Label htmlFor="password">Password</Label>
             <Input id="password" name="password" type="password" required />
           </div>
+          
           <div className="grid gap-2 mt-4">
-            <Label htmlFor="role">I am a...</Label>
-            <Select name="role" required defaultValue="student" onValueChange={setRole}>
+            <Label htmlFor="learningPreference">Learning Preference</Label>
+            <Select name="learningPreference" required defaultValue="online">
               <SelectTrigger>
-                <SelectValue placeholder="Select your role" />
+                <SelectValue placeholder="Select your preference" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="student">Student</SelectItem>
+                <SelectItem value="online">Online</SelectItem>
+                <SelectItem value="in-person">In-Person</SelectItem>
               </SelectContent>
             </Select>
           </div>
-
-          {role === 'student' && (
-            <div className="grid gap-2 mt-4">
-              <Label htmlFor="learningPreference">Learning Preference</Label>
-              <Select name="learningPreference" required defaultValue="online">
-                <SelectTrigger>
-                  <SelectValue placeholder="Select your preference" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="online">Online</SelectItem>
-                  <SelectItem value="in-person">In-Person</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          )}
           
           <Button type="submit" className="w-full mt-4">
             Create an account
