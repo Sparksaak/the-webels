@@ -32,8 +32,7 @@ export function SignupForm() {
     }
   }, [state, toast]);
 
-  return (
-    <div className="mx-auto grid w-[400px] gap-6">
+  return (<div className="mx-auto grid w-[400px] gap-6">
       <div className="grid gap-2 text-center">
         <Logo className="mx-auto" />
         <h1 className="text-3xl font-bold">Sign Up</h1>
@@ -69,7 +68,6 @@ export function SignupForm() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="student">Student</SelectItem>
-                <SelectItem value="teacher">Teacher</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -80,7 +78,7 @@ export function SignupForm() {
               <Select name="learningPreference" required defaultValue="online">
                 <SelectTrigger>
                   <SelectValue placeholder="Select your preference" />
-                </Trigger>
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="online">Online</SelectItem>
                   <SelectItem value="in-person">In-Person</SelectItem>
@@ -100,6 +98,5 @@ export function SignupForm() {
           Login
         </Link>
       </div>
-    </div>
-  );
+    </div>);
 }

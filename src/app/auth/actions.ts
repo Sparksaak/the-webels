@@ -11,7 +11,7 @@ export async function signup(prevState: { error: string } | null, formData: Form
   const name = formData.get('name') as string;
   const email = formData.get('email') as string;
   const password = formData.get('password') as string;
-  const role = formData.get('role') as string;
+  const role = 'student'; // Force all new signups to be students
   const learningPreference = formData.get('learningPreference') as string | null;
 
   if (password.length < 6) {
