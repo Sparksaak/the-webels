@@ -17,11 +17,7 @@ import {
 } from '@/components/ui/select';
 import { Logo } from '@/components/logo';
 
-interface SignupFormProps {
-  teacherExists: boolean;
-}
-
-export function SignupForm({ teacherExists }: SignupFormProps) {
+export function SignupForm() {
   const [state, formAction] = useActionState(signup, null);
   const { toast } = useToast();
   const [role, setRole] = useState('student');
