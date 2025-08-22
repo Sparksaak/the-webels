@@ -3,6 +3,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
+import { cookies } from 'next/headers';
 
 export async function createConversation(
   currentUser_id: string,
@@ -10,7 +11,8 @@ export async function createConversation(
   type: 'direct' | 'group',
   name?: string
 ) {
-  const supabase = createClient();
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
   const allParticipantIds = [...new Set([currentUser_id, ...participant_ids])];
 
   // For direct messages, check if a conversation already exists
@@ -69,6 +71,8 @@ export async function createConversation(
 
   if (participantError) {
     console.error('Error adding participants:', participantError);
+    // Potentially delete the conversation if participants fail to be added
+    await supabase.from('conversations').delete().eq('id', newConversationId);
     return { error: 'Could not add participants to conversation.' };
   }
 
@@ -77,7 +81,8 @@ export async function createConversation(
 }
 
 export async function sendMessage(conversationId: string, content: string) {
-  const supabase = createClient();
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {

@@ -1,6 +1,6 @@
 
-import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { createServerClient, type CookieOptions } from '@supabase/ssr'
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({
@@ -18,6 +18,7 @@ export async function middleware(request: NextRequest) {
           return request.cookies.get(name)?.value
         },
         set(name: string, value: string, options: CookieOptions) {
+          // If the cookie is updated, update the cookies for the request and response
           request.cookies.set({
             name,
             value,
@@ -35,6 +36,7 @@ export async function middleware(request: NextRequest) {
           })
         },
         remove(name: string, options: CookieOptions) {
+          // If the cookie is removed, update the cookies for the request and response
           request.cookies.set({
             name,
             value: '',
@@ -57,11 +59,11 @@ export async function middleware(request: NextRequest) {
 
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await supabase.auth.getUser()
 
   // if user is signed in and the current path is / redirect to dashboard
   if (user && request.nextUrl.pathname === '/') {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
+    return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
   // if user is not signed in and the current path is not / redirect to /
@@ -72,11 +74,14 @@ export async function middleware(request: NextRequest) {
     !request.nextUrl.pathname.startsWith('/auth') &&
     request.nextUrl.pathname !== '/'
   ) {
-    return NextResponse.redirect(new URL('/', request.url));
+    return NextResponse.redirect(new URL('/', request.url))
   }
 
+  // Refresh session if expired - important for Server Components
+  await supabase.auth.getSession()
 
-  return response;
+
+  return response
 }
 
 export const config = {

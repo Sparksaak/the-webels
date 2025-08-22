@@ -1,9 +1,13 @@
 
+'use server';
+
 import { createClient } from '@/lib/supabase/server';
 import { AppUser } from './types';
+import { cookies } from 'next/headers';
 
-export async function getUsers(currentUserId: string) {
-  const supabase = createClient();
+export async function getUsers(currentUserId: string): Promise<AppUser[]> {
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
   const { data, error } = await supabase.from('users').select('*').not('id', 'eq', currentUserId);
   if (error) {
     console.error('Error fetching users:', error);
@@ -13,7 +17,8 @@ export async function getUsers(currentUserId: string) {
 }
 
 export async function getConversations(userId: string) {
-    const supabase = createClient();
+    const cookieStore = cookies();
+    const supabase = createClient(cookieStore);
     const { data: conversationParticipants, error: convoPartError } = await supabase
         .from('conversation_participants')
         .select('conversation_id')
@@ -22,6 +27,10 @@ export async function getConversations(userId: string) {
     if (convoPartError || !conversationParticipants) {
         console.error('Error fetching user conversations:', convoPartError);
         return [];
+    }
+
+    if (conversationParticipants.length === 0) {
+      return [];
     }
 
     const conversationIds = conversationParticipants.map(cp => cp.conversation_id);
@@ -45,7 +54,8 @@ export async function getConversations(userId: string) {
 }
 
 export async function getMessages(conversationId: string) {
-  const supabase = createClient();
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
   const { data, error } = await supabase
     .from('messages')
     .select('*, sender:users(*)')
