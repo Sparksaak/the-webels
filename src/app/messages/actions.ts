@@ -16,31 +16,16 @@ export async function createConversation(participantIds: string[], groupName?: s
     const isGroup = allParticipantIds.length > 2 || !!groupName;
 
     // For direct messages, check if a conversation already exists
-    if (!isGroup) {
-        const { data: existingConvs, error: existingConvError } = await supabase
-            .from('participants')
-            .select('conversation_id')
-            .in('user_id', allParticipantIds);
+    if (!isGroup && allParticipantIds.length === 2) {
+        const { data: existing, error: checkError } = await supabase.rpc('get_dm_conversation', { user_a: allParticipantIds[0], user_b: allParticipantIds[1] });
         
-        if (existingConvError) {
-            console.error('Error fetching participant records:', existingConvError);
+        if (checkError) {
+            console.error('Error checking for existing DM:', checkError);
             return { error: 'Failed to check for existing conversation.' };
         }
 
-        const convCounts = existingConvs.reduce((acc: Record<string, number>, { conversation_id }) => {
-            if (conversation_id) {
-                acc[conversation_id] = (acc[conversation_id] || 0) + 1;
-            }
-            return acc;
-        }, {});
-        
-        const existingConvId = Object.keys(convCounts).find(convId => convCounts[convId] === 2);
-
-        if (existingConvId) {
-             const {data: convType} = await supabase.from('conversations').select('type').eq('id', existingConvId).single();
-             if(convType?.type === 'direct') {
-                return { conversationId: existingConvId };
-             }
+        if (existing) {
+            return { conversationId: existing };
         }
     }
 

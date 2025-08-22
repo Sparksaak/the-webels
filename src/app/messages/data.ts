@@ -35,7 +35,7 @@ export type Conversation = {
 export async function getConversations(userId: string): Promise<Conversation[]> {
     noStore();
     const supabase = createClient();
-    const { data, error } = await supabase.rpc('get_user_conversations', { p_user_id: userId });
+    const { data, error } = await supabase.rpc('get_user_conversations_new', { p_user_id: userId });
 
     if (error) {
         console.error('Error fetching conversations:', error);
@@ -46,9 +46,8 @@ export async function getConversations(userId: string): Promise<Conversation[]> 
     return data.map((conv: any) => ({
         ...conv,
         participants: conv.participants.map((p: any) => ({
-            ...p,
             user: {
-                ...p.user,
+                ...p,
                 avatar_url: `https://placehold.co/100x100.png`
             }
         }))
