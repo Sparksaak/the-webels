@@ -17,15 +17,15 @@ export async function createConversation(participantIds: string[], groupName?: s
 
     // For direct messages, check if a conversation already exists
     if (!isGroup && allParticipantIds.length === 2) {
-        const { data: existing, error: checkError } = await supabase.rpc('get_dm_conversation', { user_a: allParticipantIds[0], user_b: allParticipantIds[1] });
+        const { data: existing, error: checkError } = await supabase.rpc('get_dm_conversation', { user_a_id: allParticipantIds[0], user_b_id: allParticipantIds[1] });
         
         if (checkError) {
             console.error('Error checking for existing DM:', checkError);
             return { error: 'Failed to check for existing conversation.' };
         }
 
-        if (existing) {
-            return { conversationId: existing };
+        if (existing && existing.length > 0) {
+            return { conversationId: existing[0].id };
         }
     }
 
