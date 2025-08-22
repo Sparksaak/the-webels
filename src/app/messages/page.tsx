@@ -40,7 +40,7 @@ function MessagingContent() {
                 const { data: appUser } = await supabase.from('users').select('*').eq('id', user.id).single();
                 if (appUser) {
                     setCurrentUser(appUser);
-                    const convos = await getConversations(appUser.id);
+                    const convos = await getConversations();
                     setConversations(convos);
 
                     if (activeConversationId) {
@@ -64,6 +64,8 @@ function MessagingContent() {
             if (activeConversationId) {
                 const fetchedMessages = await getMessages(activeConversationId);
                 setMessages(fetchedMessages);
+            } else {
+                setMessages([]);
             }
         };
         fetchMessages();
@@ -72,7 +74,7 @@ function MessagingContent() {
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `conversation_id=eq.${activeConversationId}` },
                 (payload) => {
                     const newMessage = payload.new;
-                    getMessages(activeConversationId).then(setMessages);
+                    getMessages(activeConversationId!).then(setMessages);
                 }
             )
             .subscribe();
@@ -108,7 +110,7 @@ function MessagingContent() {
                 <div className="flex flex-col border-r">
                     <div className="p-4 flex justify-between items-center border-b">
                         <h2 className="text-xl font-bold">Conversations</h2>
-                        <NewConversationDialog currentUser={currentUser} allUsers={[]} setConversations={setConversations} />
+                        <NewConversationDialog currentUser={currentUser} setConversations={setConversations} />
                     </div>
                     <ScrollArea>
                         {conversations.map((convo) => (
@@ -120,10 +122,10 @@ function MessagingContent() {
                                 <div className="flex items-center gap-3">
                                     <Avatar>
                                         <AvatarImage src={`https://placehold.co/40x40.png`} />
-                                        <AvatarFallback>{getConversationTitle(convo, currentUser.id).charAt(0)}</AvatarFallback>
+                                        <AvatarFallback>{getConversationTitle(convo, currentUser!.id).charAt(0)}</AvatarFallback>
                                     </Avatar>
                                     <div className="flex-1 overflow-hidden">
-                                        <p className="font-semibold truncate">{getConversationTitle(convo, currentUser.id)}</p>
+                                        <p className="font-semibold truncate">{getConversationTitle(convo, currentUser!.id)}</p>
                                         <p className="text-sm text-muted-foreground truncate">{convo.last_message?.content || 'No messages yet'}</p>
                                     </div>
                                     {convo.last_message && (
@@ -155,24 +157,24 @@ function MessagingContent() {
                             <CardContent className="flex-1 p-0">
                                 <ScrollArea className="h-[calc(100vh-14rem)] p-4">
                                     {messages.map((msg) => (
-                                        <div key={msg.id} className={`flex items-start gap-3 my-4 ${msg.sender_id === currentUser.id ? 'justify-end' : ''}`}>
-                                           {msg.sender_id !== currentUser.id && (
+                                        <div key={msg.id} className={`flex items-start gap-3 my-4 ${msg.sender_id === currentUser!.id ? 'justify-end' : ''}`}>
+                                           {msg.sender_id !== currentUser!.id && (
                                              <Avatar className="h-8 w-8">
                                                 <AvatarImage src={`https://placehold.co/40x40.png`} />
                                                 <AvatarFallback>{msg.sender.full_name?.charAt(0)}</AvatarFallback>
                                              </Avatar>
                                            )}
-                                            <div className={`rounded-lg p-3 max-w-md ${msg.sender_id === currentUser.id ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+                                            <div className={`rounded-lg p-3 max-w-md ${msg.sender_id === currentUser!.id ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
                                                 <p className="font-bold text-sm">{msg.sender.full_name}</p>
                                                 <p>{msg.content}</p>
                                                 <time className="text-xs opacity-70 mt-1 block">
                                                      {formatDistanceToNow(new Date(msg.created_at), { addSuffix: true })}
                                                 </time>
                                             </div>
-                                             {msg.sender_id === currentUser.id && (
+                                             {msg.sender_id === currentUser!.id && (
                                              <Avatar className="h-8 w-8">
                                                 <AvatarImage src={`https://placehold.co/40x40.png`} />
-                                                <AvatarFallback>{currentUser.name?.charAt(0)}</AvatarFallback>
+                                                <AvatarFallback>{currentUser!.full_name?.charAt(0)}</AvatarFallback>
                                              </Avatar>
                                            )}
                                         </div>
@@ -204,7 +206,7 @@ function MessagingContent() {
     );
 }
 
-function NewConversationDialog({ currentUser, setConversations }: { currentUser: AppUser, allUsers: AppUser[], setConversations: (convos: any[]) => void }) {
+function NewConversationDialog({ currentUser, setConversations }: { currentUser: AppUser, setConversations: (convos: any[]) => void }) {
     const [isOpen, setIsOpen] = useState(false);
     const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
     const [groupName, setGroupName] = useState('');
@@ -215,7 +217,7 @@ function NewConversationDialog({ currentUser, setConversations }: { currentUser:
 
     useEffect(() => {
         if(isOpen) {
-            getUsers(currentUser.id).then(setAllUsers);
+            getUsers().then(setAllUsers);
         }
     }, [isOpen, currentUser.id]);
 
@@ -224,14 +226,14 @@ function NewConversationDialog({ currentUser, setConversations }: { currentUser:
         if (conversationType === 'group' && !groupName.trim()) return;
 
         startTransition(async () => {
-            const result = await createConversation(currentUser.id, selectedUsers, conversationType, groupName);
+            const result = await createConversation(selectedUsers, conversationType, groupName);
             if (result.error) {
                 console.error("Failed to create conversation:", result.error);
             } else if (result.data) {
                 setIsOpen(false);
                 setSelectedUsers([]);
                 setGroupName('');
-                const newConvos = await getConversations(currentUser.id);
+                const newConvos = await getConversations();
                 setConversations(newConvos);
                 router.push(`/messages?conversation_id=${result.data.id}`);
             }
@@ -257,7 +259,7 @@ function NewConversationDialog({ currentUser, setConversations }: { currentUser:
                 <p className="font-semibold mt-4">Select Participants:</p>
                 <ScrollArea className="h-64 mt-2">
                     <div className="space-y-2">
-                        {allUsers.map((user) => (
+                        {allUsers.filter(u => u.id !== currentUser.id).map((user) => (
                             <div key={user.id} className="flex items-center space-x-2 p-2 rounded-md hover:bg-muted">
                                 <Checkbox
                                     id={`user-${user.id}`}
@@ -272,10 +274,10 @@ function NewConversationDialog({ currentUser, setConversations }: { currentUser:
                                     <div className="flex items-center gap-2">
                                         <Avatar className="h-8 w-8">
                                             <AvatarImage src={user.avatarUrl} />
-                                            <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                                            <AvatarFallback>{user.full_name?.charAt(0) || '?'}</AvatarFallback>
                                         </Avatar>
                                         <div>
-                                            <p>{user.name}</p>
+                                            <p>{user.full_name}</p>
                                             <p className="text-xs text-muted-foreground">{user.email}</p>
                                         </div>
                                     </div>
