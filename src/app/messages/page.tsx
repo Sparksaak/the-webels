@@ -40,7 +40,7 @@ function MessagesContent() {
         if (user) {
             const { data: profile } = await supabase.from('users').select('*').eq('id', user.id).single();
             if (profile) {
-                const appUser: User = { ...profile, avatar_url: 'https://placehold.co/100x100.png' };
+                const appUser: User = { ...profile, avatar_url: `https://placehold.co/100x100.png` };
                 setCurrentUser(appUser);
                 const convos = await getConversations(appUser.id);
                 setConversations(convos);
@@ -95,7 +95,6 @@ function MessagesContent() {
 
     const handleConversationSelect = (conv: Conversation) => {
         router.push(`/messages?id=${conv.id}`);
-        setActiveConversation(conv);
     };
     
     const handleSendMessage = async (e: React.FormEvent) => {
@@ -120,9 +119,11 @@ function MessagesContent() {
             setMessages(prev => prev.filter(m => m.id !== tempMessageId));
             setNewMessage(sentMessageContent);
         } else {
-            // Re-fetch conversations to get the latest last_message
+            // Re-fetch conversations and messages
              const convos = await getConversations(currentUser.id);
              setConversations(convos);
+             const msgs = await getMessages(activeConversation.id);
+             setMessages(msgs);
         }
     };
     
@@ -130,39 +131,37 @@ function MessagesContent() {
         const convos = await getConversations(currentUser!.id);
         setConversations(convos);
         router.push(`/messages?id=${conversationId}`);
-        const newConv = convos.find(c => c.id === conversationId);
-        if (newConv) {
-            setActiveConversation(newConv);
-        }
     }, [currentUser, router]);
 
     if (loading || !currentUser) {
         return (
-            <div className="flex h-screen items-center justify-center">
-                <div>Loading messages...</div>
-            </div>
+            <AppLayout userRole="student">
+                <div className="flex h-screen items-center justify-center">
+                    <div>Loading messages...</div>
+                </div>
+            </AppLayout>
         );
     }
 
     const getConversationDisplay = (conv: Conversation) => {
         if (conv.type === 'group') {
-            return { name: conv.name || 'Group Chat', avatarUrl: 'https://placehold.co/100x100.png' };
+            return { name: conv.name || 'Group Chat', avatarUrl: `https://placehold.co/100x100.png?text=${conv.name?.charAt(0) || 'G'}` };
         }
         const otherParticipant = conv.participants.find(p => p.user.id !== currentUser.id)?.user;
         if (otherParticipant) {
-             return { name: otherParticipant.full_name, avatarUrl: `https://placehold.co/100x100.png`};
+             return { name: otherParticipant.full_name, avatarUrl: otherParticipant.avatar_url};
         }
         // It's a DM with ourselves?
         if (conv.participants.length === 1) {
-             return { name: currentUser.full_name, avatarUrl: `https://placehold.co/100x100.png`};
+             return { name: currentUser.full_name, avatarUrl: currentUser.avatar_url};
         }
-        return { name: 'Conversation', avatarUrl: `https://placehold.co/100x100.png`};
+        return { name: 'Conversation', avatarUrl: 'https://placehold.co/100x100.png'};
     }
 
     return (
         <AppLayout userRole={currentUser.role}>
             <div className="h-[calc(100vh-5rem)]">
-                <div className="grid h-full grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                <div className="grid h-full grid-cols-1 md:grid-cols-[300px_1fr] lg:grid-cols-[350px_1fr] gap-4">
                     <div className="flex flex-col border-r">
                         <div className="p-4 flex justify-between items-center">
                             <h2 className="text-xl font-bold">Conversations</h2>
@@ -181,7 +180,7 @@ function MessagesContent() {
                                         >
                                             <Avatar className="h-10 w-10">
                                                 <AvatarImage src={display.avatarUrl} alt={display.name} />
-                                                <AvatarFallback>{display.name?.charAt(0)}</AvatarFallback>
+                                                <AvatarFallback>{display.name?.charAt(0).toUpperCase()}</AvatarFallback>
                                             </Avatar>
                                             <div className="flex-1 truncate">
                                                 <p className="font-semibold">{display.name}</p>
@@ -193,13 +192,13 @@ function MessagesContent() {
                             </div>
                         </ScrollArea>
                     </div>
-                    <div className="flex flex-col md:col-span-2 lg:col-span-3">
+                    <div className="flex flex-col">
                         {activeConversation ? (
                             <>
                                 <div className="flex items-center gap-4 border-b p-4">
                                      <Avatar className="h-10 w-10" data-ai-hint="person portrait">
                                         <AvatarImage src={getConversationDisplay(activeConversation).avatarUrl} alt={getConversationDisplay(activeConversation).name} />
-                                        <AvatarFallback>{getConversationDisplay(activeConversation).name?.charAt(0)}</AvatarFallback>
+                                        <AvatarFallback>{getConversationDisplay(activeConversation).name?.charAt(0).toUpperCase()}</AvatarFallback>
                                     </Avatar>
                                     <div>
                                         <p className="font-semibold">{getConversationDisplay(activeConversation).name}</p>
@@ -215,7 +214,7 @@ function MessagesContent() {
                                                 {msg.sender.id !== currentUser.id && (
                                                      <Avatar className="h-8 w-8">
                                                         <AvatarImage src={msg.sender.avatar_url} alt={msg.sender.full_name} />
-                                                        <AvatarFallback>{msg.sender.full_name?.charAt(0)}</AvatarFallback>
+                                                        <AvatarFallback>{msg.sender.full_name?.charAt(0).toUpperCase()}</AvatarFallback>
                                                     </Avatar>
                                                 )}
                                                 <div className={`max-w-xs md:max-w-md lg:max-w-lg p-3 rounded-lg ${msg.sender.id === currentUser.id ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
@@ -273,7 +272,7 @@ function MessagesContent() {
 function NewConversationDialog({ currentUser, onConversationCreated }: { currentUser: User, onConversationCreated: (id: string) => void }) {
     const [isOpen, setIsOpen] = useState(false);
     const [recipients, setRecipients] = useState<User[]>([]);
-    const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+    const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
     const [groupName, setGroupName] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -289,14 +288,14 @@ function NewConversationDialog({ currentUser, onConversationCreated }: { current
             fetchUsers();
         } else {
              // Reset state when closed
-            setSelectedUsers([]);
+            setSelectedUserIds([]);
             setGroupName('');
             setError(null);
         }
     }, [isOpen, currentUser]);
 
     const handleSelectUser = (userId: string) => {
-        setSelectedUsers(prev =>
+        setSelectedUserIds(prev =>
             prev.includes(userId) ? prev.filter(id => id !== userId) : [...prev, userId]
         );
     };
@@ -304,7 +303,7 @@ function NewConversationDialog({ currentUser, onConversationCreated }: { current
     const handleCreate = async () => {
         setIsLoading(true);
         setError(null);
-        const result = await createConversation(selectedUsers, selectedUsers.length > 1 ? groupName : undefined);
+        const result = await createConversation(selectedUserIds, selectedUserIds.length > 1 ? groupName : undefined);
         if (result.error) {
             setError(result.error);
         } else if (result.conversationId) {
@@ -314,13 +313,14 @@ function NewConversationDialog({ currentUser, onConversationCreated }: { current
         setIsLoading(false);
     };
 
-    const isGroup = selectedUsers.length > 1;
+    const isGroup = selectedUserIds.length > 1;
 
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
                 <Button variant="ghost" size="icon">
                     <MessageSquarePlus className="h-5 w-5" />
+                    <span className="sr-only">New Conversation</span>
                 </Button>
             </DialogTrigger>
             <DialogContent>
@@ -330,7 +330,7 @@ function NewConversationDialog({ currentUser, onConversationCreated }: { current
                 <div className="flex flex-col gap-4">
                     {isGroup && (
                         <Input 
-                            placeholder="Group Name (optional)"
+                            placeholder="Group Name (optional for groups)"
                             value={groupName}
                             onChange={(e) => setGroupName(e.target.value)}
                         />
@@ -342,14 +342,14 @@ function NewConversationDialog({ currentUser, onConversationCreated }: { current
                                 <div key={user.id} className="flex items-center space-x-3 p-2 rounded-md hover:bg-muted/50">
                                     <Checkbox 
                                         id={`user-${user.id}`} 
-                                        checked={selectedUsers.includes(user.id)}
+                                        checked={selectedUserIds.includes(user.id)}
                                         onCheckedChange={() => handleSelectUser(user.id)}
                                     />
                                     <Label htmlFor={`user-${user.id}`} className="flex-1 cursor-pointer w-full">
                                         <div className="flex items-center gap-3">
                                             <Avatar className="h-8 w-8">
                                                 <AvatarImage src={user.avatar_url} alt={user.full_name} />
-                                                <AvatarFallback>{user.full_name?.charAt(0)}</AvatarFallback>
+                                                <AvatarFallback>{user.full_name?.charAt(0).toUpperCase()}</AvatarFallback>
                                             </Avatar>
                                             <div>
                                                 <p className="font-semibold">{user.full_name}</p>
@@ -362,7 +362,7 @@ function NewConversationDialog({ currentUser, onConversationCreated }: { current
                        </div>
                     </ScrollArea>
                     {error && <p className="text-sm text-destructive">{error}</p>}
-                    <Button onClick={handleCreate} disabled={selectedUsers.length === 0 || isLoading}>
+                    <Button onClick={handleCreate} disabled={selectedUserIds.length === 0 || isLoading}>
                         {isLoading ? 'Creating...' : (isGroup ? 'Create Group' : 'Start Chat')}
                     </Button>
                 </div>
@@ -378,3 +378,5 @@ export default function MessagesPage() {
         </Suspense>
     )
 }
+
+    
