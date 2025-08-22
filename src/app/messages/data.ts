@@ -9,7 +9,7 @@ export type User = {
     full_name: string;
     avatar_url: string;
     role: 'teacher' | 'student';
-    learning_preference: 'online' | 'in-person';
+    learning_preference?: 'online' | 'in-person';
 };
 
 export type Message = {
@@ -41,7 +41,18 @@ export async function getConversations(userId: string): Promise<Conversation[]> 
         console.error('Error fetching conversations:', error);
         return [];
     }
-    return data;
+    
+    // The RPC returns participants as JSON, so we need to ensure avatar_url is added
+    return data.map((conv: any) => ({
+        ...conv,
+        participants: conv.participants.map((p: any) => ({
+            ...p,
+            user: {
+                ...p.user,
+                avatar_url: `https://placehold.co/100x100.png`
+            }
+        }))
+    }));
 }
 
 export async function getMessages(conversationId: string): Promise<Message[]> {

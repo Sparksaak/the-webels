@@ -17,17 +17,30 @@ export async function createConversation(participantIds: string[], groupName?: s
 
     // For direct messages, check if a conversation already exists
     if (!isGroup) {
-        const { data: existingConv, error: existingConvError } = await supabase.rpc('get_existing_conversation', {
-            p_user_ids: allParticipantIds
-        });
-
+        const { data: existingConvs, error: existingConvError } = await supabase
+            .from('participants')
+            .select('conversation_id')
+            .in('user_id', allParticipantIds);
+        
         if (existingConvError) {
-            console.error('Error checking for existing conversation:', existingConvError);
+            console.error('Error fetching participant records:', existingConvError);
             return { error: 'Failed to check for existing conversation.' };
         }
+
+        const convCounts = existingConvs.reduce((acc: Record<string, number>, { conversation_id }) => {
+            if (conversation_id) {
+                acc[conversation_id] = (acc[conversation_id] || 0) + 1;
+            }
+            return acc;
+        }, {});
         
-        if (existingConv) {
-           return { conversationId: existingConv };
+        const existingConvId = Object.keys(convCounts).find(convId => convCounts[convId] === 2);
+
+        if (existingConvId) {
+             const {data: convType} = await supabase.from('conversations').select('type').eq('id', existingConvId).single();
+             if(convType?.type === 'direct') {
+                return { conversationId: existingConvId };
+             }
         }
     }
 
