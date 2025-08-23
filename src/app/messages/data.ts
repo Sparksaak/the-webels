@@ -8,12 +8,17 @@ import { cookies } from 'next/headers';
 export async function getUsers(currentUserId: string): Promise<AppUser[]> {
   const cookieStore = cookies();
   const supabase = createClient(cookieStore);
-  const { data, error } = await supabase.from('users').select('*').not('id', 'eq', currentUserId);
-  if (error) {
-    console.error('Error fetching users:', error);
+  try {
+    const { data, error } = await supabase.from('users').select('*').not('id', 'eq', currentUserId);
+    if (error) {
+      console.error('Error fetching users:', error);
+      return [];
+    }
+    return data.map(u => ({...u, avatarUrl: `https://placehold.co/100x100.png`})) as AppUser[];
+  } catch (e) {
+    console.error('Exception fetching users:', e);
     return [];
   }
-  return data.map(u => ({...u, avatarUrl: `https://placehold.co/100x100.png`})) as AppUser[];
 }
 
 
@@ -90,6 +95,10 @@ export async function getMessages(conversationId: string) {
       throw error;
     }
     
+    if (!data) {
+      return [];
+    }
+
     console.log(`Server: Successfully fetched messages for convo ${conversationId}`);
     return data.map((d: any) => ({
         ...d, 
