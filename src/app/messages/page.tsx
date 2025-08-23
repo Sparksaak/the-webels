@@ -268,11 +268,9 @@ function NewConversationDialog({ currentUser, setConversations }: { currentUser:
             const result = await createConversation(allParticipantIds, conversationType, groupName);
 
             if (result.error) {
-                console.error("--- [CLIENT] Error creating conversation ---");
-                console.error(result.error);
-                toast({
+                 toast({
                     title: "Error creating conversation",
-                    description: (result.error as any).details || (result.error as any).message || 'An unknown error occurred.',
+                    description: result.error.details || result.error.message || 'An unknown error occurred.',
                     variant: "destructive",
                 });
             } else if (result.data) {

@@ -10,26 +10,19 @@ export async function createConversation(
   type: 'direct' | 'group',
   name?: string
 ) {
-  console.log('--- [SERVER] Initiating createConversation ---');
-  console.log('--- [SERVER] Input participant_ids:', participant_ids);
-  console.log('--- [SERVER] Input type:', type);
-  console.log('--- [SERVER] Input name:', name);
-
   const cookieStore = cookies();
   const supabase = createClient(cookieStore);
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
-    console.error('--- [SERVER] Create conversation failed: User not logged in.');
     return { error: { message: 'You must be logged in.'} };
   }
   
+  // For direct messages, ensure consistent participant order to find existing chats
   if (type === 'direct') {
       participant_ids.sort();
   }
   
-  console.log('--- [SERVER] Attempting to call RPC with participants:', participant_ids);
-
   const { data, error } = await supabase.rpc('create_new_conversation', {
       participant_ids: participant_ids,
       conversation_type: type,
@@ -37,20 +30,16 @@ export async function createConversation(
   });
 
   if (error) {
-      console.error('--- [SERVER] ERROR from create_new_conversation RPC ---');
-      console.error('--- [SERVER] Full Error Object:', JSON.stringify(error, null, 2));
+      console.error('Error from create_new_conversation RPC:', JSON.stringify(error, null, 2));
       return { 
         error: {
           message: 'Failed to create conversation.',
           details: error.message,
           code: error.code,
-          hint: error.hint,
-          input_participants: participant_ids
         } 
       };
   }
 
-  console.log('--- [SERVER] Successfully created conversation, ID:', data);
   revalidatePath('/messages');
   return { data: { id: data } };
 }
