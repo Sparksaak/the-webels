@@ -46,33 +46,58 @@ export async function getConversations(userId: string) {
 
         const conversationIds = participant_data.map(p => p.conversation_id);
 
-        // Step 2: Fetch details for those conversations, including participants and the last message.
-        const { data, error } = await supabase
+        // Step 2: Fetch details for those conversations.
+        const { data: conversations, error: convos_error } = await supabase
             .from('conversations')
             .select(`
                 id,
                 type,
-                name,
-                participants:conversation_participants(user:users(id, full_name, email, role, avatarUrl:avatar_url)),
-                last_message:messages(id, content, created_at, sender_id)
+                name
             `)
-            .in('id', conversationIds)
-            .order('created_at', { foreignTable: 'messages', ascending: false })
-            .limit(1, { foreignTable: 'messages' });
-
-        if (error) {
-            console.error('--- Server Error in main conversation fetch ---', error);
-            throw error;
+            .in('id', conversationIds);
+        
+        if (convos_error) {
+            console.error('--- Server Error in main conversation fetch ---', convos_error);
+            throw convos_error;
         }
+
+        if (!conversations) {
+            return [];
+        }
+
+        // Step 3: For each conversation, fetch participants and the last message.
+        const detailedConversations = await Promise.all(
+            conversations.map(async (convo) => {
+                // Fetch participants for this convo
+                const { data: participantsData, error: p_error } = await supabase
+                    .from('conversation_participants')
+                    .select('user:users(*)')
+                    .eq('conversation_id', convo.id);
+
+                // Fetch last message for this convo
+                const { data: lastMessageData, error: m_error } = await supabase
+                    .from('messages')
+                    .select('*')
+                    .eq('conversation_id', convo.id)
+                    .order('created_at', { ascending: false })
+                    .limit(1)
+                    .single();
+
+                if (p_error || m_error) {
+                    console.error(`Error fetching details for convo ${convo.id}`, {p_error, m_error});
+                    return { ...convo, participants: [], last_message: null };
+                }
+
+                return {
+                    ...convo,
+                    participants: (participantsData || []).map((p: any) => ({ ...p.user, avatarUrl: `https://placehold.co/100x100.png` })),
+                    last_message: lastMessageData
+                };
+            })
+        );
         
-        console.log(`Server: Successfully fetched ${data.length} conversations.`);
-        
-        // Step 3: Process the data to be in the correct format.
-        return data.map((convo) => ({
-            ...convo,
-            last_message: convo.last_message[0] || null,
-            participants: (convo.participants || []).map((p: any) => ({...p.user, avatarUrl: `https://placehold.co/100x100.png`})),
-        }));
+        console.log(`Server: Successfully fetched ${detailedConversations.length} conversations.`);
+        return detailedConversations;
 
     } catch (e) {
         console.error('--- Server CRITICAL: Exception in getConversations ---', e);
@@ -88,7 +113,7 @@ export async function getMessages(conversationId: string) {
     console.log(`Server: getMessages called for convo: ${conversationId}`);
     const { data, error } = await supabase
       .from('messages')
-      .select('*, sender:users(id, full_name, email, role)')
+      .select('*, sender:users(*)')
       .eq('conversation_id', conversationId)
       .order('created_at', { ascending: true });
 
