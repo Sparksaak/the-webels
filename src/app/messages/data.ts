@@ -13,12 +13,14 @@ export async function getUsers(currentUserId: string): Promise<AppUser[]> {
     console.error('Error fetching users:', error);
     return [];
   }
-  return data as AppUser[];
+  return data.map(u => ({...u, avatarUrl: `https://placehold.co/100x100.png`})) as AppUser[];
 }
+
 
 export async function getConversations(userId: string) {
     const cookieStore = cookies();
     const supabase = createClient(cookieStore);
+
     const { data: conversationParticipants, error: convoPartError } = await supabase
         .from('conversation_participants')
         .select('conversation_id')
@@ -37,28 +39,33 @@ export async function getConversations(userId: string) {
 
     const { data: conversations, error: conversationsError } = await supabase
         .from('conversations')
-        .select(`*, participants:conversation_participants(user:users(*)), messages(content, created_at)`)
+        .select(`
+            *,
+            participants:conversation_participants!inner(user:users!inner(*)),
+            messages(content, created_at)
+        `)
         .in('id', conversationIds)
         .order('created_at', { foreignTable: 'messages', ascending: false });
-
+        
     if (conversationsError) {
         console.error('Error fetching conversations details:', conversationsError);
         return [];
     }
 
-    return conversations.map(c => ({
+    return conversations.map((c: any) => ({
         ...c,
         last_message: c.messages[0] || null,
-        participants: c.participants.map((p: any) => p.user)
+        participants: c.participants.map((p: any) => ({...p.user, avatarUrl: `https://placehold.co/100x100.png`}))
     }));
 }
+
 
 export async function getMessages(conversationId: string) {
   const cookieStore = cookies();
   const supabase = createClient(cookieStore);
   const { data, error } = await supabase
     .from('messages')
-    .select('*, sender:users(*)')
+    .select('*, sender:users!inner(*)')
     .eq('conversation_id', conversationId)
     .order('created_at', { ascending: true });
 
@@ -66,5 +73,6 @@ export async function getMessages(conversationId: string) {
     console.error('Error fetching messages:', error);
     return [];
   }
-  return data;
+  return data.map((d: any) => ({...d, sender: {...d.sender, avatarUrl: `https://placehold.co/100x100.png`}}));
 }
+

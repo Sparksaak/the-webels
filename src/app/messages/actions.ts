@@ -6,66 +6,48 @@ import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 
 export async function createConversation(
-  currentUser_id: string,
   participant_ids: string[],
   type: 'direct' | 'group',
   name?: string
 ) {
   const cookieStore = cookies();
   const supabase = createClient(cookieStore);
-  const allParticipantIds = [...new Set([currentUser_id, ...participant_ids])];
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: 'You must be logged in to create a conversation.' };
+  }
+  
+  const allParticipantIds = [...new Set([user.id, ...participant_ids])];
 
   // For direct messages, check if a conversation already exists
   if (type === 'direct' && allParticipantIds.length === 2) {
-    const { data: existingConvo, error: existingConvoError } = await supabase.rpc('get_dm_conversation_participants', {
-      user_a_id: allParticipantIds[0],
-      user_b_id: allParticipantIds[1],
-    });
+      const { data: existingConvo, error: rpcError } = await supabase.rpc('get_conversation_for_users', { user_ids: allParticipantIds });
 
-    if (existingConvoError) {
-        console.error('Error checking for existing conversations:', existingConvoError);
-        return { error: 'Failed to check for existing conversations.' };
-    }
-    
-    if (existingConvo && existingConvo.length > 0) {
-        // Conversation already exists, just return its ID
-        return { data: { id: existingConvo[0].conversation_id }};
-    }
+      if (rpcError) {
+          console.error('Error checking for existing DM:', rpcError);
+          // Don't block, just log the error. The creation can proceed.
+      }
+      
+      if (existingConvo && existingConvo.length > 0) {
+          return { data: { id: existingConvo[0].id } };
+      }
   }
 
+  // Call the new database function to handle creation
+  const { data, error } = await supabase.rpc('create_new_conversation', {
+      participant_ids: allParticipantIds,
+      conversation_type: type,
+      group_name: name
+  });
 
-  // 1. Create the conversation
-  const { data: conversationData, error: conversationError } = await supabase
-    .from('conversations')
-    .insert({ type, name: type === 'group' ? name : null })
-    .select('id')
-    .single();
-
-  if (conversationError) {
-    console.error('Error creating conversation:', conversationError);
-    return { error: 'Failed to create conversation.' };
-  }
-  const conversationId = conversationData.id;
-  
-  // 2. Add all participants to the new conversation
-  const participantRecords = allParticipantIds.map((userId) => ({
-    conversation_id: conversationId,
-    user_id: userId,
-  }));
-
-  const { error: participantError } = await supabase
-    .from('conversation_participants')
-    .insert(participantRecords);
-
-  if (participantError) {
-    console.error('Error adding participants:', participantError);
-    // Attempt to clean up the created conversation if participants fail
-    await supabase.from('conversations').delete().eq('id', conversationId);
-    return { error: 'Could not add participants to conversation.' };
+  if (error) {
+      console.error('Error in create_new_conversation RPC:', error);
+      return { error: 'Failed to create conversation.' };
   }
 
   revalidatePath('/messages');
-  return { data: { id: conversationId } };
+  return { data: { id: data } };
 }
 
 export async function sendMessage(conversationId: string, content: string) {
@@ -91,4 +73,3 @@ export async function sendMessage(conversationId: string, content: string) {
   revalidatePath(`/messages?conversation_id=${conversationId}`);
   return { success: true };
 }
-
