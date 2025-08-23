@@ -26,12 +26,12 @@ export async function getConversations(userId: string) {
         .select('conversation_id')
         .eq('user_id', userId);
 
-    if (convoPartError || !conversationParticipants) {
+    if (convoPartError) {
         console.error('Error fetching user conversations:', convoPartError);
-        return [];
+        throw convoPartError;
     }
 
-    if (conversationParticipants.length === 0) {
+    if (!conversationParticipants || conversationParticipants.length === 0) {
       return [];
     }
 
@@ -51,10 +51,9 @@ export async function getConversations(userId: string) {
         
     if (conversationsError) {
         console.error('Error fetching conversations details:', conversationsError);
-        return [];
+        throw conversationsError;
     }
     
-    // Manually join participants based on conversation_participants table
     const { data: allParticipants, error: allParticipantsError } = await supabase
         .from('conversation_participants')
         .select('*, user:users(*)')
@@ -62,7 +61,7 @@ export async function getConversations(userId: string) {
 
     if(allParticipantsError) {
         console.error('Error fetching all participants', allParticipantsError);
-        return [];
+        throw allParticipantsError;
     }
 
     return conversations.map((c: any) => ({
@@ -86,7 +85,7 @@ export async function getMessages(conversationId: string) {
 
   if (error) {
     console.error('Error fetching messages:', error);
-    return [];
+    throw error;
   }
   
   return data.map((d: any) => ({
@@ -97,5 +96,3 @@ export async function getMessages(conversationId: string) {
       }
   }));
 }
-
-    

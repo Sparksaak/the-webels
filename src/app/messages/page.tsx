@@ -43,24 +43,39 @@ function MessagingContent() {
     }, []);
 
     const fetchAndSetData = useCallback(async (user: AppUser, convoId: string | null) => {
-        const convos = await getConversations(user.id);
-        setConversations(convos);
+        try {
+            console.log('Client: Fetching conversations...');
+            const convos = await getConversations(user.id);
+            setConversations(convos);
+            console.log('Client: Fetched conversations successfully.', convos);
 
-        if (convoId) {
-            const foundConv = convos.find(c => c.id === convoId);
-            setActiveConversation(foundConv || null);
-            if (foundConv) {
-                const fetchedMessages = await getMessages(convoId);
-                setMessages(fetchedMessages);
-                setTimeout(scrollToBottom, 100);
-            } else {
-                setMessages([]);
-                setActiveConversation(null);
+            if (convoId) {
+                const foundConv = convos.find(c => c.id === convoId);
+                setActiveConversation(foundConv || null);
+                if (foundConv) {
+                    try {
+                        console.log(`Client: Fetching messages for convoId: ${convoId}`);
+                        const fetchedMessages = await getMessages(convoId);
+                        setMessages(fetchedMessages);
+                        console.log('Client: Fetched messages successfully.', fetchedMessages);
+                        setTimeout(scrollToBottom, 100);
+                    } catch (error) {
+                        console.error('--- Client Error: Failed to fetch messages ---', error);
+                        toast({ title: 'Error fetching messages', description: 'Could not load messages for this conversation.', variant: 'destructive' });
+                        setMessages([]);
+                    }
+                } else {
+                    setMessages([]);
+                    setActiveConversation(null);
+                }
+            } else if (convos.length > 0) {
+                router.replace(`/messages?conversation_id=${convos[0].id}`);
             }
-        } else if (convos.length > 0) {
-            router.replace(`/messages?conversation_id=${convos[0].id}`);
+        } catch (error) {
+            console.error('--- Client Error: Failed to fetch conversations ---', error);
+            toast({ title: 'Error fetching conversations', description: 'Could not load your conversation list.', variant: 'destructive' });
         }
-    }, [router, scrollToBottom]);
+    }, [router, scrollToBottom, toast]);
 
 
     useEffect(() => {
@@ -89,11 +104,19 @@ function MessagingContent() {
             .on('postgres_changes', 
                 { event: 'INSERT', schema: 'public', table: 'messages', filter: `conversation_id=eq.${activeConversationId}` },
                 (payload) => {
+                    console.log('Realtime: New message received', payload.new);
                     setMessages(currentMessages => [...currentMessages, payload.new]);
                     setTimeout(scrollToBottom, 100);
                 }
             )
-            .subscribe();
+            .subscribe((status, err) => {
+                if (status === 'SUBSCRIBED') {
+                    console.log('Realtime: Subscribed to messages channel.');
+                }
+                if (err) {
+                    console.error('--- Client Error: Realtime subscription failed ---', err);
+                }
+            });
 
         return () => {
             channel.unsubscribe();
@@ -128,6 +151,7 @@ function MessagingContent() {
         const result = await sendMessage(activeConversationId, tempMessage);
         
         if (result.error) {
+            console.error('--- Client Error: Failed to send message ---', result);
             toast({
                 title: 'Error sending message',
                 description: result.error,
@@ -282,10 +306,10 @@ function NewConversationDialog({ currentUser, setConversations }: { currentUser:
         if (conversationType === 'group' && !groupName.trim()) return;
 
         startTransition(async () => {
-            const allParticipantIds = [...new Set([currentUser.id, ...selectedUsers])];
-            const result = await createConversation(allParticipantIds, conversationType, groupName);
+            const result = await createConversation(selectedUsers, conversationType, groupName);
 
             if (result.error) {
+                 console.error('--- Client Error: Failed to create conversation ---', result.error);
                  toast({
                     title: "Error creating conversation",
                     description: result.error.details || result.error.message || 'An unknown error occurred.',
@@ -376,5 +400,3 @@ export default function MessagesPage() {
         </Suspense>
     );
 }
-
-    
