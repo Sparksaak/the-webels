@@ -53,9 +53,8 @@ function MessagingContent() {
             if (convoId) {
                 currentConvo = convos.find(c => c.id === convoId) || null;
             } else if (convos.length > 0) {
-                 // If no convoId is in the URL, redirect to the most recent one.
                 router.replace(`/messages?conversation_id=${convos[0].id}`);
-                return; // Stop execution to let the redirect and re-render handle the rest.
+                return;
             }
             
             setActiveConversation(currentConvo);
@@ -204,13 +203,8 @@ function MessagingContent() {
                                     </Avatar>
                                     <div className="flex-1 overflow-hidden">
                                         <p className="font-semibold truncate">{getConversationTitle(convo)}</p>
-                                        <p className="text-sm text-muted-foreground truncate">{convo.last_message?.content || 'No messages yet'}</p>
+                                        <p className="text-sm text-muted-foreground truncate">Select to view messages</p>
                                     </div>
-                                    {convo.last_message && (
-                                        <time className="text-xs text-muted-foreground self-start">
-                                            {formatDistanceToNow(new Date(convo.last_message.created_at), { addSuffix: true })}
-                                        </time>
-                                    )}
                                 </div>
                             </button>
                         ))}
