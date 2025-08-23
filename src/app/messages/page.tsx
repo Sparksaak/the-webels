@@ -32,44 +32,44 @@ function MessagingContent() {
     const activeConversationId = searchParams.get('conversation_id');
     const { toast } = useToast();
     const scrollAreaRef = useRef<HTMLDivElement>(null);
+    const [isSending, setIsSending] = useState(false);
+
 
     const scrollToBottom = useCallback(() => {
-        if (scrollAreaRef.current) {
-            const scrollViewport = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+        setTimeout(() => {
+            const scrollViewport = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]');
             if (scrollViewport) {
                 scrollViewport.scrollTop = scrollViewport.scrollHeight;
             }
-        }
+        }, 100);
     }, []);
 
     const fetchAndSetData = useCallback(async (user: AppUser, convoId: string | null) => {
         try {
             console.log('Client: Fetching conversations...');
             const convos = await getConversations(user.id);
-            setConversations(convos);
             console.log('Client: Fetched conversations successfully.', convos);
+            setConversations(convos);
 
+            let currentConvo = null;
             if (convoId) {
-                const foundConv = convos.find(c => c.id === convoId);
-                setActiveConversation(foundConv || null);
-                if (foundConv) {
-                    try {
-                        console.log(`Client: Fetching messages for convoId: ${convoId}`);
-                        const fetchedMessages = await getMessages(convoId);
-                        setMessages(fetchedMessages);
-                        console.log('Client: Fetched messages successfully.', fetchedMessages);
-                        setTimeout(scrollToBottom, 100);
-                    } catch (error) {
-                        console.error('--- Client Error: Failed to fetch messages ---', error);
-                        toast({ title: 'Error fetching messages', description: 'Could not load messages for this conversation.', variant: 'destructive' });
-                        setMessages([]);
-                    }
-                } else {
-                    setMessages([]);
-                    setActiveConversation(null);
-                }
+                currentConvo = convos.find(c => c.id === convoId) || null;
             } else if (convos.length > 0) {
+                 // If no convoId is in the URL, redirect to the most recent one.
                 router.replace(`/messages?conversation_id=${convos[0].id}`);
+                return; // Stop execution to let the redirect and re-render handle the rest.
+            }
+            
+            setActiveConversation(currentConvo);
+
+            if (currentConvo) {
+                console.log(`Client: Fetching messages for convoId: ${currentConvo.id}`);
+                const fetchedMessages = await getMessages(currentConvo.id);
+                console.log('Client: Fetched messages successfully.', fetchedMessages);
+                setMessages(fetchedMessages);
+                scrollToBottom();
+            } else {
+                setMessages([]);
             }
         } catch (error) {
             console.error('--- Client Error: Failed to fetch conversations ---', error);
@@ -90,6 +90,8 @@ function MessagingContent() {
                     const enrichedAppUser = {...appUser, avatarUrl: `https://placehold.co/100x100.png`};
                     setCurrentUser(enrichedAppUser as AppUser);
                     await fetchAndSetData(enrichedAppUser as AppUser, activeConversationId);
+                } else {
+                     router.push('/login');
                 }
             } else {
                 router.push('/login');
@@ -98,17 +100,35 @@ function MessagingContent() {
         };
 
         initialize();
+    }, [activeConversationId, fetchAndSetData, router]);
+
+
+    useEffect(() => {
+        if (!activeConversationId) return;
 
         const channel = createClient()
-            .channel('db-messages')
-            .on('postgres_changes', 
-                { event: 'INSERT', schema: 'public', table: 'messages', filter: `conversation_id=eq.${activeConversationId}` },
-                (payload) => {
-                    console.log('Realtime: New message received', payload.new);
-                    setMessages(currentMessages => [...currentMessages, payload.new]);
-                    setTimeout(scrollToBottom, 100);
+            .channel(`db-messages-${activeConversationId}`)
+            .on('postgres_changes', { 
+                event: 'INSERT', 
+                schema: 'public', 
+                table: 'messages', 
+                filter: `conversation_id=eq.${activeConversationId}` 
+            }, async (payload) => {
+                console.log('Realtime: New message received payload', payload.new);
+                const { data: senderData, error } = await createClient().from('users').select('*').eq('id', payload.new.sender_id).single();
+
+                if (error) {
+                    console.error("Error fetching sender for realtime message:", error);
+                    return;
                 }
-            )
+
+                const fullMessage = {
+                    ...payload.new,
+                    sender: {...senderData, avatarUrl: `https://placehold.co/40x40.png`}
+                }
+                setMessages(currentMessages => [...currentMessages, fullMessage]);
+                scrollToBottom();
+            })
             .subscribe((status, err) => {
                 if (status === 'SUBSCRIBED') {
                     console.log('Realtime: Subscribed to messages channel.');
@@ -119,32 +139,18 @@ function MessagingContent() {
             });
 
         return () => {
+            console.log("Realtime: Unsubscribing from channel.");
             channel.unsubscribe();
         };
 
-    }, [activeConversationId, fetchAndSetData, router, scrollToBottom]);
+    }, [activeConversationId, scrollToBottom]);
 
-
-    useEffect(() => {
-        scrollToBottom();
-    }, [messages, scrollToBottom]);
 
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!newMessage.trim() || !activeConversationId || !currentUser) return;
         
-        const optimisticMessage = {
-            id: Date.now(), // Temporary ID
-            content: newMessage,
-            created_at: new Date().toISOString(),
-            sender_id: currentUser.id,
-            sender: {
-                ...currentUser,
-                full_name: currentUser.full_name
-            }
-        };
-
-        setMessages(currentMessages => [...currentMessages, optimisticMessage]);
+        setIsSending(true);
         const tempMessage = newMessage;
         setNewMessage('');
 
@@ -157,10 +163,11 @@ function MessagingContent() {
                 description: result.error,
                 variant: 'destructive',
             });
-            // Rollback optimistic update
-            setMessages(currentMessages => currentMessages.filter(m => m.id !== optimisticMessage.id));
-            setNewMessage(tempMessage); 
+            setNewMessage(tempMessage); // Restore message on error
         }
+        // Optimistic update is removed; we rely on real-time for updates.
+        setIsSending(false);
+        scrollToBottom();
     };
 
     if (loading) {
@@ -189,7 +196,7 @@ function MessagingContent() {
                 <div className="flex flex-col border-r">
                     <div className="p-4 flex justify-between items-center border-b">
                         <h2 className="text-xl font-bold">Conversations</h2>
-                        <NewConversationDialog currentUser={currentUser} setConversations={setConversations} />
+                        <NewConversationDialog currentUser={currentUser} onConversationCreated={(newId) => router.push(`/messages?conversation_id=${newId}`)} />
                     </div>
                     <ScrollArea>
                         {conversations.map((convo) => (
@@ -267,8 +274,11 @@ function MessagingContent() {
                                         onChange={(e) => setNewMessage(e.target.value)}
                                         placeholder="Type a message..."
                                         autoComplete="off"
+                                        disabled={isSending}
                                     />
-                                    <Button type="submit" size="icon"><Send className="h-4 w-4" /></Button>
+                                    <Button type="submit" size="icon" disabled={isSending}>
+                                        <Send className="h-4 w-4" />
+                                    </Button>
                                 </form>
                             </div>
                         </>
@@ -285,13 +295,12 @@ function MessagingContent() {
     );
 }
 
-function NewConversationDialog({ currentUser, setConversations }: { currentUser: AppUser, setConversations: (convos: any[]) => void }) {
+function NewConversationDialog({ currentUser, onConversationCreated }: { currentUser: AppUser, onConversationCreated: (newId: string) => void }) {
     const [isOpen, setIsOpen] = useState(false);
     const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
     const [groupName, setGroupName] = useState('');
     const [conversationType, setConversationType] = useState<'direct' | 'group'>('direct');
     const [isPending, startTransition] = useTransition();
-    const router = useRouter();
     const [allUsers, setAllUsers] = useState<AppUser[]>([]);
     const { toast } = useToast();
 
@@ -303,7 +312,10 @@ function NewConversationDialog({ currentUser, setConversations }: { currentUser:
 
     const handleCreateConversation = async () => {
         if (selectedUsers.length === 0) return;
-        if (conversationType === 'group' && !groupName.trim()) return;
+        if (conversationType === 'group' && !groupName.trim()) {
+            toast({ title: 'Group name required', description: 'Please enter a name for your group chat.', variant: 'destructive' });
+            return;
+        }
 
         startTransition(async () => {
             const result = await createConversation(selectedUsers, conversationType, groupName);
@@ -319,9 +331,7 @@ function NewConversationDialog({ currentUser, setConversations }: { currentUser:
                 setIsOpen(false);
                 setSelectedUsers([]);
                 setGroupName('');
-                const newConvos = await getConversations(currentUser.id);
-                setConversations(newConvos);
-                router.push(`/messages?conversation_id=${result.data.id}`);
+                onConversationCreated(result.data.id);
             }
         });
     };
@@ -329,11 +339,7 @@ function NewConversationDialog({ currentUser, setConversations }: { currentUser:
     const handleUserSelection = (checked: boolean | string, userId: string) => {
         const isChecked = checked === true || checked === 'true';
         if (conversationType === 'direct') {
-            if (isChecked) {
-                setSelectedUsers([userId]);
-            } else {
-                setSelectedUsers([]);
-            }
+            setSelectedUsers(isChecked ? [userId] : []);
         } else {
             setSelectedUsers(prev =>
                 isChecked ? [...prev, userId] : prev.filter(id => id !== userId)
