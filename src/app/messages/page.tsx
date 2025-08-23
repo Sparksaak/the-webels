@@ -264,14 +264,15 @@ function NewConversationDialog({ currentUser, setConversations }: { currentUser:
         if (conversationType === 'group' && !groupName.trim()) return;
 
         startTransition(async () => {
-            // THIS IS THE FIX: Ensure the current user is always included in the participants list.
             const allParticipantIds = [...new Set([currentUser.id, ...selectedUsers])];
             const result = await createConversation(allParticipantIds, conversationType, groupName);
 
             if (result.error) {
+                console.error("--- [CLIENT] Error creating conversation ---");
+                console.error(result.error);
                 toast({
                     title: "Error creating conversation",
-                    description: result.error,
+                    description: (result.error as any).details || (result.error as any).message || 'An unknown error occurred.',
                     variant: "destructive",
                 });
             } else if (result.data) {
@@ -359,5 +360,3 @@ export default function MessagesPage() {
         </Suspense>
     );
 }
-
-    
