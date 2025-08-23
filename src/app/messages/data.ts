@@ -30,47 +30,84 @@ export async function getConversations(userId: string) {
 
     try {
         const { data, error } = await supabase
-            .from('conversations')
+            .from('conversation_participants')
             .select(`
-                id,
-                type,
-                name,
-                participants:conversation_participants (
-                    user:users ( id, full_name, email, role, avatarUrl:avatar_url )
+                conversation:conversations (
+                    id,
+                    type,
+                    name,
+                    last_message:messages (
+                        content,
+                        created_at
+                    )
                 ),
-                last_message:messages (
-                    content,
-                    created_at
+                user:users (
+                    id,
+                    full_name,
+                    email,
+                    role
                 )
             `)
-            .in('id', 
-                supabase.from('conversation_participants')
-                        .select('conversation_id')
-                        .eq('user_id', userId)
-            )
-            .order('created_at', { foreignTable: 'messages', ascending: false })
-            .limit(1, { foreignTable: 'messages' });
-
+            .eq('user_id', userId)
+            .order('created_at', { foreignTable: 'conversations.messages', ascending: false })
+            .limit(1, { foreignTable: 'conversations.messages' });
 
         if (error) {
             console.error('--- Server Error: getConversations query failed ---', error);
             throw error;
         }
 
-        console.log('Server: Successfully fetched conversations via direct query:', data);
-        
         if (!data) {
+          console.log('Server: No conversation data returned, returning empty array.');
           return [];
         }
+        
+        // The query above returns one row for each participant in a conversation for the current user.
+        // We need to group these by conversation ID.
+        const conversationsMap = new Map();
+        
+        for (const participant of data) {
+            if (participant.conversation) {
+                const convoId = participant.conversation.id;
+                if (!conversationsMap.has(convoId)) {
+                    conversationsMap.set(convoId, {
+                        ...participant.conversation,
+                        participants: [],
+                        last_message: participant.conversation.last_message[0] || null,
+                    });
+                }
+            }
+        }
+        
+        // Fetch all participants for the conversations we found
+        const convoIds = Array.from(conversationsMap.keys());
+        if (convoIds.length > 0) {
+            const { data: allParticipants, error: participantsError } = await supabase
+                .from('conversation_participants')
+                .select(`
+                    conversation_id,
+                    user:users (id, full_name, email, role)
+                `)
+                .in('conversation_id', convoIds);
 
-        // The query now returns a structure that is much closer to what we need.
-        return data.map((convo: any) => ({
-          id: convo.id,
-          type: convo.type,
-          name: convo.name,
-          participants: convo.participants.map((p: any) => ({ ...p.user, avatarUrl: `https://placehold.co/100x100.png` })),
-          last_message: convo.last_message[0] || null
-        }));
+            if (participantsError) {
+                console.error('--- Server Error: Failed to fetch all participants ---', participantsError);
+                throw participantsError;
+            }
+
+            if (allParticipants) {
+                for (const p of allParticipants) {
+                    if (conversationsMap.has(p.conversation_id)) {
+                        const user = {...p.user, avatarUrl: `https://placehold.co/100x100.png`}
+                        conversationsMap.get(p.conversation_id).participants.push(user);
+                    }
+                }
+            }
+        }
+        
+        const finalConversations = Array.from(conversationsMap.values());
+        console.log(`Server: Successfully processed ${finalConversations.length} conversations.`);
+        return finalConversations;
 
     } catch (e) {
         console.error('--- Server CRITICAL: Exception in getConversations ---', e);
@@ -96,11 +133,12 @@ export async function getMessages(conversationId: string) {
     }
     
     if (!data) {
+      console.log(`Server: No messages found for convo ${conversationId}, returning empty array.`);
       return [];
     }
 
-    console.log(`Server: Successfully fetched messages for convo ${conversationId}`);
-    return data.map((d: any) => ({
+    console.log(`Server: Successfully fetched ${data.length} messages for convo ${conversationId}`);
+    return data.map((d) => ({
         ...d, 
         sender: {
             ...d.sender, 
