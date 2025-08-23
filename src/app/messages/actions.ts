@@ -10,20 +10,28 @@ export async function createConversation(
   type: 'direct' | 'group',
   name?: string
 ) {
+  console.log('--- Initiating createConversation ---');
+  console.log('Input participant_ids:', participant_ids);
+  console.log('Input type:', type);
+  console.log('Input name:', name);
+
   const cookieStore = cookies();
   const supabase = createClient(cookieStore);
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
+    console.error('Create conversation failed: User not logged in.');
     return { error: 'You must be logged in to create a conversation.' };
   }
   
   const allParticipantIds = [...new Set([user.id, ...participant_ids])];
 
-  // For direct messages, we need to sort the IDs to ensure the check is consistent
+  // For direct messages, sort the IDs to ensure the check is consistent
   if (type === 'direct') {
       allParticipantIds.sort();
   }
+  
+  console.log('Attempting to call RPC with participants:', allParticipantIds);
 
   // Call the new database function to handle creation
   const { data, error } = await supabase.rpc('create_new_conversation', {
@@ -33,10 +41,16 @@ export async function createConversation(
   });
 
   if (error) {
-      console.error('Error in create_new_conversation RPC:', error);
+      console.error('--- ERROR from create_new_conversation RPC ---');
+      console.error('Status:', error.code);
+      console.error('Message:', error.message);
+      console.error('Details:', error.details);
+      console.error('Hint:', error.hint);
+      console.error('------------------------------------------');
       return { error: 'Failed to create conversation.' };
   }
 
+  console.log('Successfully created conversation, ID:', data);
   revalidatePath('/messages');
   return { data: { id: data } };
 }
