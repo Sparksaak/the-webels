@@ -24,35 +24,51 @@ export async function getConversations(userId: string) {
     console.log(`Server: getConversations called for user: ${userId}`);
 
     try {
-        const { data, error } = await supabase.rpc('get_user_conversations_with_details', {
-            p_user_id: userId
-        });
+        const { data, error } = await supabase
+            .from('conversations')
+            .select(`
+                id,
+                type,
+                name,
+                participants:conversation_participants (
+                    user:users ( id, full_name, email, role, avatarUrl:avatar_url )
+                ),
+                last_message:messages (
+                    content,
+                    created_at
+                )
+            `)
+            .in('id', 
+                supabase.from('conversation_participants')
+                        .select('conversation_id')
+                        .eq('user_id', userId)
+            )
+            .order('created_at', { foreignTable: 'messages', ascending: false })
+            .limit(1, { foreignTable: 'messages' });
+
 
         if (error) {
-            console.error('--- Server Error: getConversations RPC failed ---', error);
+            console.error('--- Server Error: getConversations query failed ---', error);
             throw error;
         }
 
-        console.log('Server: Successfully fetched conversations via RPC:', data);
+        console.log('Server: Successfully fetched conversations via direct query:', data);
         
         if (!data) {
           return [];
         }
 
+        // The query now returns a structure that is much closer to what we need.
         return data.map((convo: any) => ({
-          id: convo.conversation_id,
-          type: convo.conversation_type,
-          name: convo.conversation_name,
-          participants: convo.participants.map((p: any) => ({ ...p, avatarUrl: `https://placehold.co/100x100.png`})),
-          last_message: convo.last_message_content ? {
-            content: convo.last_message_content,
-            created_at: convo.last_message_created_at
-          } : null
+          id: convo.id,
+          type: convo.type,
+          name: convo.name,
+          participants: convo.participants.map((p: any) => ({ ...p.user, avatarUrl: `https://placehold.co/100x100.png` })),
+          last_message: convo.last_message[0] || null
         }));
 
     } catch (e) {
         console.error('--- Server CRITICAL: Exception in getConversations ---', e);
-        // Re-throw the error so the client's catch block can handle it
         throw e;
     }
 }
