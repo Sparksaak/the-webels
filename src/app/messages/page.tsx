@@ -46,9 +46,7 @@ function MessagingContent() {
 
     const fetchAndSetData = useCallback(async (user: AppUser, convoId: string | null) => {
         try {
-            console.log('Client: Fetching conversations...');
             const convos = await getConversations(user.id);
-            console.log('Client: Fetched conversations successfully.', convos);
             setConversations(convos);
 
             let currentConvo = null;
@@ -63,9 +61,7 @@ function MessagingContent() {
             setActiveConversation(currentConvo);
 
             if (currentConvo) {
-                console.log(`Client: Fetching messages for convoId: ${currentConvo.id}`);
                 const fetchedMessages = await getMessages(currentConvo.id);
-                console.log('Client: Fetched messages successfully.', fetchedMessages);
                 setMessages(fetchedMessages);
                 scrollToBottom();
             } else {
@@ -114,7 +110,6 @@ function MessagingContent() {
                 table: 'messages', 
                 filter: `conversation_id=eq.${activeConversationId}` 
             }, async (payload) => {
-                console.log('Realtime: New message received payload', payload.new);
                 const { data: senderData, error } = await createClient().from('users').select('*').eq('id', payload.new.sender_id).single();
 
                 if (error) {
@@ -139,7 +134,6 @@ function MessagingContent() {
             });
 
         return () => {
-            console.log("Realtime: Unsubscribing from channel.");
             channel.unsubscribe();
         };
 
@@ -157,7 +151,6 @@ function MessagingContent() {
         const result = await sendMessage(activeConversationId, tempMessage);
         
         if (result.error) {
-            console.error('--- Client Error: Failed to send message ---', result);
             toast({
                 title: 'Error sending message',
                 description: result.error,
@@ -165,7 +158,6 @@ function MessagingContent() {
             });
             setNewMessage(tempMessage); // Restore message on error
         }
-        // Optimistic update is removed; we rely on real-time for updates.
         setIsSending(false);
         scrollToBottom();
     };
@@ -321,7 +313,6 @@ function NewConversationDialog({ currentUser, onConversationCreated }: { current
             const result = await createConversation(selectedUsers, conversationType, groupName);
 
             if (result.error) {
-                 console.error('--- Client Error: Failed to create conversation ---', result.error);
                  toast({
                     title: "Error creating conversation",
                     description: result.error.details || result.error.message || 'An unknown error occurred.',
