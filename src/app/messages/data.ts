@@ -21,78 +21,69 @@ export async function getConversations(userId: string) {
     const cookieStore = cookies();
     const supabase = createClient(cookieStore);
 
-    const { data: conversationParticipants, error: convoPartError } = await supabase
-        .from('conversation_participants')
-        .select('conversation_id')
-        .eq('user_id', userId);
+    console.log(`Server: getConversations called for user: ${userId}`);
 
-    if (convoPartError) {
-        console.error('Error fetching user conversations:', convoPartError);
-        throw convoPartError;
-    }
+    try {
+        const { data, error } = await supabase.rpc('get_user_conversations_with_details', {
+            p_user_id: userId
+        });
 
-    if (!conversationParticipants || conversationParticipants.length === 0) {
-      return [];
-    }
+        if (error) {
+            console.error('--- Server Error: getConversations RPC failed ---', error);
+            throw error;
+        }
 
-    const conversationIds = conversationParticipants.map(cp => cp.conversation_id);
-
-    const { data: conversations, error: conversationsError } = await supabase
-        .from('conversations')
-        .select(`
-            id,
-            type,
-            name,
-            participants:users(*),
-            messages(content, created_at)
-        `)
-        .in('id', conversationIds)
-        .order('created_at', { foreignTable: 'messages', ascending: false });
+        console.log('Server: Successfully fetched conversations via RPC:', data);
         
-    if (conversationsError) {
-        console.error('Error fetching conversations details:', conversationsError);
-        throw conversationsError;
-    }
-    
-    const { data: allParticipants, error: allParticipantsError } = await supabase
-        .from('conversation_participants')
-        .select('*, user:users(*)')
-        .in('conversation_id', conversationIds);
+        if (!data) {
+          return [];
+        }
 
-    if(allParticipantsError) {
-        console.error('Error fetching all participants', allParticipantsError);
-        throw allParticipantsError;
-    }
+        return data.map((convo: any) => ({
+          id: convo.conversation_id,
+          type: convo.conversation_type,
+          name: convo.conversation_name,
+          participants: convo.participants.map((p: any) => ({ ...p, avatarUrl: `https://placehold.co/100x100.png`})),
+          last_message: convo.last_message_content ? {
+            content: convo.last_message_content,
+            created_at: convo.last_message_created_at
+          } : null
+        }));
 
-    return conversations.map((c: any) => ({
-        ...c,
-        last_message: c.messages[0] || null,
-        participants: allParticipants
-            .filter(p => p.conversation_id === c.id)
-            .map((p: any) => ({...p.user, avatarUrl: `https://placehold.co/100x100.png`}))
-    }));
+    } catch (e) {
+        console.error('--- Server CRITICAL: Exception in getConversations ---', e);
+        // Re-throw the error so the client's catch block can handle it
+        throw e;
+    }
 }
 
 
 export async function getMessages(conversationId: string) {
   const cookieStore = cookies();
   const supabase = createClient(cookieStore);
-  const { data, error } = await supabase
-    .from('messages')
-    .select('*, sender:users(id, full_name, email, role)')
-    .eq('conversation_id', conversationId)
-    .order('created_at', { ascending: true });
+  try {
+    console.log(`Server: getMessages called for convo: ${conversationId}`);
+    const { data, error } = await supabase
+      .from('messages')
+      .select('*, sender:users(id, full_name, email, role)')
+      .eq('conversation_id', conversationId)
+      .order('created_at', { ascending: true });
 
-  if (error) {
-    console.error('Error fetching messages:', error);
-    throw error;
+    if (error) {
+      console.error(`--- Server Error: getMessages failed for convo ${conversationId} ---`, error);
+      throw error;
+    }
+    
+    console.log(`Server: Successfully fetched messages for convo ${conversationId}`);
+    return data.map((d: any) => ({
+        ...d, 
+        sender: {
+            ...d.sender, 
+            avatarUrl: `https://placehold.co/40x40.png`
+        }
+    }));
+  } catch(e) {
+      console.error('--- Server CRITICAL: Exception in getMessages ---', e);
+      throw e;
   }
-  
-  return data.map((d: any) => ({
-      ...d, 
-      sender: {
-          ...d.sender, 
-          avatarUrl: `https://placehold.co/100x100.png`
-      }
-  }));
 }
