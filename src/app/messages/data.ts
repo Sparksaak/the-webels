@@ -28,20 +28,49 @@ export async function getConversations(userId: string) {
     const supabase = createClient(cookieStore);
 
     try {
+        // Step 1: Get all conversation IDs for the current user.
+        const { data: participant_data, error: participant_error } = await supabase
+            .from('conversation_participants')
+            .select('conversation_id')
+            .eq('user_id', userId);
+
+        if (participant_error) {
+            console.error('--- Server Error fetching conversation participants ---', participant_error);
+            throw participant_error;
+        }
+
+        if (!participant_data || participant_data.length === 0) {
+            console.log('Server: User is not in any conversations.');
+            return [];
+        }
+
+        const conversationIds = participant_data.map(p => p.conversation_id);
+
+        // Step 2: Fetch details for those conversations.
         const { data, error } = await supabase
-            .rpc('get_user_conversations_with_details', { p_user_id: userId });
+            .from('conversations')
+            .select(`
+                id,
+                type,
+                name,
+                participants:conversation_participants(user:users(id, full_name, email, role, avatarUrl:avatar_url)),
+                last_message:messages(id, content, created_at, sender_id)
+            `)
+            .in('id', conversationIds)
+            .order('created_at', { foreignTable: 'messages', ascending: false })
+            .limit(1, { foreignTable: 'messages' });
 
         if (error) {
             console.error('--- Server Error: get_user_conversations_with_details RPC failed ---', error);
             throw error;
         }
         
-        console.log(`Server: Successfully fetched ${data.length} conversations via RPC.`);
-        if (!data) return [];
-
+        console.log(`Server: Successfully fetched ${data.length} conversations.`);
+        
         return data.map((convo: any) => ({
             ...convo,
-            participants: (convo.participants || []).map((p:any) => ({...p, avatarUrl: `https://placehold.co/100x100.png`})),
+            last_message: convo.last_message[0] || null, // The query returns an array, we only need the first item or null
+            participants: (convo.participants || []).map((p:any) => ({...p.user, avatarUrl: `https://placehold.co/100x100.png`})),
         }));
 
     } catch (e) {
