@@ -1,7 +1,7 @@
 
 'use client';
 
-import { AppUser, Conversation, Message } from './types';
+import { AppUser } from './types';
 import { Suspense, useEffect, useState, useTransition } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -15,9 +15,10 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { createConversation, sendMessage } from './actions';
-import { getUsers, getConversations, getMessages } from './data';
-import { MessageCircle, Plus, Send, Users } from 'lucide-react';
+import { getUsers, getConversations } from './data';
+import { MessageCircle, Plus, Send } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { useToast } from '@/hooks/use-toast';
 
 function MessagingContent() {
     const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
@@ -29,6 +30,7 @@ function MessagingContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const activeConversationId = searchParams.get('conversation_id');
+    const { toast } = useToast();
 
     useEffect(() => {
         const initialize = async () => {
@@ -40,7 +42,7 @@ function MessagingContent() {
                 const { data: appUser } = await supabase.from('users').select('*').eq('id', user.id).single();
                 if (appUser) {
                     setCurrentUser(appUser);
-                    const convos = await getConversations();
+                    const convos = await getConversations(user.id);
                     setConversations(convos);
 
                     if (activeConversationId) {
@@ -48,7 +50,6 @@ function MessagingContent() {
                         setActiveConversation(foundConv || null);
                     } else if (convos.length > 0) {
                         router.replace(`/messages?conversation_id=${convos[0].id}`);
-                        setActiveConversation(convos[0]);
                     }
                 }
             } else {
@@ -60,13 +61,14 @@ function MessagingContent() {
     }, [router, activeConversationId]);
 
     useEffect(() => {
+        if (!activeConversationId) {
+            setMessages([]);
+            return;
+        };
+
         const fetchMessages = async () => {
-            if (activeConversationId) {
-                const fetchedMessages = await getMessages(activeConversationId);
-                setMessages(fetchedMessages);
-            } else {
-                setMessages([]);
-            }
+            const fetchedMessages = await getMessages(activeConversationId);
+            setMessages(fetchedMessages);
         };
         fetchMessages();
 
@@ -74,7 +76,14 @@ function MessagingContent() {
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `conversation_id=eq.${activeConversationId}` },
                 (payload) => {
                     const newMessage = payload.new;
-                    getMessages(activeConversationId!).then(setMessages);
+                    getMessages(activeConversationId).then(fetchedMessages => {
+                        // We need to enrich the sender info manually here
+                        const enrichedMessage = {
+                            ...newMessage,
+                            sender: activeConversation.participants.find((p:any) => p.id === newMessage.sender_id)
+                        };
+                        setMessages(currentMessages => [...currentMessages, enrichedMessage]);
+                    });
                 }
             )
             .subscribe();
@@ -83,13 +92,32 @@ function MessagingContent() {
             channel.unsubscribe();
         };
 
-    }, [activeConversationId]);
+    }, [activeConversationId, activeConversation]);
 
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!newMessage.trim() || !activeConversationId) return;
-        await sendMessage(activeConversationId, newMessage);
+        
+        const optimisticMessage = {
+            id: Date.now(), // Temporary ID
+            content: newMessage,
+            created_at: new Date().toISOString(),
+            sender_id: currentUser!.id,
+            sender: currentUser,
+        };
+        setMessages(current => [...current, optimisticMessage]);
         setNewMessage('');
+
+        const result = await sendMessage(activeConversationId, newMessage);
+        if (result.error) {
+            toast({
+                title: 'Error sending message',
+                description: result.error,
+                variant: 'destructive',
+            });
+            // Revert optimistic update
+            setMessages(current => current.filter(m => m.id !== optimisticMessage.id));
+        }
     };
 
     if (loading) {
@@ -99,9 +127,16 @@ function MessagingContent() {
     if (!currentUser) return null;
 
     const getConversationTitle = (convo: any, currentUserId: string) => {
+        if (!convo || !convo.participants) return 'Conversation';
         if (convo.type === 'group') return convo.name || 'Group Chat';
         const otherParticipant = convo.participants.find((p: any) => p.id !== currentUserId);
         return otherParticipant?.full_name || 'Direct Message';
+    };
+
+    const getConversationAvatar = (convo: any, currentUserId: string) => {
+        if (!convo || !convo.participants || convo.participants.length < 2) return '';
+        const otherParticipant = convo.participants.find((p: any) => p.id !== currentUserId);
+        return otherParticipant?.avatarUrl || `https://placehold.co/40x40.png`;
     };
 
     return (
@@ -121,7 +156,7 @@ function MessagingContent() {
                             >
                                 <div className="flex items-center gap-3">
                                     <Avatar>
-                                        <AvatarImage src={`https://placehold.co/40x40.png`} />
+                                        <AvatarImage src={getConversationAvatar(convo, currentUser!.id)} />
                                         <AvatarFallback>{getConversationTitle(convo, currentUser!.id).charAt(0)}</AvatarFallback>
                                     </Avatar>
                                     <div className="flex-1 overflow-hidden">
@@ -139,13 +174,13 @@ function MessagingContent() {
                     </ScrollArea>
                 </div>
 
-                <div className="flex flex-col h-full">
+                <div className="flex flex-col h-full bg-card">
                     {activeConversation ? (
                         <>
                             <CardHeader className="border-b">
                                 <div className="flex items-center gap-3">
                                     <Avatar>
-                                        <AvatarImage src={`https://placehold.co/40x40.png`} />
+                                        <AvatarImage src={getConversationAvatar(activeConversation, currentUser.id)} />
                                         <AvatarFallback>{getConversationTitle(activeConversation, currentUser.id).charAt(0)}</AvatarFallback>
                                     </Avatar>
                                     <div>
@@ -160,12 +195,12 @@ function MessagingContent() {
                                         <div key={msg.id} className={`flex items-start gap-3 my-4 ${msg.sender_id === currentUser!.id ? 'justify-end' : ''}`}>
                                            {msg.sender_id !== currentUser!.id && (
                                              <Avatar className="h-8 w-8">
-                                                <AvatarImage src={`https://placehold.co/40x40.png`} />
-                                                <AvatarFallback>{msg.sender.full_name?.charAt(0)}</AvatarFallback>
+                                                <AvatarImage src={msg.sender?.avatarUrl || `https://placehold.co/40x40.png`} />
+                                                <AvatarFallback>{msg.sender?.full_name?.charAt(0) || '?'}</AvatarFallback>
                                              </Avatar>
                                            )}
                                             <div className={`rounded-lg p-3 max-w-md ${msg.sender_id === currentUser!.id ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
-                                                <p className="font-bold text-sm">{msg.sender.full_name}</p>
+                                                <p className="font-bold text-sm">{msg.sender?.full_name}</p>
                                                 <p>{msg.content}</p>
                                                 <time className="text-xs opacity-70 mt-1 block">
                                                      {formatDistanceToNow(new Date(msg.created_at), { addSuffix: true })}
@@ -173,7 +208,7 @@ function MessagingContent() {
                                             </div>
                                              {msg.sender_id === currentUser!.id && (
                                              <Avatar className="h-8 w-8">
-                                                <AvatarImage src={`https://placehold.co/40x40.png`} />
+                                                <AvatarImage src={currentUser?.avatarUrl} />
                                                 <AvatarFallback>{currentUser!.full_name?.charAt(0)}</AvatarFallback>
                                              </Avatar>
                                            )}
@@ -214,6 +249,7 @@ function NewConversationDialog({ currentUser, setConversations }: { currentUser:
     const [isPending, startTransition] = useTransition();
     const router = useRouter();
     const [allUsers, setAllUsers] = useState<AppUser[]>([]);
+    const { toast } = useToast();
 
     useEffect(() => {
         if(isOpen) {
@@ -228,17 +264,36 @@ function NewConversationDialog({ currentUser, setConversations }: { currentUser:
         startTransition(async () => {
             const result = await createConversation(currentUser.id, selectedUsers, conversationType, groupName);
             if (result.error) {
-                console.error("Failed to create conversation:", result.error);
+                toast({
+                    title: "Error creating conversation",
+                    description: result.error,
+                    variant: "destructive",
+                });
             } else if (result.data) {
                 setIsOpen(false);
                 setSelectedUsers([]);
                 setGroupName('');
-                const newConvos = await getConversations();
+                const newConvos = await getConversations(currentUser.id);
                 setConversations(newConvos);
                 router.push(`/messages?conversation_id=${result.data.id}`);
             }
         });
     };
+    
+    const handleUserSelection = (checked: boolean | string, userId: string) => {
+        if (conversationType === 'direct') {
+            if (checked) {
+                setSelectedUsers([userId]);
+            } else {
+                setSelectedUsers([]);
+            }
+        } else {
+            setSelectedUsers(prev =>
+                checked ? [...prev, userId] : prev.filter(id => id !== userId)
+            );
+        }
+    };
+
 
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -250,8 +305,8 @@ function NewConversationDialog({ currentUser, setConversations }: { currentUser:
                     <DialogTitle>New Conversation</DialogTitle>
                 </DialogHeader>
                 <div className="flex gap-2 border-b pb-4">
-                    <Button variant={conversationType === 'direct' ? 'default' : 'outline'} onClick={() => setConversationType('direct')} className="flex-1">Direct Message</Button>
-                    <Button variant={conversationType === 'group' ? 'default' : 'outline'} onClick={() => setConversationType('group')} className="flex-1">Group Chat</Button>
+                    <Button variant={conversationType === 'direct' ? 'default' : 'outline'} onClick={() => { setConversationType('direct'); setSelectedUsers([]); }} className="flex-1">Direct Message</Button>
+                    <Button variant={conversationType === 'group' ? 'default' : 'outline'} onClick={() => { setConversationType('group'); setSelectedUsers([]); }} className="flex-1">Group Chat</Button>
                 </div>
                 {conversationType === 'group' && (
                     <Input placeholder="Group Name" value={groupName} onChange={(e) => setGroupName(e.target.value)} className="mt-4" />
@@ -259,15 +314,12 @@ function NewConversationDialog({ currentUser, setConversations }: { currentUser:
                 <p className="font-semibold mt-4">Select Participants:</p>
                 <ScrollArea className="h-64 mt-2">
                     <div className="space-y-2">
-                        {allUsers.filter(u => u.id !== currentUser.id).map((user) => (
+                        {allUsers.map((user) => (
                             <div key={user.id} className="flex items-center space-x-2 p-2 rounded-md hover:bg-muted">
                                 <Checkbox
                                     id={`user-${user.id}`}
-                                    onCheckedChange={(checked) => {
-                                        setSelectedUsers(prev =>
-                                            checked ? [...prev, user.id] : prev.filter(id => id !== user.id)
-                                        );
-                                    }}
+                                    checked={selectedUsers.includes(user.id)}
+                                    onCheckedChange={(checked) => handleUserSelection(checked.toString(), user.id)}
                                     disabled={conversationType === 'direct' && selectedUsers.length > 0 && !selectedUsers.includes(user.id)}
                                 />
                                 <Label htmlFor={`user-${user.id}`} className="flex-1 cursor-pointer">
@@ -296,10 +348,8 @@ function NewConversationDialog({ currentUser, setConversations }: { currentUser:
 
 export default function MessagesPage() {
     return (
-        <Suspense fallback={<div>Loading...</div>}>
+        <Suspense fallback={<div className="flex h-full items-center justify-center"><p>Loading...</p></div>}>
             <MessagingContent />
         </Suspense>
     );
 }
-
-    
