@@ -22,7 +22,6 @@ export async function getConversations(userId: string) {
     const cookieStore = cookies();
     const supabase = createClient(cookieStore);
 
-    // Step 1: Get the conversation IDs the user is part of.
     const { data: participantData, error: participantError } = await supabase
         .from('conversation_participants')
         .select('conversation_id')
@@ -39,7 +38,6 @@ export async function getConversations(userId: string) {
 
     const conversationIds = participantData.map(p => p.conversation_id);
     
-    // Step 2: Get the full conversation objects for those IDs.
     const { data: conversations, error: convosError } = await supabase
         .from('conversations')
         .select(`id, type, name, created_at`)

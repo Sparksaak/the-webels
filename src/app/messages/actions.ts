@@ -10,64 +10,79 @@ export async function createConversation(
   type: 'direct' | 'group',
   name?: string
 ) {
-  console.log('--- createConversation Action Started ---');
-  console.log('Input Participants:', participant_ids);
-  console.log('Input Type:', type);
-  console.log('Input Name:', name);
-
   const cookieStore = cookies();
   const supabase = createClient(cookieStore);
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
-    console.error('Create Conversation Error: User not logged in.');
     return { error: { message: 'You must be logged in.'} };
   }
   
   const finalParticipantIds = [...new Set([user.id, ...participant_ids])];
-  if (type === 'direct') {
-      finalParticipantIds.sort();
-  }
-  console.log('Final Participants for DB:', finalParticipantIds);
-  
-  const { data, error } = await supabase.rpc('create_new_conversation', {
-      participant_ids: finalParticipantIds,
-      conversation_type: type,
-      group_name: name
-  });
 
-  if (error) {
-      console.error('--- createConversation RPC Error ---', {
-        message: error.message,
-        details: error.details,
-        code: error.code,
-        hint: error.hint
-      });
-      return { 
-        error: {
-          message: 'Failed to create conversation.',
-          details: error.details,
-          code: error.code,
-        } 
-      };
+  // For direct messages, check if a conversation already exists
+  if (type === 'direct' && finalParticipantIds.length === 2) {
+    const { data: existing, error: existingError } = await supabase.rpc('get_existing_direct_conversation', {
+      user1_id: finalParticipantIds[0],
+      user2_id: finalParticipantIds[1]
+    });
+
+    if (existingError) {
+       console.error('--- Error checking for existing DM ---', existingError);
+       // Don't block, just log. Proceed to create.
+    }
+    
+    if (existing) {
+       revalidatePath('/messages');
+       return { data: { id: existing } };
+    }
   }
 
-  console.log('--- createConversation Success ---', { newConversationId: data });
+  // Create new conversation
+  const { data: conversationData, error: conversationError } = await supabase
+    .from('conversations')
+    .insert({
+      type: type,
+      name: type === 'group' ? name : null,
+    })
+    .select('id')
+    .single();
+
+  if (conversationError) {
+    console.error('--- createConversation DB Error ---', conversationError);
+    return { error: { message: 'Failed to create conversation.', details: conversationError.message } };
+  }
+
+  const newConversationId = conversationData.id;
+
+  // Add participants
+  const participantObjects = finalParticipantIds.map(userId => ({
+    conversation_id: newConversationId,
+    user_id: userId,
+  }));
+
+  const { error: participantsError } = await supabase
+    .from('conversation_participants')
+    .insert(participantObjects);
+
+  if (participantsError) {
+    console.error('--- createConversation participants DB Error ---', participantsError);
+    // Attempt to clean up the orphaned conversation
+    await supabase.from('conversations').delete().eq('id', newConversationId);
+    return { error: { message: 'Failed to add participants to conversation.', details: participantsError.message }};
+  }
+
+
   revalidatePath('/messages');
-  return { data: { id: data } };
+  return { data: { id: newConversationId } };
 }
 
 export async function sendMessage(conversationId: string, content: string) {
-  console.log('--- sendMessage Action Started ---');
-  console.log('Conversation ID:', conversationId);
-  console.log('Content:', content);
-
   const cookieStore = cookies();
   const supabase = createClient(cookieStore);
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
-    console.error('sendMessage Error: User not logged in.');
     return { error: 'You must be logged in to send a message.' };
   }
 
@@ -79,10 +94,9 @@ export async function sendMessage(conversationId: string, content: string) {
 
   if (error) {
     console.error('--- sendMessage DB Error ---', error);
-    return { error: 'Could not send message.', details: error };
+    return { error: 'Could not send message.' };
   }
 
-  console.log('--- sendMessage Success ---');
   revalidatePath(`/messages?conversation_id=${conversationId}`);
   return { success: true };
 }

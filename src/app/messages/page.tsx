@@ -54,9 +54,8 @@ function MessagingContent() {
             if (convoId) {
                 currentConvoFromList = convos.find(c => c.id === convoId) || null;
             } else if (convos.length > 0) {
-                // If no convoId is specified, redirect to the first one.
                 router.replace(`/messages?conversation_id=${convos[0].id}`);
-                return; // Exit because the component will re-render with the new URL param
+                return; 
             }
 
             if (currentConvoFromList) {
@@ -69,7 +68,6 @@ function MessagingContent() {
                 setMessages(fetchedMessages);
                 scrollToBottom();
             } else {
-                 // No active conversation
                 setActiveConversation(null);
                 setMessages([]);
                 setActiveConversationParticipants([]);
@@ -82,7 +80,6 @@ function MessagingContent() {
         }
     }, [router, scrollToBottom, toast]);
 
-    // Main initialization and data fetching effect
     useEffect(() => {
         const convoId = searchParams.get('conversation_id');
         setActiveConversationId(convoId);
@@ -96,7 +93,6 @@ function MessagingContent() {
                 if (appUser) {
                     const enrichedAppUser = {...appUser, avatarUrl: `https://placehold.co/100x100.png`};
                     setCurrentUser(enrichedAppUser as AppUser);
-                    // Pass user and convoId to the fetching function
                     await fetchAndSetData(enrichedAppUser as AppUser, convoId);
                 } else {
                     router.push('/login');
@@ -109,7 +105,6 @@ function MessagingContent() {
         initialize();
     }, [searchParams, fetchAndSetData, router]);
 
-    // Real-time subscription effect
     useEffect(() => {
         if (!activeConversationId) return;
 
@@ -150,19 +145,19 @@ function MessagingContent() {
 
         const result = await sendMessage(activeConversationId, tempMessage);
         
-        if (result.error) {
+        if (result?.error) {
             toast({
                 title: 'Error sending message',
                 description: result.error,
                 variant: 'destructive',
             });
-            setNewMessage(tempMessage); // Restore message on error
+            setNewMessage(tempMessage); 
         }
         setIsSending(false);
         scrollToBottom();
     };
 
-    if (loading && !activeConversation) {
+    if (loading && !currentUser) {
         return <div className="flex h-full items-center justify-center"><p>Loading messages...</p></div>;
     }
 
@@ -170,21 +165,14 @@ function MessagingContent() {
 
     const getConversationTitle = (convo: any) => {
         if (!convo) return 'Conversation';
-        if (convo.type === 'group') return convo.name || 'Group Chat';
-        const otherParticipant = activeConversationParticipants.find(p => p.id !== currentUser.id);
-        return otherParticipant?.full_name || 'Direct Message';
+        if (convo.type === 'group' && convo.name) return convo.name;
+        if (convo.type === 'direct') {
+            const otherParticipant = activeConversationParticipants.find(p => p.id !== currentUser.id);
+            return otherParticipant?.full_name || 'Direct Message';
+        }
+        return 'Conversation';
     };
 
-    const getConversationAvatar = (otherUsers: AppUser[]) => {
-       if (otherUsers.length === 0) return `https://placehold.co/40x40.png`;
-       return otherUsers[0].avatarUrl;
-    };
-    
-    const getConversationListTitle = (convo: any) => {
-        if (convo.type === 'group' || !convo.name) return convo.name || 'Group Chat';
-        return convo.name;
-    };
-    
     return (
         <AppLayout userRole={currentUser.role}>
             <div className="grid grid-cols-[300px_1fr] h-[calc(100vh-4rem)]">
@@ -216,12 +204,16 @@ function MessagingContent() {
                 </div>
 
                 <div className="flex flex-col h-full bg-card">
-                    {activeConversation ? (
+                    {loading && activeConversationId ? (
+                         <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+                            <p>Loading conversation...</p>
+                         </div>
+                    ) : activeConversation ? (
                         <>
                             <CardHeader className="border-b">
                                 <div className="flex items-center gap-3">
                                     <Avatar>
-                                        <AvatarImage src={getConversationAvatar(activeConversationParticipants.filter(p => p.id !== currentUser.id))} />
+                                        <AvatarImage src={ `https://placehold.co/40x40.png` } />
                                         <AvatarFallback>{getConversationTitle(activeConversation).charAt(0)}</AvatarFallback>
                                     </Avatar>
                                     <div>
@@ -266,7 +258,7 @@ function MessagingContent() {
                                         autoComplete="off"
                                         disabled={isSending}
                                     />
-                                    <Button type="submit" size="icon" disabled={isSending}>
+                                    <Button type="submit" size="icon" disabled={isSending || !newMessage.trim()}>
                                         <Send className="h-4 w-4" />
                                     </Button>
                                 </form>
@@ -309,14 +301,13 @@ function NewConversationDialog({ currentUser, onConversationCreated }: { current
 
         startTransition(async () => {
             const result = await createConversation(selectedUsers, conversationType, groupName);
-
-            if (result.error) {
+            if (result?.error) {
                  toast({
                     title: "Error creating conversation",
-                    description: result.error.details || result.error.message || 'An unknown error occurred.',
+                    description: result.error.message || 'An unknown error occurred.',
                     variant: "destructive",
                 });
-            } else if (result.data) {
+            } else if (result?.data) {
                 setIsOpen(false);
                 setSelectedUsers([]);
                 setGroupName('');
@@ -326,7 +317,7 @@ function NewConversationDialog({ currentUser, onConversationCreated }: { current
     };
     
     const handleUserSelection = (checked: boolean | string, userId: string) => {
-        const isChecked = checked === true || checked === 'true';
+        const isChecked = !!checked;
         if (conversationType === 'direct') {
             setSelectedUsers(isChecked ? [userId] : []);
         } else {
