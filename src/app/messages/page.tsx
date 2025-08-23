@@ -2,7 +2,7 @@
 'use client';
 
 import { AppUser } from './types';
-import { Suspense, useEffect, useState, useTransition } from 'react';
+import { Suspense, useEffect, useState, useTransition, useCallback, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { AppLayout } from '@/components/app-layout';
@@ -31,6 +31,22 @@ function MessagingContent() {
     const searchParams = useSearchParams();
     const activeConversationId = searchParams.get('conversation_id');
     const { toast } = useToast();
+    const scrollAreaRef = useRef<HTMLDivElement>(null);
+
+    const scrollToBottom = () => {
+        if (scrollAreaRef.current) {
+            const scrollViewport = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+            if (scrollViewport) {
+                scrollViewport.scrollTop = scrollViewport.scrollHeight;
+            }
+        }
+    };
+
+    const fetchAndSetMessages = useCallback(async (convoId: string) => {
+        const fetchedMessages = await getMessages(convoId);
+        setMessages(fetchedMessages);
+        setTimeout(scrollToBottom, 100);
+    }, []);
 
     useEffect(() => {
         const initialize = async () => {
@@ -49,6 +65,9 @@ function MessagingContent() {
                     if (activeConversationId) {
                         const foundConv = convos.find(c => c.id === activeConversationId);
                         setActiveConversation(foundConv || null);
+                        if (foundConv) {
+                           await fetchAndSetMessages(activeConversationId);
+                        }
                     } else if (convos.length > 0) {
                         router.replace(`/messages?conversation_id=${convos[0].id}`);
                     }
@@ -59,32 +78,23 @@ function MessagingContent() {
             setLoading(false);
         };
         initialize();
-    }, [router, activeConversationId]);
+    }, [router, activeConversationId, fetchAndSetMessages]);
 
     useEffect(() => {
         if (!activeConversationId) {
             setMessages([]);
             setActiveConversation(null);
             return;
-        };
-
-        const fetchMessagesAndSetConversation = async () => {
-            const currentConvos = await getConversations(currentUser!.id);
-            const foundConv = currentConvos.find(c => c.id === activeConversationId);
-            setActiveConversation(foundConv || null);
-
-            const fetchedMessages = await getMessages(activeConversationId);
-            setMessages(fetchedMessages);
-        };
-
-        if (currentUser) {
-            fetchMessagesAndSetConversation();
         }
+
+        const foundConv = conversations.find(c => c.id === activeConversationId);
+        setActiveConversation(foundConv || null);
+        fetchAndSetMessages(activeConversationId);
 
         const channel = createClient().channel(`messages:${activeConversationId}`)
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `conversation_id=eq.${activeConversationId}` },
                 (payload) => {
-                     getMessages(activeConversationId).then(setMessages);
+                     fetchAndSetMessages(activeConversationId);
                 }
             )
             .subscribe();
@@ -92,32 +102,27 @@ function MessagingContent() {
         return () => {
             channel.unsubscribe();
         };
-
-    }, [activeConversationId, currentUser]);
+    }, [activeConversationId, conversations, fetchAndSetMessages]);
+    
+    useEffect(() => {
+        scrollToBottom();
+    }, [messages]);
 
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!newMessage.trim() || !activeConversationId || !currentUser) return;
         
-        const optimisticMessage = {
-            id: Date.now(), // Temporary ID
-            content: newMessage,
-            created_at: new Date().toISOString(),
-            sender_id: currentUser.id,
-            sender: currentUser,
-        };
-        setMessages(current => [...current, optimisticMessage]);
+        const tempMessage = newMessage;
         setNewMessage('');
 
-        const result = await sendMessage(activeConversationId, newMessage);
+        const result = await sendMessage(activeConversationId, tempMessage);
         if (result.error) {
             toast({
                 title: 'Error sending message',
                 description: result.error,
                 variant: 'destructive',
             });
-            // Revert optimistic update
-            setMessages(current => current.filter(m => m.id !== optimisticMessage.id));
+            setNewMessage(tempMessage); // Revert optimistic clear
         }
     };
 
@@ -130,15 +135,15 @@ function MessagingContent() {
     const getConversationTitle = (convo: any, currentUserId: string) => {
         if (!convo || !convo.participants) return 'Conversation';
         if (convo.type === 'group') return convo.name || 'Group Chat';
-        const otherParticipant = convo.participants.find((p: any) => p.id !== currentUserId);
-        return otherParticipant?.full_name || 'Direct Message';
+        const otherParticipant = convo.participants.find((p: any) => p.user.id !== currentUserId);
+        return otherParticipant?.user?.full_name || 'Direct Message';
     };
 
     const getConversationAvatar = (convo: any, currentUserId: string) => {
         if (!convo || !convo.participants) return '';
         if (convo.type === 'group') return `https://placehold.co/40x40.png`;
-        const otherParticipant = convo.participants.find((p: any) => p.id !== currentUserId);
-        return otherParticipant?.avatarUrl || `https://placehold.co/40x40.png`;
+        const otherParticipant = convo.participants.find((p: any) => p.user.id !== currentUserId);
+        return otherParticipant?.user?.avatarUrl || `https://placehold.co/40x40.png`;
     };
 
     return (
@@ -187,12 +192,12 @@ function MessagingContent() {
                                     </Avatar>
                                     <div>
                                         <p className="font-bold text-lg">{getConversationTitle(activeConversation, currentUser.id)}</p>
-                                        <p className="text-sm text-muted-foreground">{activeConversation.participants.map((p:any) => p.full_name).join(', ')}</p>
+                                        <p className="text-sm text-muted-foreground">{activeConversation.participants.map((p:any) => p.user.full_name).join(', ')}</p>
                                     </div>
                                 </div>
                             </CardHeader>
                             <CardContent className="flex-1 p-0">
-                                <ScrollArea className="h-[calc(100vh-14rem)] p-4">
+                                <ScrollArea className="h-[calc(100vh-14rem)] p-4" ref={scrollAreaRef}>
                                     {messages.map((msg) => (
                                         <div key={msg.id} className={`flex items-start gap-3 my-4 ${msg.sender_id === currentUser!.id ? 'justify-end' : ''}`}>
                                            {msg.sender_id !== currentUser!.id && (

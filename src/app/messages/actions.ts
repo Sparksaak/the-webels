@@ -19,12 +19,13 @@ export async function createConversation(
   }
   
   // For direct messages, ensure consistent participant order to find existing chats
+  const finalParticipantIds = [...new Set([user.id, ...participant_ids])];
   if (type === 'direct') {
-      participant_ids.sort();
+      finalParticipantIds.sort();
   }
   
   const { data, error } = await supabase.rpc('create_new_conversation', {
-      participant_ids: participant_ids,
+      participant_ids: finalParticipantIds,
       conversation_type: type,
       group_name: name
   });

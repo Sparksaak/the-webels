@@ -40,8 +40,10 @@ export async function getConversations(userId: string) {
     const { data: conversations, error: conversationsError } = await supabase
         .from('conversations')
         .select(`
-            *,
-            participants:conversation_participants!inner(user:users!inner(*)),
+            id,
+            type,
+            name,
+            participants:conversation_participants(user:users!inner(id, full_name, email, role)),
             messages(content, created_at)
         `)
         .in('id', conversationIds)
@@ -65,7 +67,7 @@ export async function getMessages(conversationId: string) {
   const supabase = createClient(cookieStore);
   const { data, error } = await supabase
     .from('messages')
-    .select('*, sender:users!inner(*)')
+    .select('*, sender:users!messages_sender_id_fkey(id, full_name, email, role)')
     .eq('conversation_id', conversationId)
     .order('created_at', { ascending: true });
 
@@ -73,6 +75,12 @@ export async function getMessages(conversationId: string) {
     console.error('Error fetching messages:', error);
     return [];
   }
-  return data.map((d: any) => ({...d, sender: {...d.sender, avatarUrl: `https://placehold.co/100x100.png`}}));
+  
+  return data.map((d: any) => ({
+      ...d, 
+      sender: {
+          ...d.sender, 
+          avatarUrl: `https://placehold.co/100x100.png`
+      }
+  }));
 }
-
