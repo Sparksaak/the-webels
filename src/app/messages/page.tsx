@@ -217,7 +217,7 @@ function NewConversationDialog({ currentUser, setConversations }: { currentUser:
 
     useEffect(() => {
         if(isOpen) {
-            getUsers().then(setAllUsers);
+            getUsers(currentUser.id).then(setAllUsers);
         }
     }, [isOpen, currentUser.id]);
 
@@ -226,7 +226,7 @@ function NewConversationDialog({ currentUser, setConversations }: { currentUser:
         if (conversationType === 'group' && !groupName.trim()) return;
 
         startTransition(async () => {
-            const result = await createConversation(selectedUsers, conversationType, groupName);
+            const result = await createConversation(currentUser.id, selectedUsers, conversationType, groupName);
             if (result.error) {
                 console.error("Failed to create conversation:", result.error);
             } else if (result.data) {
@@ -301,3 +301,5 @@ export default function MessagesPage() {
         </Suspense>
     );
 }
+
+    
