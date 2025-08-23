@@ -33,20 +33,35 @@ function MessagingContent() {
     const { toast } = useToast();
     const scrollAreaRef = useRef<HTMLDivElement>(null);
 
-    const scrollToBottom = () => {
+    const scrollToBottom = useCallback(() => {
         if (scrollAreaRef.current) {
             const scrollViewport = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
             if (scrollViewport) {
                 scrollViewport.scrollTop = scrollViewport.scrollHeight;
             }
         }
-    };
-
-    const fetchAndSetMessages = useCallback(async (convoId: string) => {
-        const fetchedMessages = await getMessages(convoId);
-        setMessages(fetchedMessages);
-        setTimeout(scrollToBottom, 100);
     }, []);
+
+    const fetchAndSetData = useCallback(async (user: AppUser, convoId: string | null) => {
+        const convos = await getConversations(user.id);
+        setConversations(convos);
+
+        if (convoId) {
+            const foundConv = convos.find(c => c.id === convoId);
+            setActiveConversation(foundConv || null);
+            if (foundConv) {
+                const fetchedMessages = await getMessages(convoId);
+                setMessages(fetchedMessages);
+                setTimeout(scrollToBottom, 100);
+            } else {
+                setMessages([]);
+                setActiveConversation(null);
+            }
+        } else if (convos.length > 0) {
+            router.replace(`/messages?conversation_id=${convos[0].id}`);
+        }
+    }, [router, scrollToBottom]);
+
 
     useEffect(() => {
         const initialize = async () => {
@@ -59,42 +74,23 @@ function MessagingContent() {
                 if (appUser) {
                     const enrichedAppUser = {...appUser, avatarUrl: `https://placehold.co/100x100.png`};
                     setCurrentUser(enrichedAppUser as AppUser);
-                    const convos = await getConversations(user.id);
-                    setConversations(convos);
-
-                    if (activeConversationId) {
-                        const foundConv = convos.find(c => c.id === activeConversationId);
-                        setActiveConversation(foundConv || null);
-                        if (foundConv) {
-                           await fetchAndSetMessages(activeConversationId);
-                        }
-                    } else if (convos.length > 0) {
-                        router.replace(`/messages?conversation_id=${convos[0].id}`);
-                    }
+                    await fetchAndSetData(enrichedAppUser as AppUser, activeConversationId);
                 }
             } else {
                 router.push('/login');
             }
             setLoading(false);
         };
+
         initialize();
-    }, [router, activeConversationId, fetchAndSetMessages]);
 
-    useEffect(() => {
-        if (!activeConversationId) {
-            setMessages([]);
-            setActiveConversation(null);
-            return;
-        }
-
-        const foundConv = conversations.find(c => c.id === activeConversationId);
-        setActiveConversation(foundConv || null);
-        fetchAndSetMessages(activeConversationId);
-
-        const channel = createClient().channel(`messages:${activeConversationId}`)
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `conversation_id=eq.${activeConversationId}` },
+        const channel = createClient()
+            .channel('db-messages')
+            .on('postgres_changes', 
+                { event: 'INSERT', schema: 'public', table: 'messages', filter: `conversation_id=eq.${activeConversationId}` },
                 (payload) => {
-                     fetchAndSetMessages(activeConversationId);
+                    setMessages(currentMessages => [...currentMessages, payload.new]);
+                    setTimeout(scrollToBottom, 100);
                 }
             )
             .subscribe();
@@ -102,27 +98,44 @@ function MessagingContent() {
         return () => {
             channel.unsubscribe();
         };
-    }, [activeConversationId, conversations, fetchAndSetMessages]);
-    
+
+    }, [activeConversationId, fetchAndSetData, router, scrollToBottom]);
+
+
     useEffect(() => {
         scrollToBottom();
-    }, [messages]);
+    }, [messages, scrollToBottom]);
 
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!newMessage.trim() || !activeConversationId || !currentUser) return;
         
+        const optimisticMessage = {
+            id: Date.now(), // Temporary ID
+            content: newMessage,
+            created_at: new Date().toISOString(),
+            sender_id: currentUser.id,
+            sender: {
+                ...currentUser,
+                full_name: currentUser.full_name
+            }
+        };
+
+        setMessages(currentMessages => [...currentMessages, optimisticMessage]);
         const tempMessage = newMessage;
         setNewMessage('');
 
         const result = await sendMessage(activeConversationId, tempMessage);
+        
         if (result.error) {
             toast({
                 title: 'Error sending message',
                 description: result.error,
                 variant: 'destructive',
             });
-            setNewMessage(tempMessage); // Revert optimistic clear
+            // Rollback optimistic update
+            setMessages(currentMessages => currentMessages.filter(m => m.id !== optimisticMessage.id));
+            setNewMessage(tempMessage); 
         }
     };
 
@@ -132,18 +145,18 @@ function MessagingContent() {
 
     if (!currentUser) return null;
 
-    const getConversationTitle = (convo: any, currentUserId: string) => {
+    const getConversationTitle = (convo: any) => {
         if (!convo || !convo.participants) return 'Conversation';
         if (convo.type === 'group') return convo.name || 'Group Chat';
-        const otherParticipant = convo.participants.find((p: any) => p.user.id !== currentUserId);
-        return otherParticipant?.user?.full_name || 'Direct Message';
+        const otherParticipant = convo.participants.find((p: any) => p.id !== currentUser.id);
+        return otherParticipant?.full_name || 'Direct Message';
     };
 
-    const getConversationAvatar = (convo: any, currentUserId: string) => {
+    const getConversationAvatar = (convo: any) => {
         if (!convo || !convo.participants) return '';
         if (convo.type === 'group') return `https://placehold.co/40x40.png`;
-        const otherParticipant = convo.participants.find((p: any) => p.user.id !== currentUserId);
-        return otherParticipant?.user?.avatarUrl || `https://placehold.co/40x40.png`;
+        const otherParticipant = convo.participants.find((p: any) => p.id !== currentUser.id);
+        return otherParticipant?.avatarUrl || `https://placehold.co/40x40.png`;
     };
 
     return (
@@ -163,11 +176,11 @@ function MessagingContent() {
                             >
                                 <div className="flex items-center gap-3">
                                     <Avatar>
-                                        <AvatarImage src={getConversationAvatar(convo, currentUser!.id)} />
-                                        <AvatarFallback>{getConversationTitle(convo, currentUser!.id).charAt(0)}</AvatarFallback>
+                                        <AvatarImage src={getConversationAvatar(convo)} />
+                                        <AvatarFallback>{getConversationTitle(convo).charAt(0)}</AvatarFallback>
                                     </Avatar>
                                     <div className="flex-1 overflow-hidden">
-                                        <p className="font-semibold truncate">{getConversationTitle(convo, currentUser!.id)}</p>
+                                        <p className="font-semibold truncate">{getConversationTitle(convo)}</p>
                                         <p className="text-sm text-muted-foreground truncate">{convo.last_message?.content || 'No messages yet'}</p>
                                     </div>
                                     {convo.last_message && (
@@ -187,12 +200,12 @@ function MessagingContent() {
                             <CardHeader className="border-b">
                                 <div className="flex items-center gap-3">
                                     <Avatar>
-                                        <AvatarImage src={getConversationAvatar(activeConversation, currentUser.id)} />
-                                        <AvatarFallback>{getConversationTitle(activeConversation, currentUser.id).charAt(0)}</AvatarFallback>
+                                        <AvatarImage src={getConversationAvatar(activeConversation)} />
+                                        <AvatarFallback>{getConversationTitle(activeConversation).charAt(0)}</AvatarFallback>
                                     </Avatar>
                                     <div>
-                                        <p className="font-bold text-lg">{getConversationTitle(activeConversation, currentUser.id)}</p>
-                                        <p className="text-sm text-muted-foreground">{activeConversation.participants.map((p:any) => p.user.full_name).join(', ')}</p>
+                                        <p className="font-bold text-lg">{getConversationTitle(activeConversation)}</p>
+                                        <p className="text-sm text-muted-foreground">{activeConversation.participants.map((p:any) => p.full_name).join(', ')}</p>
                                     </div>
                                 </div>
                             </CardHeader>
@@ -363,3 +376,5 @@ export default function MessagesPage() {
         </Suspense>
     );
 }
+
+    

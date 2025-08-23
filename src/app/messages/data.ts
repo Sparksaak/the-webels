@@ -43,7 +43,7 @@ export async function getConversations(userId: string) {
             id,
             type,
             name,
-            participants:conversation_participants(user:users!inner(id, full_name, email, role)),
+            participants:users(*),
             messages(content, created_at)
         `)
         .in('id', conversationIds)
@@ -53,11 +53,24 @@ export async function getConversations(userId: string) {
         console.error('Error fetching conversations details:', conversationsError);
         return [];
     }
+    
+    // Manually join participants based on conversation_participants table
+    const { data: allParticipants, error: allParticipantsError } = await supabase
+        .from('conversation_participants')
+        .select('*, user:users(*)')
+        .in('conversation_id', conversationIds);
+
+    if(allParticipantsError) {
+        console.error('Error fetching all participants', allParticipantsError);
+        return [];
+    }
 
     return conversations.map((c: any) => ({
         ...c,
         last_message: c.messages[0] || null,
-        participants: c.participants.map((p: any) => ({...p.user, avatarUrl: `https://placehold.co/100x100.png`}))
+        participants: allParticipants
+            .filter(p => p.conversation_id === c.id)
+            .map((p: any) => ({...p.user, avatarUrl: `https://placehold.co/100x100.png`}))
     }));
 }
 
@@ -67,7 +80,7 @@ export async function getMessages(conversationId: string) {
   const supabase = createClient(cookieStore);
   const { data, error } = await supabase
     .from('messages')
-    .select('*, sender:users!messages_sender_id_fkey(id, full_name, email, role)')
+    .select('*, sender:users(id, full_name, email, role)')
     .eq('conversation_id', conversationId)
     .order('created_at', { ascending: true });
 
@@ -84,3 +97,5 @@ export async function getMessages(conversationId: string) {
       }
   }));
 }
+
+    
