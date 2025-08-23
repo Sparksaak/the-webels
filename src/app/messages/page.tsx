@@ -15,7 +15,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { createConversation, sendMessage } from './actions';
-import { getUsers, getConversations } from './data';
+import { getUsers, getConversations, getMessages } from './data';
 import { MessageCircle, Plus, Send } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
@@ -41,7 +41,8 @@ function MessagingContent() {
             if (user) {
                 const { data: appUser } = await supabase.from('users').select('*').eq('id', user.id).single();
                 if (appUser) {
-                    setCurrentUser(appUser);
+                    const enrichedAppUser = {...appUser, avatarUrl: `https://placehold.co/100x100.png`};
+                    setCurrentUser(enrichedAppUser as AppUser);
                     const convos = await getConversations(user.id);
                     setConversations(convos);
 
@@ -63,27 +64,27 @@ function MessagingContent() {
     useEffect(() => {
         if (!activeConversationId) {
             setMessages([]);
+            setActiveConversation(null);
             return;
         };
 
-        const fetchMessages = async () => {
+        const fetchMessagesAndSetConversation = async () => {
+            const currentConvos = await getConversations(currentUser!.id);
+            const foundConv = currentConvos.find(c => c.id === activeConversationId);
+            setActiveConversation(foundConv || null);
+
             const fetchedMessages = await getMessages(activeConversationId);
             setMessages(fetchedMessages);
         };
-        fetchMessages();
+
+        if (currentUser) {
+            fetchMessagesAndSetConversation();
+        }
 
         const channel = createClient().channel(`messages:${activeConversationId}`)
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `conversation_id=eq.${activeConversationId}` },
                 (payload) => {
-                    const newMessage = payload.new;
-                    getMessages(activeConversationId).then(fetchedMessages => {
-                        // We need to enrich the sender info manually here
-                        const enrichedMessage = {
-                            ...newMessage,
-                            sender: activeConversation.participants.find((p:any) => p.id === newMessage.sender_id)
-                        };
-                        setMessages(currentMessages => [...currentMessages, enrichedMessage]);
-                    });
+                     getMessages(activeConversationId).then(setMessages);
                 }
             )
             .subscribe();
@@ -92,17 +93,17 @@ function MessagingContent() {
             channel.unsubscribe();
         };
 
-    }, [activeConversationId, activeConversation]);
+    }, [activeConversationId, currentUser]);
 
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!newMessage.trim() || !activeConversationId) return;
+        if (!newMessage.trim() || !activeConversationId || !currentUser) return;
         
         const optimisticMessage = {
             id: Date.now(), // Temporary ID
             content: newMessage,
             created_at: new Date().toISOString(),
-            sender_id: currentUser!.id,
+            sender_id: currentUser.id,
             sender: currentUser,
         };
         setMessages(current => [...current, optimisticMessage]);
@@ -134,7 +135,8 @@ function MessagingContent() {
     };
 
     const getConversationAvatar = (convo: any, currentUserId: string) => {
-        if (!convo || !convo.participants || convo.participants.length < 2) return '';
+        if (!convo || !convo.participants) return '';
+        if (convo.type === 'group') return `https://placehold.co/40x40.png`;
         const otherParticipant = convo.participants.find((p: any) => p.id !== currentUserId);
         return otherParticipant?.avatarUrl || `https://placehold.co/40x40.png`;
     };
@@ -262,7 +264,10 @@ function NewConversationDialog({ currentUser, setConversations }: { currentUser:
         if (conversationType === 'group' && !groupName.trim()) return;
 
         startTransition(async () => {
-            const result = await createConversation(currentUser.id, selectedUsers, conversationType, groupName);
+            // THIS IS THE FIX: Ensure the current user is always included in the participants list.
+            const allParticipantIds = [...new Set([currentUser.id, ...selectedUsers])];
+            const result = await createConversation(allParticipantIds, conversationType, groupName);
+
             if (result.error) {
                 toast({
                     title: "Error creating conversation",
@@ -281,15 +286,16 @@ function NewConversationDialog({ currentUser, setConversations }: { currentUser:
     };
     
     const handleUserSelection = (checked: boolean | string, userId: string) => {
+        const isChecked = checked === true || checked === 'true';
         if (conversationType === 'direct') {
-            if (checked) {
+            if (isChecked) {
                 setSelectedUsers([userId]);
             } else {
                 setSelectedUsers([]);
             }
         } else {
             setSelectedUsers(prev =>
-                checked ? [...prev, userId] : prev.filter(id => id !== userId)
+                isChecked ? [...prev, userId] : prev.filter(id => id !== userId)
             );
         }
     };
@@ -319,7 +325,7 @@ function NewConversationDialog({ currentUser, setConversations }: { currentUser:
                                 <Checkbox
                                     id={`user-${user.id}`}
                                     checked={selectedUsers.includes(user.id)}
-                                    onCheckedChange={(checked) => handleUserSelection(checked.toString(), user.id)}
+                                    onCheckedChange={(checked) => handleUserSelection(checked, user.id)}
                                     disabled={conversationType === 'direct' && selectedUsers.length > 0 && !selectedUsers.includes(user.id)}
                                 />
                                 <Label htmlFor={`user-${user.id}`} className="flex-1 cursor-pointer">
@@ -338,7 +344,7 @@ function NewConversationDialog({ currentUser, setConversations }: { currentUser:
                         ))}
                     </div>
                 </ScrollArea>
-                <Button onClick={handleCreateConversation} disabled={isPending} className="mt-4 w-full">
+                <Button onClick={handleCreateConversation} disabled={isPending || (selectedUsers.length === 0)} className="mt-4 w-full">
                     {isPending ? 'Creating...' : 'Start Conversation'}
                 </Button>
             </DialogContent>
@@ -353,3 +359,5 @@ export default function MessagesPage() {
         </Suspense>
     );
 }
+
+    

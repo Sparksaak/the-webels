@@ -24,18 +24,16 @@ export async function createConversation(
     return { error: 'You must be logged in to create a conversation.' };
   }
   
-  const allParticipantIds = [...new Set([user.id, ...participant_ids])];
-
-  // For direct messages, sort the IDs to ensure the check is consistent
+  // For direct messages, ensure the participant list is sorted to create a consistent check
   if (type === 'direct') {
-      allParticipantIds.sort();
+      participant_ids.sort();
   }
   
-  console.log('Attempting to call RPC with participants:', allParticipantIds);
+  console.log('Attempting to call RPC with participants:', participant_ids);
 
   // Call the new database function to handle creation
   const { data, error } = await supabase.rpc('create_new_conversation', {
-      participant_ids: allParticipantIds,
+      participant_ids: participant_ids,
       conversation_type: type,
       group_name: name
   });
@@ -78,3 +76,5 @@ export async function sendMessage(conversationId: string, content: string) {
   revalidatePath(`/messages?conversation_id=${conversationId}`);
   return { success: true };
 }
+
+    
