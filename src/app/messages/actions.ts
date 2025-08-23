@@ -20,18 +20,9 @@ export async function createConversation(
   
   const allParticipantIds = [...new Set([user.id, ...participant_ids])];
 
-  // For direct messages, check if a conversation already exists
-  if (type === 'direct' && allParticipantIds.length === 2) {
-      const { data: existingConvo, error: rpcError } = await supabase.rpc('get_conversation_for_users', { user_ids: allParticipantIds });
-
-      if (rpcError) {
-          console.error('Error checking for existing DM:', rpcError);
-          // Don't block, just log the error. The creation can proceed.
-      }
-      
-      if (existingConvo && existingConvo.length > 0) {
-          return { data: { id: existingConvo[0].id } };
-      }
+  // For direct messages, we need to sort the IDs to ensure the check is consistent
+  if (type === 'direct') {
+      allParticipantIds.sort();
   }
 
   // Call the new database function to handle creation
