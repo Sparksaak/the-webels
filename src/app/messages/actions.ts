@@ -13,13 +13,13 @@ export async function createConversation(
 ) {
   const cookieStore = cookies();
   const supabase = createClient(cookieStore);
-  const allParticipantIds = [...new Set([currentUser_id, ...participant_ids])];
+  const allParticipantIds = [...new Set([currentUser_id, ...participant_ids])].sort();
 
   // For direct messages, check if a conversation already exists
   if (type === 'direct' && allParticipantIds.length === 2) {
     const { data: existingConvos, error: existingConvoError } = await supabase
       .from('conversation_participants')
-      .select('conversation_id, user_id')
+      .select('conversation_id')
       .in('user_id', allParticipantIds);
       
     if (existingConvoError) {
@@ -27,19 +27,28 @@ export async function createConversation(
       return { error: 'Failed to check for existing conversation.' };
     }
 
-    const conversationsByUser = existingConvos.reduce((acc, { conversation_id, user_id }) => {
-        if (!acc[conversation_id]) {
-            acc[conversation_id] = [];
-        }
-        acc[conversation_id].push(user_id);
-        return acc;
-    }, {} as Record<string, string[]>);
+    if (existingConvos.length > 0) {
+        const conversationsByUser = existingConvos.reduce((acc, { conversation_id }) => {
+            if (!acc[conversation_id]) {
+                acc[conversation_id] = 0;
+            }
+            acc[conversation_id]++;
+            return acc;
+        }, {} as Record<string, number>);
 
-    for (const conversation_id in conversationsByUser) {
-        const participantIdsInDb = conversationsByUser[conversation_id];
-        const { data: convoDetails, error: convoDetailsError } = await supabase.from('conversations').select('type').eq('id', conversation_id).single();
-        if (convoDetails?.type === 'direct' && participantIdsInDb.sort().join(',') === allParticipantIds.sort().join(',')) {
-            return { data: { id: conversation_id } };
+        for (const conversation_id in conversationsByUser) {
+            if (conversationsByUser[conversation_id] === 2) {
+                 const { data: convoDetails, error: convoDetailsError } = await supabase
+                    .from('conversations')
+                    .select('id, type')
+                    .eq('id', conversation_id)
+                    .eq('type', 'direct')
+                    .single();
+
+                if (convoDetails) {
+                     return { data: { id: convoDetails.id } };
+                }
+            }
         }
     }
   }
