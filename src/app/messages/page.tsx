@@ -15,7 +15,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { createConversation, sendMessage } from './actions';
-import { getUsers, getConversations, getMessages } from './data';
+import { getUsers, getConversations, getMessages, getConversationParticipants } from './data';
 import { MessageCircle, Plus, Send } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
@@ -24,6 +24,7 @@ function MessagingContent() {
     const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
     const [conversations, setConversations] = useState<any[]>([]);
     const [activeConversation, setActiveConversation] = useState<any | null>(null);
+    const [activeConversationParticipants, setActiveConversationParticipants] = useState<AppUser[]>([]);
     const [messages, setMessages] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [newMessage, setNewMessage] = useState('');
@@ -33,7 +34,6 @@ function MessagingContent() {
     const { toast } = useToast();
     const scrollAreaRef = useRef<HTMLDivElement>(null);
     const [isSending, setIsSending] = useState(false);
-
 
     const scrollToBottom = useCallback(() => {
         setTimeout(() => {
@@ -60,15 +60,20 @@ function MessagingContent() {
             setActiveConversation(currentConvo);
 
             if (currentConvo) {
-                const fetchedMessages = await getMessages(currentConvo.id);
+                const [participants, fetchedMessages] = await Promise.all([
+                    getConversationParticipants(currentConvo.id),
+                    getMessages(currentConvo.id)
+                ]);
+                setActiveConversationParticipants(participants);
                 setMessages(fetchedMessages);
                 scrollToBottom();
             } else {
                 setMessages([]);
+                setActiveConversationParticipants([]);
             }
         } catch (error) {
-            console.error('--- Client Error: Failed to fetch conversations ---', error);
-            toast({ title: 'Error fetching conversations', description: 'Could not load your conversation list.', variant: 'destructive' });
+            console.error('--- Client Error: Failed to fetch data ---', error);
+            toast({ title: 'Error fetching data', description: 'Could not load your conversations or messages.', variant: 'destructive' });
         }
     }, [router, scrollToBottom, toast]);
 
@@ -97,7 +102,6 @@ function MessagingContent() {
         initialize();
     }, [activeConversationId, fetchAndSetData, router]);
 
-
     useEffect(() => {
         if (!activeConversationId) return;
 
@@ -124,9 +128,6 @@ function MessagingContent() {
                 scrollToBottom();
             })
             .subscribe((status, err) => {
-                if (status === 'SUBSCRIBED') {
-                    console.log('Realtime: Subscribed to messages channel.');
-                }
                 if (err) {
                     console.error('--- Client Error: Realtime subscription failed ---', err);
                 }
@@ -168,16 +169,16 @@ function MessagingContent() {
     if (!currentUser) return null;
 
     const getConversationTitle = (convo: any) => {
-        if (!convo || !convo.participants) return 'Conversation';
+        if (!convo) return 'Conversation';
         if (convo.type === 'group') return convo.name || 'Group Chat';
-        const otherParticipant = convo.participants.find((p: any) => p.id !== currentUser.id);
+        const otherParticipant = activeConversationParticipants.find((p: any) => p.id !== currentUser.id);
         return otherParticipant?.full_name || 'Direct Message';
     };
 
     const getConversationAvatar = (convo: any) => {
-        if (!convo || !convo.participants) return '';
+        if (!convo) return '';
         if (convo.type === 'group') return `https://placehold.co/40x40.png`;
-        const otherParticipant = convo.participants.find((p: any) => p.id !== currentUser.id);
+        const otherParticipant = activeConversationParticipants.find((p: any) => p.id !== currentUser.id);
         return otherParticipant?.avatarUrl || `https://placehold.co/40x40.png`;
     };
 
@@ -198,11 +199,11 @@ function MessagingContent() {
                             >
                                 <div className="flex items-center gap-3">
                                     <Avatar>
-                                        <AvatarImage src={getConversationAvatar(convo)} />
-                                        <AvatarFallback>{getConversationTitle(convo).charAt(0)}</AvatarFallback>
+                                        <AvatarImage src={ convo.type === 'group' ? `https://placehold.co/40x40.png` : `https://placehold.co/40x40.png` } />
+                                        <AvatarFallback>{(convo.name || 'C').charAt(0)}</AvatarFallback>
                                     </Avatar>
                                     <div className="flex-1 overflow-hidden">
-                                        <p className="font-semibold truncate">{getConversationTitle(convo)}</p>
+                                        <p className="font-semibold truncate">{convo.name || 'Direct Message'}</p>
                                         <p className="text-sm text-muted-foreground truncate">Select to view messages</p>
                                     </div>
                                 </div>
@@ -222,7 +223,7 @@ function MessagingContent() {
                                     </Avatar>
                                     <div>
                                         <p className="font-bold text-lg">{getConversationTitle(activeConversation)}</p>
-                                        <p className="text-sm text-muted-foreground">{activeConversation.participants.map((p:any) => p.full_name).join(', ')}</p>
+                                        <p className="text-sm text-muted-foreground">{activeConversationParticipants.map((p:any) => p.full_name).join(', ')}</p>
                                     </div>
                                 </div>
                             </CardHeader>

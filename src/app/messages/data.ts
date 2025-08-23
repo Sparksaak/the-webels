@@ -43,34 +43,38 @@ export async function getConversations(userId: string) {
     
     const { data: conversations, error: convosError } = await supabase
         .from('conversations')
-        .select(`
-            id,
-            type,
-            name,
-            participants:conversation_participants(user:users(*))
-        `)
+        .select(`id, type, name`)
         .in('id', conversationIds)
         .order('created_at', { ascending: false });
-
+        
     if (convosError) {
         console.error('--- Server Error in main conversation fetch ---', convosError);
         throw convosError;
     }
 
-    if (!conversations) {
-        return [];
+    return conversations || [];
+}
+
+export async function getConversationParticipants(conversationId: string): Promise<AppUser[]> {
+    const cookieStore = cookies();
+    const supabase = createClient(cookieStore);
+
+    const { data, error } = await supabase
+        .from('conversation_participants')
+        .select('user:users(*)')
+        .eq('conversation_id', conversationId);
+
+    if (error) {
+        console.error('--- Server Error fetching participants ---', error);
+        throw error;
     }
 
-    const detailedConversations = conversations.map(convo => {
-        return {
-            ...convo,
-            participants: (convo.participants || []).map((p: any) => ({ ...p.user, avatarUrl: `https://placehold.co/100x100.png` })),
-            // last_message is intentionally omitted to prevent server crashes.
-            last_message: null 
-        };
-    });
-
-    return detailedConversations;
+    if (!data) return [];
+    
+    return data.map((p: any) => ({
+        ...p.user,
+        avatarUrl: `https://placehold.co/100x100.png`
+    }));
 }
 
 
