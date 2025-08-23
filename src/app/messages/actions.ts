@@ -4,28 +4,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
-import { createHash } from 'crypto';
-
-// Helper function to create a deterministic v5 UUID from user IDs for a direct message
-function getDirectMessageConversationId(userId1: string, userId2: string): string {
-  const sortedIds = [userId1, userId2].sort();
-  const namespace = 'd8b2d49e-15f1-4f1e-9b2a-8f8e6a8e3f9e'; // A constant namespace UUID
-  const name = sortedIds.join('');
-  const hash = createHash('sha1').update(name).digest('hex');
-  
-  const uuid = [
-    hash.substring(0, 8),
-    hash.substring(8, 12),
-    // "5" specifies UUID version 5
-    '5' + hash.substring(13, 16),
-    // The 2 most significant bits of this byte must be 10.
-    (parseInt(hash.substring(16, 18), 16) & 0x3f | 0x80).toString(16).padStart(2, '0') + hash.substring(18, 20),
-    hash.substring(20, 32)
-  ].join('-');
-
-  return uuid;
-}
-
 
 export async function createConversation(
   currentUser_id: string,
@@ -37,37 +15,39 @@ export async function createConversation(
   const supabase = createClient(cookieStore);
   const allParticipantIds = [...new Set([currentUser_id, ...participant_ids])];
 
-  let conversationId: string;
-  
+  // For direct messages, check if a conversation already exists
   if (type === 'direct' && allParticipantIds.length === 2) {
-    conversationId = getDirectMessageConversationId(allParticipantIds[0], allParticipantIds[1]);
-  } else {
-    // For group chats, we still generate a random UUID.
-    const { data: conversationData, error: conversationError } = await supabase
-      .from('conversations')
-      .insert({ type, name: type === 'group' ? name : null })
-      .select('id')
-      .single();
+    const { data: existingConvo, error: existingConvoError } = await supabase.rpc('get_dm_conversation_participants', {
+      user_a_id: allParticipantIds[0],
+      user_b_id: allParticipantIds[1],
+    });
 
-      if (conversationError) {
-        console.error('Error creating group conversation:', conversationError);
-        return { error: 'Could not create group conversation.' };
-      }
-      conversationId = conversationData.id;
+    if (existingConvoError) {
+        console.error('Error checking for existing conversations:', existingConvoError);
+        return { error: 'Failed to check for existing conversations.' };
+    }
+    
+    if (existingConvo && existingConvo.length > 0) {
+        // Conversation already exists, just return its ID
+        return { data: { id: existingConvo[0].conversation_id }};
+    }
   }
 
-  // Use upsert for the conversation. If it exists, fine. If not, create it.
-  const { error: upsertConversationError } = await supabase
+
+  // 1. Create the conversation
+  const { data: conversationData, error: conversationError } = await supabase
     .from('conversations')
-    .upsert({ id: conversationId, type, name: type === 'group' ? name : null })
-    .select('id');
+    .insert({ type, name: type === 'group' ? name : null })
+    .select('id')
+    .single();
 
-  if (upsertConversationError) {
-      console.error('Error upserting conversation:', upsertConversationError);
-      return { error: 'Failed to create or find conversation.' };
+  if (conversationError) {
+    console.error('Error creating conversation:', conversationError);
+    return { error: 'Failed to create conversation.' };
   }
+  const conversationId = conversationData.id;
   
-  // Use upsert for participants to avoid errors if they already exist.
+  // 2. Add all participants to the new conversation
   const participantRecords = allParticipantIds.map((userId) => ({
     conversation_id: conversationId,
     user_id: userId,
@@ -75,10 +55,12 @@ export async function createConversation(
 
   const { error: participantError } = await supabase
     .from('conversation_participants')
-    .upsert(participantRecords, { onConflict: 'conversation_id, user_id' });
+    .insert(participantRecords);
 
   if (participantError) {
     console.error('Error adding participants:', participantError);
+    // Attempt to clean up the created conversation if participants fail
+    await supabase.from('conversations').delete().eq('id', conversationId);
     return { error: 'Could not add participants to conversation.' };
   }
 
@@ -109,3 +91,4 @@ export async function sendMessage(conversationId: string, content: string) {
   revalidatePath(`/messages?conversation_id=${conversationId}`);
   return { success: true };
 }
+
