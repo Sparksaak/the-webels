@@ -11,103 +11,38 @@ export async function getUsers(currentUserId: string): Promise<AppUser[]> {
   try {
     const { data, error } = await supabase.from('users').select('*').not('id', 'eq', currentUserId);
     if (error) {
-      console.error('Error fetching users:', error);
+      console.error('--- Server Error: Error fetching users ---', error);
       return [];
     }
     return data.map(u => ({...u, avatarUrl: `https://placehold.co/100x100.png`})) as AppUser[];
   } catch (e) {
-    console.error('Exception fetching users:', e);
+    console.error('--- Server CRITICAL: Exception fetching users ---', e);
     return [];
   }
 }
 
 
 export async function getConversations(userId: string) {
+    console.log(`Server: getConversations called for user: ${userId}`);
     const cookieStore = cookies();
     const supabase = createClient(cookieStore);
 
-    console.log(`Server: getConversations called for user: ${userId}`);
-
     try {
         const { data, error } = await supabase
-            .from('conversation_participants')
-            .select(`
-                conversation:conversations (
-                    id,
-                    type,
-                    name,
-                    last_message:messages (
-                        content,
-                        created_at
-                    )
-                ),
-                user:users (
-                    id,
-                    full_name,
-                    email,
-                    role
-                )
-            `)
-            .eq('user_id', userId)
-            .order('created_at', { foreignTable: 'conversations.messages', ascending: false })
-            .limit(1, { foreignTable: 'conversations.messages' });
+            .rpc('get_user_conversations_with_details', { p_user_id: userId });
 
         if (error) {
-            console.error('--- Server Error: getConversations query failed ---', error);
+            console.error('--- Server Error: get_user_conversations_with_details RPC failed ---', error);
             throw error;
         }
+        
+        console.log(`Server: Successfully fetched ${data.length} conversations via RPC.`);
+        if (!data) return [];
 
-        if (!data) {
-          console.log('Server: No conversation data returned, returning empty array.');
-          return [];
-        }
-        
-        // The query above returns one row for each participant in a conversation for the current user.
-        // We need to group these by conversation ID.
-        const conversationsMap = new Map();
-        
-        for (const participant of data) {
-            if (participant.conversation) {
-                const convoId = participant.conversation.id;
-                if (!conversationsMap.has(convoId)) {
-                    conversationsMap.set(convoId, {
-                        ...participant.conversation,
-                        participants: [],
-                        last_message: participant.conversation.last_message[0] || null,
-                    });
-                }
-            }
-        }
-        
-        // Fetch all participants for the conversations we found
-        const convoIds = Array.from(conversationsMap.keys());
-        if (convoIds.length > 0) {
-            const { data: allParticipants, error: participantsError } = await supabase
-                .from('conversation_participants')
-                .select(`
-                    conversation_id,
-                    user:users (id, full_name, email, role)
-                `)
-                .in('conversation_id', convoIds);
-
-            if (participantsError) {
-                console.error('--- Server Error: Failed to fetch all participants ---', participantsError);
-                throw participantsError;
-            }
-
-            if (allParticipants) {
-                for (const p of allParticipants) {
-                    if (conversationsMap.has(p.conversation_id)) {
-                        const user = {...p.user, avatarUrl: `https://placehold.co/100x100.png`}
-                        conversationsMap.get(p.conversation_id).participants.push(user);
-                    }
-                }
-            }
-        }
-        
-        const finalConversations = Array.from(conversationsMap.values());
-        console.log(`Server: Successfully processed ${finalConversations.length} conversations.`);
-        return finalConversations;
+        return data.map((convo: any) => ({
+            ...convo,
+            participants: (convo.participants || []).map((p:any) => ({...p, avatarUrl: `https://placehold.co/100x100.png`})),
+        }));
 
     } catch (e) {
         console.error('--- Server CRITICAL: Exception in getConversations ---', e);
