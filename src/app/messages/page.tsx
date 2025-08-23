@@ -23,6 +23,7 @@ import { useToast } from '@/hooks/use-toast';
 function MessagingContent() {
     const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
     const [conversations, setConversations] = useState<any[]>([]);
+    const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
     const [activeConversation, setActiveConversation] = useState<any | null>(null);
     const [activeConversationParticipants, setActiveConversationParticipants] = useState<AppUser[]>([]);
     const [messages, setMessages] = useState<any[]>([]);
@@ -30,7 +31,6 @@ function MessagingContent() {
     const [newMessage, setNewMessage] = useState('');
     const router = useRouter();
     const searchParams = useSearchParams();
-    const activeConversationId = searchParams.get('conversation_id');
     const { toast } = useToast();
     const scrollAreaRef = useRef<HTMLDivElement>(null);
     const [isSending, setIsSending] = useState(false);
@@ -45,42 +45,49 @@ function MessagingContent() {
     }, []);
 
     const fetchAndSetData = useCallback(async (user: AppUser, convoId: string | null) => {
+        setLoading(true);
         try {
             const convos = await getConversations(user.id);
             setConversations(convos);
 
-            let currentConvo = null;
+            let currentConvoFromList = null;
             if (convoId) {
-                currentConvo = convos.find(c => c.id === convoId) || null;
+                currentConvoFromList = convos.find(c => c.id === convoId) || null;
             } else if (convos.length > 0) {
+                // If no convoId is specified, redirect to the first one.
                 router.replace(`/messages?conversation_id=${convos[0].id}`);
-                return;
+                return; // Exit because the component will re-render with the new URL param
             }
-            
-            setActiveConversation(currentConvo);
 
-            if (currentConvo) {
+            if (currentConvoFromList) {
+                setActiveConversation(currentConvoFromList);
                 const [participants, fetchedMessages] = await Promise.all([
-                    getConversationParticipants(currentConvo.id),
-                    getMessages(currentConvo.id)
+                    getConversationParticipants(currentConvoFromList.id),
+                    getMessages(currentConvoFromList.id)
                 ]);
                 setActiveConversationParticipants(participants);
                 setMessages(fetchedMessages);
                 scrollToBottom();
             } else {
+                 // No active conversation
+                setActiveConversation(null);
                 setMessages([]);
                 setActiveConversationParticipants([]);
             }
         } catch (error) {
             console.error('--- Client Error: Failed to fetch data ---', error);
             toast({ title: 'Error fetching data', description: 'Could not load your conversations or messages.', variant: 'destructive' });
+        } finally {
+            setLoading(false);
         }
     }, [router, scrollToBottom, toast]);
 
-
+    // Main initialization and data fetching effect
     useEffect(() => {
+        const convoId = searchParams.get('conversation_id');
+        setActiveConversationId(convoId);
+
         const initialize = async () => {
-            setLoading(true);
             const supabase = createClient();
             const { data: { user } } = await supabase.auth.getUser();
 
@@ -89,19 +96,20 @@ function MessagingContent() {
                 if (appUser) {
                     const enrichedAppUser = {...appUser, avatarUrl: `https://placehold.co/100x100.png`};
                     setCurrentUser(enrichedAppUser as AppUser);
-                    await fetchAndSetData(enrichedAppUser as AppUser, activeConversationId);
+                    // Pass user and convoId to the fetching function
+                    await fetchAndSetData(enrichedAppUser as AppUser, convoId);
                 } else {
-                     router.push('/login');
+                    router.push('/login');
                 }
             } else {
                 router.push('/login');
             }
-            setLoading(false);
         };
 
         initialize();
-    }, [activeConversationId, fetchAndSetData, router]);
+    }, [searchParams, fetchAndSetData, router]);
 
+    // Real-time subscription effect
     useEffect(() => {
         if (!activeConversationId) return;
 
@@ -114,24 +122,16 @@ function MessagingContent() {
                 filter: `conversation_id=eq.${activeConversationId}` 
             }, async (payload) => {
                 const { data: senderData, error } = await createClient().from('users').select('*').eq('id', payload.new.sender_id).single();
-
-                if (error) {
-                    console.error("Error fetching sender for realtime message:", error);
-                    return;
-                }
+                if (error) return;
 
                 const fullMessage = {
                     ...payload.new,
                     sender: {...senderData, avatarUrl: `https://placehold.co/40x40.png`}
-                }
+                };
                 setMessages(currentMessages => [...currentMessages, fullMessage]);
                 scrollToBottom();
             })
-            .subscribe((status, err) => {
-                if (err) {
-                    console.error('--- Client Error: Realtime subscription failed ---', err);
-                }
-            });
+            .subscribe();
 
         return () => {
             channel.unsubscribe();
@@ -162,7 +162,7 @@ function MessagingContent() {
         scrollToBottom();
     };
 
-    if (loading) {
+    if (loading && !activeConversation) {
         return <div className="flex h-full items-center justify-center"><p>Loading messages...</p></div>;
     }
 
@@ -171,17 +171,20 @@ function MessagingContent() {
     const getConversationTitle = (convo: any) => {
         if (!convo) return 'Conversation';
         if (convo.type === 'group') return convo.name || 'Group Chat';
-        const otherParticipant = activeConversationParticipants.find((p: any) => p.id !== currentUser.id);
+        const otherParticipant = activeConversationParticipants.find(p => p.id !== currentUser.id);
         return otherParticipant?.full_name || 'Direct Message';
     };
 
-    const getConversationAvatar = (convo: any) => {
-        if (!convo) return '';
-        if (convo.type === 'group') return `https://placehold.co/40x40.png`;
-        const otherParticipant = activeConversationParticipants.find((p: any) => p.id !== currentUser.id);
-        return otherParticipant?.avatarUrl || `https://placehold.co/40x40.png`;
+    const getConversationAvatar = (otherUsers: AppUser[]) => {
+       if (otherUsers.length === 0) return `https://placehold.co/40x40.png`;
+       return otherUsers[0].avatarUrl;
     };
-
+    
+    const getConversationListTitle = (convo: any) => {
+        if (convo.type === 'group' || !convo.name) return convo.name || 'Group Chat';
+        return convo.name;
+    };
+    
     return (
         <AppLayout userRole={currentUser.role}>
             <div className="grid grid-cols-[300px_1fr] h-[calc(100vh-4rem)]">
@@ -194,12 +197,12 @@ function MessagingContent() {
                         {conversations.map((convo) => (
                             <button
                                 key={convo.id}
-                                className={`w-full text-left p-4 border-b hover:bg-muted ${activeConversation?.id === convo.id ? 'bg-muted' : ''}`}
+                                className={`w-full text-left p-4 border-b hover:bg-muted ${activeConversationId === convo.id ? 'bg-muted' : ''}`}
                                 onClick={() => router.push(`/messages?conversation_id=${convo.id}`)}
                             >
                                 <div className="flex items-center gap-3">
                                     <Avatar>
-                                        <AvatarImage src={ convo.type === 'group' ? `https://placehold.co/40x40.png` : `https://placehold.co/40x40.png` } />
+                                        <AvatarImage src={ `https://placehold.co/40x40.png` } />
                                         <AvatarFallback>{(convo.name || 'C').charAt(0)}</AvatarFallback>
                                     </Avatar>
                                     <div className="flex-1 overflow-hidden">
@@ -218,7 +221,7 @@ function MessagingContent() {
                             <CardHeader className="border-b">
                                 <div className="flex items-center gap-3">
                                     <Avatar>
-                                        <AvatarImage src={getConversationAvatar(activeConversation)} />
+                                        <AvatarImage src={getConversationAvatar(activeConversationParticipants.filter(p => p.id !== currentUser.id))} />
                                         <AvatarFallback>{getConversationTitle(activeConversation).charAt(0)}</AvatarFallback>
                                     </Avatar>
                                     <div>
