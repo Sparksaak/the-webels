@@ -172,6 +172,14 @@ function MessagingContent() {
         }
         return 'Conversation';
     };
+    
+    const getConversationListItemTitle = (convo: any) => {
+        if (convo.type === 'group' && convo.name) {
+            return convo.name;
+        }
+        return 'Direct Message';
+    };
+
 
     return (
         <AppLayout userRole={currentUser.role}>
@@ -191,10 +199,10 @@ function MessagingContent() {
                                 <div className="flex items-center gap-3">
                                     <Avatar>
                                         <AvatarImage src={ `https://placehold.co/40x40.png` } />
-                                        <AvatarFallback>{(convo.name || 'C').charAt(0)}</AvatarFallback>
+                                        <AvatarFallback>{(getConversationListItemTitle(convo)).charAt(0)}</AvatarFallback>
                                     </Avatar>
                                     <div className="flex-1 overflow-hidden">
-                                        <p className="font-semibold truncate">{convo.name || 'Direct Message'}</p>
+                                        <p className="font-semibold truncate">{getConversationListItemTitle(convo)}</p>
                                         <p className="text-sm text-muted-foreground truncate">Select to view messages</p>
                                     </div>
                                 </div>
