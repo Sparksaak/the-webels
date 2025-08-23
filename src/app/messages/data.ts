@@ -6,21 +6,21 @@ import { AppUser } from './types';
 import { cookies } from 'next/headers';
 
 export async function getUsers(currentUserId: string): Promise<AppUser[]> {
+  console.log(`Server: getUsers called, excluding user: ${currentUserId}`);
   const cookieStore = cookies();
   const supabase = createClient(cookieStore);
   try {
     const { data, error } = await supabase.from('users').select('*').not('id', 'eq', currentUserId);
     if (error) {
-      console.error('--- Server Error: Error fetching users ---', error);
-      return [];
+      console.error('--- Server Error: getUsers failed ---', error);
+      throw error;
     }
-    return data.map(u => ({...u, avatarUrl: `https://placehold.co/100x100.png`})) as AppUser[];
+    return (data || []).map(u => ({...u, avatarUrl: `https://placehold.co/100x100.png`})) as AppUser[];
   } catch (e) {
-    console.error('--- Server CRITICAL: Exception fetching users ---', e);
-    return [];
+    console.error('--- Server CRITICAL: Exception in getUsers ---', e);
+    throw e;
   }
 }
-
 
 export async function getConversations(userId: string) {
     console.log(`Server: getConversations called for user: ${userId}`);
@@ -46,7 +46,7 @@ export async function getConversations(userId: string) {
 
         const conversationIds = participant_data.map(p => p.conversation_id);
 
-        // Step 2: Fetch details for those conversations.
+        // Step 2: Fetch details for those conversations, including participants and the last message.
         const { data, error } = await supabase
             .from('conversations')
             .select(`
@@ -61,16 +61,17 @@ export async function getConversations(userId: string) {
             .limit(1, { foreignTable: 'messages' });
 
         if (error) {
-            console.error('--- Server Error: get_user_conversations_with_details RPC failed ---', error);
+            console.error('--- Server Error in main conversation fetch ---', error);
             throw error;
         }
         
         console.log(`Server: Successfully fetched ${data.length} conversations.`);
         
-        return data.map((convo: any) => ({
+        // Step 3: Process the data to be in the correct format.
+        return data.map((convo) => ({
             ...convo,
-            last_message: convo.last_message[0] || null, // The query returns an array, we only need the first item or null
-            participants: (convo.participants || []).map((p:any) => ({...p.user, avatarUrl: `https://placehold.co/100x100.png`})),
+            last_message: convo.last_message[0] || null,
+            participants: (convo.participants || []).map((p: any) => ({...p.user, avatarUrl: `https://placehold.co/100x100.png`})),
         }));
 
     } catch (e) {
