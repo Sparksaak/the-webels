@@ -18,8 +18,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { ScrollArea } from './ui/scroll-area';
 import { useEffect, useState } from 'react';
-import { createClient } from '@/lib/supabase/client';
 import type { AppUser } from '@/app/messages/types';
+import { getDashboardData } from '@/app/dashboard/actions';
 
 interface Student {
     id: string;
@@ -38,19 +38,16 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
 
   useEffect(() => {
     const fetchStudents = async () => {
-      const supabase = createClient();
-      // SECURITY DEFINER views may require specific select clauses.
-      const { data, error } = await supabase
-        .from('users')
-        .select('id, full_name, email, learning_preference')
-        .eq('role', 'student');
-
-      if (error) {
-        console.error('Error fetching students:', error);
-      } else {
-        setStudents(data as Student[]);
+      try {
+        const { students: fetchedStudents } = await getDashboardData();
+        if (fetchedStudents) {
+          setStudents(fetchedStudents as Student[]);
+        }
+      } catch (error) {
+         console.error('Error fetching students:', error);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     fetchStudents();

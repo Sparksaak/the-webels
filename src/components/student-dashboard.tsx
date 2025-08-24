@@ -17,8 +17,8 @@ import {
 } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { useEffect, useState } from 'react';
-import { createClient } from '@/lib/supabase/client';
 import type { AppUser } from '@/app/messages/types';
+import { getDashboardData } from '@/app/dashboard/actions';
 
 interface StudentDashboardProps {
     user: AppUser;
@@ -36,21 +36,16 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
 
   useEffect(() => {
     const fetchTeacher = async () => {
-      const supabase = createClient();
-      // SECURITY DEFINER views may require specific select clauses.
-      const { data, error } = await supabase
-        .from('users')
-        .select('id, full_name, email') 
-        .eq('role', 'teacher')
-        .limit(1)
-        .single();
-      
-      if (error) {
+      try {
+        const { teacher: fetchedTeacher } = await getDashboardData();
+        if (fetchedTeacher) {
+            setTeacher(fetchedTeacher as Teacher);
+        }
+      } catch (error) {
         console.error('Error fetching teacher:', error);
-      } else {
-        setTeacher(data);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     fetchTeacher();
