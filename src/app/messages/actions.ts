@@ -2,6 +2,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
+import { supabaseAdmin } from '@/lib/supabase/admin';
 import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 
@@ -27,22 +28,23 @@ export async function createConversation(formData: FormData) {
     try {
         // For direct messages, check if a conversation already exists between the two users
         if (type === 'direct' && allParticipantIds.length === 2) {
-             const { data: existing, error: existingError } = await supabase
+            // Use the admin client to query all conversations, as RLS may prevent seeing existing ones.
+            const { data: existingConversations, error: existingError } = await supabaseAdmin
                 .from('conversation_participants')
                 .select('conversation_id')
                 .in('user_id', allParticipantIds);
-
+        
             if (existingError) {
                 console.error("Error checking for existing conversations:", existingError);
-            } else if (existing) {
+            } else if (existingConversations) {
                 const conversationCounts: { [key: string]: number } = {};
-                for (const uc of existing) {
+                for (const uc of existingConversations) {
                     conversationCounts[uc.conversation_id] = (conversationCounts[uc.conversation_id] || 0) + 1;
                 }
-
+        
                 for (const convId in conversationCounts) {
                     if (conversationCounts[convId] === 2) {
-                        const { data: convDetails, error: convDetailsError } = await supabase
+                         const { data: convDetails, error: convDetailsError } = await supabaseAdmin
                             .from('conversations')
                             .select('id, type')
                             .eq('id', convId)
@@ -50,7 +52,7 @@ export async function createConversation(formData: FormData) {
                             .single();
                         
                         if (convDetails) {
-                             return { success: true, conversationId: convDetails.id };
+                            return { success: true, conversationId: convDetails.id };
                         }
                     }
                 }
@@ -132,7 +134,8 @@ export async function getUsers() {
 
     if (!currentUser) return [];
     
-    const { data: { users }, error } = await supabase.auth.admin.listUsers();
+    // Use the admin client to fetch all users, as only it has the required permissions.
+    const { data: { users }, error } = await supabaseAdmin.auth.admin.listUsers();
 
     if (error) {
         console.error('Error fetching users:', error);
