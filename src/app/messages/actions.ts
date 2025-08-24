@@ -30,31 +30,30 @@ export async function createConversation(formData: FormData) {
              const { data: existing, error: existingError } = await supabase
                 .from('conversation_participants')
                 .select('conversation_id')
-                .in('user_id', allParticipantIds)
-                .then(async ({ data: userConversations, error }) => {
-                    if (error) throw error;
-                    const conversationCounts: { [key: string]: number } = {};
-                    for (const uc of userConversations!) {
-                        conversationCounts[uc.conversation_id] = (conversationCounts[uc.conversation_id] || 0) + 1;
+                .in('user_id', allParticipantIds);
+
+            if (existingError) {
+                console.error("Error checking for existing conversations:", existingError);
+            } else if (existing) {
+                const conversationCounts: { [key: string]: number } = {};
+                for (const uc of existing) {
+                    conversationCounts[uc.conversation_id] = (conversationCounts[uc.conversation_id] || 0) + 1;
+                }
+
+                for (const convId in conversationCounts) {
+                    if (conversationCounts[convId] === 2) {
+                        const { data: convDetails, error: convDetailsError } = await supabase
+                            .from('conversations')
+                            .select('id, type')
+                            .eq('id', convId)
+                            .eq('type', 'direct')
+                            .single();
+                        
+                        if (convDetails) {
+                             return { success: true, conversationId: convDetails.id };
+                        }
                     }
-
-                    const existingConvId = Object.keys(conversationCounts).find(convId => conversationCounts[convId] === 2);
-                    
-                    if (existingConvId) {
-                         const { data: convType } = await supabase.from('conversations').select('type').eq('id', existingConvId).single();
-                         if (convType?.type === 'direct') {
-                            return { data: [{ id: existingConvId }], error: null };
-                         }
-                    }
-
-                    return { data: [], error: null };
-                });
-
-            if (existingError) throw existingError;
-            
-            if (existing && existing.length > 0) {
-                // Conversation already exists, return the existing conversation id
-                return { success: true, conversationId: existing[0].id };
+                }
             }
         }
 
@@ -132,34 +131,38 @@ export async function getUsers() {
     const { data: { user: currentUser } } = await supabase.auth.getUser();
 
     if (!currentUser) return [];
-
-    const { data: users, error } = await supabase
-        .from('users')
-        .select('id, raw_user_meta_data->>full_name as full_name, email, raw_user_meta_data->>role as role, raw_user_meta_data->>learning_preference as learning_preference')
-        .neq('id', currentUser.id);
+    
+    const { data: { users }, error } = await supabase.auth.admin.listUsers();
 
     if (error) {
         console.error('Error fetching users:', error);
         return [];
     }
-    
+
+    const allUsers = users
+      .filter(u => u.id !== currentUser.id)
+      .map(u => ({
+          id: u.id,
+          full_name: u.user_metadata.full_name || u.email,
+          email: u.email,
+          role: u.user_metadata.role as 'teacher' | 'student',
+          learning_preference: u.user_metadata.learning_preference as 'online' | 'in-person'
+      }));
+
     const currentUserRole = currentUser.user_metadata?.role;
-    
+    const currentUserLearningPreference = currentUser.user_metadata?.learning_preference;
+
     if (currentUserRole === 'teacher') {
-        return users.map((u: any) => ({ id: u.id, full_name: u.full_name, email: u.email, role: u.role as 'teacher' | 'student' }));
+        return allUsers;
     }
 
     if (currentUserRole === 'student') {
-        const studentLearningPreference = currentUser.user_metadata?.learning_preference;
-        
-        return users.filter((user: any) => {
+        return allUsers.filter(user => {
             if (user.role === 'teacher') return true;
-            if (user.role === 'student') {
-                return user.learning_preference === studentLearningPreference;
-            }
+            if (user.role === 'student' && user.learning_preference === currentUserLearningPreference) return true;
             return false;
-        }).map((u: any) => ({ id: u.id, full_name: u.full_name, email: u.email, role: u.role as 'teacher' | 'student' }));
+        });
     }
-    
+
     return [];
 }
