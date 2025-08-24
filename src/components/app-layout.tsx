@@ -1,9 +1,10 @@
 
+
 "use client";
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Megaphone } from 'lucide-react';
+import { LayoutDashboard, Megaphone, MessageSquare } from 'lucide-react';
 import {
   SidebarProvider,
   Sidebar,
@@ -60,6 +61,7 @@ export function AppLayout({ children, userRole }: AppLayoutProps) {
   const navItems = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/announcements', label: 'Announcements', icon: Megaphone },
+    { href: '/messages', label: 'Messages', icon: MessageSquare },
   ];
   
   const isActive = (href: string) => {
@@ -119,8 +121,8 @@ export function AppLayout({ children, userRole }: AppLayoutProps) {
                 </div>
                 <UserNav user={currentUser} />
             </header>
-            <main className="flex-1 overflow-auto p-4 sm:p-6">
-              <div className="mx-auto max-w-7xl">
+            <main className="flex-1 overflow-auto p-0 sm:p-0">
+              <div className="mx-auto max-w-full">
                 {children}
               </div>
             </main>

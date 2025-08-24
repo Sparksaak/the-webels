@@ -18,10 +18,10 @@ import {
   DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import type { User } from "@/lib/mock-data"
 import { logout } from "@/app/auth/actions"
+import type { AppUser } from "@/app/messages/types";
 
-export function UserNav({ user }: { user: User | null }) {
+export function UserNav({ user }: { user: AppUser | null }) {
   if (!user) {
     return null;
   }

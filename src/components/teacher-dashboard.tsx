@@ -19,14 +19,7 @@ import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { ScrollArea } from './ui/scroll-area';
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: 'teacher' | 'student';
-  avatarUrl: string;
-}
+import type { AppUser } from '@/app/messages/types';
 
 interface Student {
     id: string;
@@ -36,7 +29,7 @@ interface Student {
 }
 
 interface TeacherDashboardProps {
-    user: User;
+    user: AppUser;
 }
 
 export function TeacherDashboard({ user }: TeacherDashboardProps) {

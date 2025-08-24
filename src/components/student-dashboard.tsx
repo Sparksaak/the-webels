@@ -18,14 +18,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-
-interface AppUser {
-  id: string;
-  name: string;
-  email: string;
-  role: 'teacher' | 'student';
-  avatarUrl: string;
-}
+import type { AppUser } from '@/app/messages/types';
 
 interface StudentDashboardProps {
     user: AppUser;
