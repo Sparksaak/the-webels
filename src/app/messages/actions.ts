@@ -27,15 +27,43 @@ export async function createConversation(formData: FormData) {
     const type = allParticipantIds.length > 2 ? 'group' : 'direct';
 
     try {
-        // For direct messages, check if a conversation already exists
+        // For direct messages, check if a conversation already exists using the admin client
         if (type === 'direct' && allParticipantIds.length === 2) {
-            const { data: existing, error: existingError } = await supabaseAdmin.rpc('get_existing_conversation_direct', {
+             const { data: existing, error: existingError } = await supabaseAdmin.rpc('get_existing_conversation_direct', {
                 user_id_1: allParticipantIds[0],
                 user_id_2: allParticipantIds[1]
             });
 
-            if (existingError) console.error("Error checking for existing DM:", existingError);
-            if (existing) {
+            if (existingError) {
+                // If function doesn't exist, fallback to manual check
+                if (existingError.code === '42883') {
+                    const { data: manualCheck, error: manualCheckError } = await supabaseAdmin
+                        .from('conversation_participants')
+                        .select('conversation_id, user_id')
+                        .in('user_id', allParticipantIds);
+                    
+                    if (manualCheck) {
+                        const convsByUser = manualCheck.reduce((acc, { conversation_id, user_id }) => {
+                            if (!acc[conversation_id]) acc[conversation_id] = [];
+                            acc[conversation_id].push(user_id);
+                            return acc;
+                        }, {} as Record<string, string[]>);
+
+                        for(const convId in convsByUser) {
+                            const participants = convsByUser[convId];
+                            if (participants.length === 2 && participants.includes(allParticipantIds[0]) && participants.includes(allParticipantIds[1])) {
+                                const { data: convType } = await supabaseAdmin.from('conversations').select('type').eq('id', convId).single();
+                                if (convType?.type === 'direct') {
+                                    return { success: true, conversationId: convId };
+                                }
+                            }
+                        }
+                    }
+                } else {
+                     console.error("Error checking for existing DM:", existingError);
+                }
+            }
+             if (existing) {
                 return { success: true, conversationId: existing };
             }
         }
@@ -50,20 +78,21 @@ export async function createConversation(formData: FormData) {
         if (convError) throw convError;
         const conversationId = conversation.id;
 
-        // 2. Add the creator as the first participant (this is always allowed by RLS)
-        const { error: creatorParticipantError } = await supabase
+        // 2. Add creator first - this is allowed by the 'Allow participant to add' policy we are about to create
+         const { error: creatorParticipantError } = await supabase
             .from('conversation_participants')
             .insert({ conversation_id: conversationId, user_id: user.id });
         
         if (creatorParticipantError) throw creatorParticipantError;
 
-        // 3. Add the rest of the participants using the admin client to bypass RLS checks
+
+        // 3. Add the rest of the participants. The creator is now a participant, so RLS allows this.
         if (otherParticipantIds.length > 0) {
             const otherParticipantsData = otherParticipantIds.map(userId => ({
                 conversation_id: conversationId,
                 user_id: userId,
             }));
-            const { error: otherParticipantsError } = await supabaseAdmin
+            const { error: otherParticipantsError } = await supabase
                 .from('conversation_participants')
                 .insert(otherParticipantsData);
 
