@@ -17,7 +17,6 @@ export async function createConversation(formData: FormData) {
     const participantIds = formData.getAll('participants') as string[];
     const name = formData.get('name') as string || null;
     
-    // Add the current user to the participant list
     const allParticipantIds = [...new Set([user.id, ...participantIds])];
     const type = allParticipantIds.length > 2 ? 'group' : 'direct';
 
@@ -28,10 +27,28 @@ export async function createConversation(formData: FormData) {
     try {
         // For direct messages, check if a conversation already exists between the two users
         if (type === 'direct' && allParticipantIds.length === 2) {
-             const { data: existing, error: existingError } = await supabase.rpc('get_existing_conversation_direct', {
-                user_id_1: allParticipantIds[0],
-                user_id_2: allParticipantIds[1]
-            });
+             const { data: existing, error: existingError } = await supabase
+                .from('conversation_participants')
+                .select('conversation_id')
+                .in('user_id', allParticipantIds)
+                .then(async ({ data: userConversations, error }) => {
+                    if (error) throw error;
+                    const conversationCounts: { [key: string]: number } = {};
+                    for (const uc of userConversations!) {
+                        conversationCounts[uc.conversation_id] = (conversationCounts[uc.conversation_id] || 0) + 1;
+                    }
+
+                    const existingConvId = Object.keys(conversationCounts).find(convId => conversationCounts[convId] === 2);
+                    
+                    if (existingConvId) {
+                         const { data: convType } = await supabase.from('conversations').select('type').eq('id', existingConvId).single();
+                         if (convType?.type === 'direct') {
+                            return { data: [{ id: existingConvId }], error: null };
+                         }
+                    }
+
+                    return { data: [], error: null };
+                });
 
             if (existingError) throw existingError;
             
@@ -116,10 +133,9 @@ export async function getUsers() {
 
     if (!currentUser) return [];
 
-    // Fetch all users except the current one
     const { data: users, error } = await supabase
         .from('users')
-        .select('id, full_name, email, role, learning_preference')
+        .select('id, raw_user_meta_data->>full_name as full_name, email, raw_user_meta_data->>role as role, raw_user_meta_data->>learning_preference as learning_preference')
         .neq('id', currentUser.id);
 
     if (error) {
@@ -127,26 +143,22 @@ export async function getUsers() {
         return [];
     }
     
-    // If the current user is a teacher, they can message anyone.
-    if (currentUser.user_metadata?.role === 'teacher') {
-        return users.map(u => ({ id: u.id, full_name: u.full_name, email: u.email, role: u.role as 'teacher' | 'student' }));
+    const currentUserRole = currentUser.user_metadata?.role;
+    
+    if (currentUserRole === 'teacher') {
+        return users.map((u: any) => ({ id: u.id, full_name: u.full_name, email: u.email, role: u.role as 'teacher' | 'student' }));
     }
 
-    // If the current user is a student, filter the list.
-    if (currentUser.user_metadata?.role === 'student') {
+    if (currentUserRole === 'student') {
         const studentLearningPreference = currentUser.user_metadata?.learning_preference;
         
-        return users.filter(user => {
-            // Students can always message teachers.
+        return users.filter((user: any) => {
             if (user.role === 'teacher') return true;
-            
-            // Students can message other students with the same learning preference.
             if (user.role === 'student') {
                 return user.learning_preference === studentLearningPreference;
             }
-            
             return false;
-        }).map(u => ({ id: u.id, full_name: u.full_name, email: u.email, role: u.role as 'teacher' | 'student' }));
+        }).map((u: any) => ({ id: u.id, full_name: u.full_name, email: u.email, role: u.role as 'teacher' | 'student' }));
     }
     
     return [];
