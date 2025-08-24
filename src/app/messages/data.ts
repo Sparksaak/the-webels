@@ -9,32 +9,35 @@ export async function getConversations(userId: string): Promise<Conversation[]> 
     const cookieStore = cookies();
     const supabase = createClient(cookieStore);
 
-    const { data: conv_parts, error: conv_parts_error } = await supabase
+    // Fetch conversation IDs where the user is a participant
+    const { data: userConvos, error: userConvosError } = await supabase
         .from('conversation_participants')
         .select('conversation_id')
         .eq('user_id', userId);
-        
-    if (conv_parts_error) {
-        console.error('Error fetching conversation participants:', conv_parts_error);
-        return [];
-    }
-    
-    if (!conv_parts || conv_parts.length === 0) {
+
+    if (userConvosError) {
+        console.error('Error fetching user conversations:', userConvosError);
         return [];
     }
 
-    const conversationIds = conv_parts.map(p => p.conversation_id);
+    if (!userConvos || userConvos.length === 0) {
+        return [];
+    }
 
-    const { data: conversations, error: conversations_error } = await supabase
+    const conversationIds = userConvos.map(c => c.conversation_id);
+
+    // Fetch the details of those conversations
+    const { data: conversations, error: conversationsError } = await supabase
         .from('conversations')
-        .select(`*, participants:conversation_participants(user:users(id, full_name, email, role))`)
+        .select('*, participants:conversation_participants(user:users(id, full_name, email, role))')
         .in('id', conversationIds);
 
-    if (conversations_error) {
-        console.error('Error fetching conversations:', conversations_error);
+    if (conversationsError) {
+        console.error('Error fetching conversations:', conversationsError);
         return [];
     }
 
+    // Enhance conversations with last message and correct name
     const conversationsWithDetails = await Promise.all(
         conversations.map(async (conv) => {
             const { data: lastMessage, error: lastMessageError } = await supabase
@@ -48,17 +51,17 @@ export async function getConversations(userId: string): Promise<Conversation[]> 
             if (lastMessageError && lastMessageError.code !== 'PGRST116') { // 'PGRST116' is "No rows found"
                 console.error('Error fetching last message:', lastMessageError);
             }
-            
+
             const participants = conv.participants.map((p: any) => ({
                 id: p.user.id,
-                name: p.user.full_name,
+                name: p.user.full_name || p.user.email,
                 email: p.user.email,
                 role: p.user.role,
                 avatarUrl: `https://placehold.co/100x100.png`
             }));
 
             let conversationName = conv.name;
-            if (conv.type === 'direct') {
+            if (conv.type === 'direct' && !conv.name) {
                 const otherParticipant = participants.find(p => p.id !== userId);
                 conversationName = otherParticipant?.name || 'Direct Message';
             }
@@ -93,7 +96,7 @@ export async function getMessages(conversationId: string): Promise<Message[]> {
             id,
             content,
             created_at,
-            sender:sender_id(id, full_name, email, role)
+            sender:users(id, full_name, email, role)
         `)
         .eq('conversation_id', conversationId)
         .order('created_at', { ascending: true });
@@ -102,7 +105,7 @@ export async function getMessages(conversationId: string): Promise<Message[]> {
         console.error('Error fetching messages:', error);
         return [];
     }
-
+    
     return data.map((msg: any) => ({
         id: msg.id,
         content: msg.content,
@@ -110,7 +113,7 @@ export async function getMessages(conversationId: string): Promise<Message[]> {
         conversationId: conversationId,
         sender: {
             id: msg.sender.id,
-            name: msg.sender.full_name,
+            name: msg.sender.full_name || msg.sender.email,
             email: msg.sender.email,
             role: msg.sender.role,
             avatarUrl: `https://placehold.co/100x100.png`

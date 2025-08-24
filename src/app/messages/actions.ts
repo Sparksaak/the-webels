@@ -26,50 +26,25 @@ export async function createConversation(formData: FormData) {
     const type = allParticipantIds.length > 2 ? 'group' : 'direct';
 
     try {
-        // For direct messages, check if a conversation already exists using the admin client
+         // For direct messages, check if a conversation already exists
         if (type === 'direct' && allParticipantIds.length === 2) {
-             const { data: existingConvos, error: existingConvoError } = await supabaseAdmin
-                .rpc('get_existing_direct_conversation', {
+            const { data: existingConvo, error: existingConvoError } = await supabaseAdmin.rpc(
+                'get_existing_direct_conversation', {
                     user_id_1: allParticipantIds[0],
                     user_id_2: allParticipantIds[1]
-                });
-
-            if (existingConvoError) {
-                // The function might not exist, so we'll fall back to a manual check
-                 const { data: manualCheck, error: manualCheckError } = await supabaseAdmin
-                    .from('conversation_participants')
-                    .select('conversation_id, user_id')
-                    .in('user_id', allParticipantIds);
-
-                if (manualCheckError) throw manualCheckError;
-                
-                const convoCounts: Record<string, number> = {};
-                const userConvos: Record<string, string[]> = {};
-
-                for (const row of manualCheck) {
-                    convoCounts[row.conversation_id] = (convoCounts[row.conversation_id] || 0) + 1;
-                    if (!userConvos[row.conversation_id]) {
-                        userConvos[row.conversation_id] = [];
-                    }
-                    userConvos[row.conversation_id].push(row.user_id);
                 }
+            );
 
-                for (const convoId in convoCounts) {
-                    const participants = userConvos[convoId];
-                    if (convoCounts[convoId] === 2 && participants.every(p => allParticipantIds.includes(p))) {
-                       const {data: convoDetails, error: detailsError} = await supabaseAdmin.from('conversations').select('type').eq('id', convoId).single();
-                       if (convoDetails?.type === 'direct') {
-                         return { success: true, conversationId: convoId };
-                       }
-                    }
-                }
-            } else if (existingConvos) {
-                return { success: true, conversationId: existingConvos };
+            if (existingConvoError && !existingConvoError.message.includes('function get_existing_direct_conversation')) {
+               console.error("Error checking for existing DM:", existingConvoError);
+            }
+            if (existingConvo) {
+                return { success: true, conversationId: existingConvo };
             }
         }
 
 
-        // Use ADMIN client to bypass RLS policies that are causing recursion
+        // Use ADMIN client to bypass RLS for initial creation
         // 1. Create the conversation
         const { data: conversation, error: convError } = await supabaseAdmin
             .from('conversations')
@@ -128,13 +103,13 @@ export async function sendMessage(formData: FormData) {
 
         if (error) throw error;
         
-        revalidatePath(`/messages/${conversationId}`);
+        revalidatePath(`/messages?conversation_id=${conversationId}`);
         revalidatePath('/messages');
         return { success: true };
 
     } catch (error: any) {
         console.error('Error sending message:', error);
-        return { error: 'Could not send message.' };
+        return { error: 'Could not send message: ' + error.message };
     }
 }
 
@@ -145,7 +120,7 @@ export async function getUsers() {
 
     if (!currentUser) return [];
 
-    // Use the admin client to fetch all users
+    // Use the admin client to fetch all users securely
     const { data: { users }, error } = await supabaseAdmin.auth.admin.listUsers();
 
     if (error) {
@@ -154,25 +129,29 @@ export async function getUsers() {
     }
 
     const allUsers = users
-      .filter(u => u.id !== currentUser.id)
+      .filter(u => u.id !== currentUser.id) // Exclude current user
       .map(u => ({
           id: u.id,
           full_name: u.user_metadata.full_name || u.email,
           email: u.email,
           role: u.user_metadata.role as 'teacher' | 'student',
-          learning_preference: u.user_metadata.learning_preference as 'online' | 'in-person'
+          learning_preference: u.user_metadata.learning_preference as 'online' | 'in-person' | undefined
       }));
 
     const currentUserRole = currentUser.user_metadata?.role;
     const currentUserLearningPreference = currentUser.user_metadata?.learning_preference;
 
+    // Teachers can message anyone
     if (currentUserRole === 'teacher') {
         return allUsers;
     }
 
+    // Students can message teachers and other students in their same learning track
     if (currentUserRole === 'student') {
         return allUsers.filter(user => {
+            // Allow messaging all teachers
             if (user.role === 'teacher') return true;
+            // Allow messaging students with the same learning preference
             if (user.role === 'student' && user.learning_preference === currentUserLearningPreference) return true;
             return false;
         });
