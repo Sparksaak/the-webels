@@ -9,10 +9,10 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Send, UserPlus, MessageSquarePlus, CornerDownLeft } from 'lucide-react';
+import { Card } from '@/components/ui/card';
+import { Send, UserPlus, MessageSquarePlus } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { format, formatDistanceToNow } from 'date-fns';
+import { format, formatDistanceToNow, parseISO } from 'date-fns';
 
 import { getConversations, getMessages } from './data';
 import { sendMessage } from './actions';
@@ -30,41 +30,41 @@ function MessagingContent() {
     const [messages, setMessages] = useState<Message[]>([]);
     const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
-    const [isDialogOpen, setIsDialogOpen] = useState(false);
-
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     };
-
+    
     const fetchAndSetData = useCallback(async (user: AppUser, conversationIdToSelect?: string) => {
         setLoading(true);
         try {
             const fetchedConversations = await getConversations(user.id);
             setConversations(fetchedConversations);
 
-            let currentConversationId = conversationIdToSelect || searchParams.get('conversation_id');
-            if (!currentConversationId && fetchedConversations.length > 0) {
-                currentConversationId = fetchedConversations[0].id;
+            let idToSelect = conversationIdToSelect || searchParams.get('conversation_id');
+            if (!idToSelect && fetchedConversations.length > 0) {
+                idToSelect = fetchedConversations[0].id;
             }
 
-            if (currentConversationId) {
-                if(currentConversationId !== activeConversationId) {
-                    setActiveConversationId(currentConversationId);
-                }
-                const fetchedMessages = await getMessages(currentConversationId);
+            if (idToSelect) {
+                router.replace(`/messages?conversation_id=${idToSelect}`, { scroll: false });
+                setActiveConversationId(idToSelect);
+                const fetchedMessages = await getMessages(idToSelect);
                 setMessages(fetchedMessages);
-                if (window.location.search.split('?')[1] !== `conversation_id=${currentConversationId}`) {
-                    router.replace(`/messages?conversation_id=${currentConversationId}`, { scroll: false });
-                }
+            } else {
+                 setActiveConversationId(null);
+                 setMessages([]);
             }
         } catch (error) {
             console.error('Failed to fetch data:', error);
         } finally {
             setLoading(false);
         }
-    }, [router, searchParams, activeConversationId]);
+    }, [router, searchParams]);
+
 
     useEffect(() => {
         const getUser = async () => {
@@ -78,13 +78,24 @@ function MessagingContent() {
                     avatarUrl: `https://placehold.co/100x100.png`
                 };
                 setCurrentUser(appUser);
-                fetchAndSetData(appUser);
+                await fetchAndSetData(appUser);
             } else {
                 router.push('/login');
             }
         };
         getUser();
-    }, [supabase, router, fetchAndSetData]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    const handleConversationSelect = (conversationId: string) => {
+        setLoading(true);
+        router.push(`/messages?conversation_id=${conversationId}`, { scroll: false });
+        setActiveConversationId(conversationId);
+        getMessages(conversationId).then(fetchedMessages => {
+            setMessages(fetchedMessages);
+            setLoading(false);
+        });
+    };
 
     useEffect(() => {
         scrollToBottom();
@@ -92,12 +103,10 @@ function MessagingContent() {
     
     const handleNewMessage = useCallback(async (payload: any) => {
         const newMessagePayload = payload.new;
-        if (newMessagePayload.conversation_id !== activeConversationId) return;
 
-        // Fetch full sender data as it's not in the payload
         const { data: senderData, error } = await supabase
             .from('users')
-            .select('id, full_name, email, role')
+            .select('id, full_name, email, user_metadata')
             .eq('id', newMessagePayload.sender_id)
             .single();
 
@@ -110,7 +119,7 @@ function MessagingContent() {
             id: senderData.id,
             name: senderData.full_name || senderData.email,
             email: senderData.email!,
-            role: senderData.role,
+            role: senderData.user_metadata?.role || 'student',
             avatarUrl: `https://placehold.co/100x100.png`
         };
 
@@ -121,8 +130,30 @@ function MessagingContent() {
             conversationId: newMessagePayload.conversation_id,
             sender: sender,
         };
+        
+        if (newMessage.conversationId === activeConversationId) {
+             setMessages(currentMessages => [...currentMessages, newMessage]);
+        }
 
-        setMessages(currentMessages => [...currentMessages, newMessage]);
+        setConversations(prevConvos => {
+            return prevConvos.map(convo => {
+                if (convo.id === newMessage.conversationId) {
+                    return {
+                        ...convo,
+                        last_message: {
+                            content: newMessage.content,
+                            timestamp: newMessage.createdAt
+                        }
+                    };
+                }
+                return convo;
+            }).sort((a, b) => {
+                const aTime = a.last_message ? new Date(a.last_message.timestamp).getTime() : new Date(a.created_at).getTime();
+                const bTime = b.last_message ? new Date(b.last_message.timestamp).getTime() : new Date(b.created_at).getTime();
+                return bTime - aTime;
+            });
+        });
+        
     }, [activeConversationId, supabase]);
 
     useEffect(() => {
@@ -139,21 +170,10 @@ function MessagingContent() {
         };
     }, [supabase, handleNewMessage]);
 
-
-    const handleConversationSelect = (conversationId: string) => {
-        router.push(`/messages?conversation_id=${conversationId}`, { scroll: false });
-        setActiveConversationId(conversationId);
-        getMessages(conversationId).then(setMessages);
-    };
-
     const activeConversation = conversations.find(c => c.id === activeConversationId);
 
-    if (loading && !currentUser) {
-        return <div className="flex items-center justify-center h-full">Loading...</div>;
-    }
-    
     if (!currentUser) {
-        return null;
+        return <div className="flex items-center justify-center h-full">Loading...</div>;
     }
 
     return (
@@ -179,7 +199,7 @@ function MessagingContent() {
                             >
                                 <Avatar className="h-10 w-10 mr-3" data-ai-hint="person portrait">
                                     <AvatarImage src={conv.type === 'direct' ? conv.participants.find(p=>p.id !== currentUser.id)?.avatarUrl : 'https://placehold.co/100x100.png'} />
-                                    <AvatarFallback>{conv.name?.charAt(0)}</AvatarFallback>
+                                    <AvatarFallback>{conv.name?.charAt(0).toUpperCase()}</AvatarFallback>
                                 </Avatar>
                                 <div className="flex flex-col items-start w-full truncate">
                                     <div className="font-semibold">{conv.name}</div>
@@ -191,7 +211,7 @@ function MessagingContent() {
                                 </div>
                                  {conv.last_message && (
                                     <div className="text-xs text-muted-foreground ml-auto whitespace-nowrap">
-                                        {formatDistanceToNow(new Date(conv.last_message.timestamp), { addSuffix: true })}
+                                        {formatDistanceToNow(parseISO(conv.last_message.timestamp), { addSuffix: true })}
                                     </div>
                                 )}
                             </Button>
@@ -206,7 +226,7 @@ function MessagingContent() {
                         <header className="flex items-center gap-4 border-b bg-background px-6 h-16">
                             <Avatar data-ai-hint="person portrait">
                                  <AvatarImage src={activeConversation.type === 'direct' ? activeConversation.participants.find(p=>p.id !== currentUser.id)?.avatarUrl : 'https://placehold.co/100x100.png'} />
-                                <AvatarFallback>{activeConversation.name?.charAt(0)}</AvatarFallback>
+                                <AvatarFallback>{activeConversation.name?.charAt(0).toUpperCase()}</AvatarFallback>
                             </Avatar>
                             <div>
                                 <h3 className="text-lg font-semibold">{activeConversation.name}</h3>
@@ -219,31 +239,39 @@ function MessagingContent() {
                             </div>
                         </header>
                         <ScrollArea className="flex-1 p-4 md:p-6">
-                            <div className="space-y-6">
-                                {messages.map((msg, index) => (
-                                    <div key={index} className={cn('flex items-end gap-2', msg.sender.id === currentUser.id ? 'justify-end' : 'justify-start')}>
-                                        {msg.sender.id !== currentUser.id && (
-                                            <Avatar className="h-8 w-8" data-ai-hint="person portrait">
-                                                <AvatarImage src={msg.sender.avatarUrl} />
-                                                <AvatarFallback>{msg.sender.name?.charAt(0)}</AvatarFallback>
-                                            </Avatar>
-                                        )}
-                                        <div className={cn('max-w-xs md:max-w-md lg:max-w-lg rounded-lg p-3 text-sm', msg.sender.id === currentUser.id ? 'bg-primary text-primary-foreground' : 'bg-card')}>
-                                            <p className="font-bold mb-1">{msg.sender.name}</p>
-                                            <p>{msg.content}</p>
-                                            <p className="text-xs opacity-70 mt-1.5 text-right">{format(new Date(msg.createdAt), 'p')}</p>
+                            {loading ? (
+                                <div className="flex justify-center items-center h-full">
+                                    <p>Loading messages...</p>
+                                </div>
+                            ) : (
+                                <div className="space-y-6">
+                                    {messages.map((msg) => (
+                                        <div key={msg.id} className={cn('flex items-end gap-2', msg.sender.id === currentUser.id ? 'justify-end' : 'justify-start')}>
+                                            {msg.sender.id !== currentUser.id && (
+                                                <Avatar className="h-8 w-8" data-ai-hint="person portrait">
+                                                    <AvatarImage src={msg.sender.avatarUrl} />
+                                                    <AvatarFallback>{msg.sender.name?.charAt(0).toUpperCase()}</AvatarFallback>
+                                                </Avatar>
+                                            )}
+                                            <div className={cn('max-w-xs md:max-w-md lg:max-w-lg rounded-lg p-3 text-sm', msg.sender.id === currentUser.id ? 'bg-primary text-primary-foreground' : 'bg-card')}>
+                                                <p className="font-bold mb-1">{msg.sender.name}</p>
+                                                <p>{msg.content}</p>
+                                                <p className="text-xs opacity-70 mt-1.5 text-right">{format(parseISO(msg.createdAt), 'p')}</p>
+                                            </div>
                                         </div>
-                                    </div>
-                                ))}
-                                <div ref={messagesEndRef} />
-                            </div>
+                                    ))}
+                                    <div ref={messagesEndRef} />
+                                </div>
+                            )}
                         </ScrollArea>
                         <div className="p-4 border-t bg-background">
                             <form 
                                 ref={formRef}
                                 action={async (formData) => {
+                                    setIsSubmitting(true);
                                     await sendMessage(formData);
                                     formRef.current?.reset();
+                                    setIsSubmitting(false);
                                 }} 
                                 className="relative"
                             >
@@ -252,9 +280,10 @@ function MessagingContent() {
                                     placeholder="Type your message..."
                                     className="pr-12"
                                     autoComplete="off"
+                                    disabled={isSubmitting}
                                 />
                                 <input type="hidden" name="conversationId" value={activeConversationId || ''} />
-                                <Button type="submit" size="icon" className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8">
+                                <Button type="submit" size="icon" className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8" disabled={isSubmitting}>
                                     <Send className="h-4 w-4" />
                                 </Button>
                             </form>
@@ -262,19 +291,23 @@ function MessagingContent() {
                     </>
                 ) : (
                     <div className="flex flex-col items-center justify-center h-full text-center">
-                        <MessageSquarePlus className="h-16 w-16 text-muted-foreground" />
-                        <h2 className="mt-4 text-2xl font-semibold">Select a conversation</h2>
-                        <p className="mt-2 text-muted-foreground">Or start a new one to begin messaging.</p>
-                        <NewConversationDialog
-                            currentUser={currentUser}
-                            onConversationCreated={(conversationId) => {
-                                fetchAndSetData(currentUser, conversationId);
-                            }}
-                        >
-                            <Button className="mt-4">
-                                <UserPlus className="mr-2 h-4 w-4" /> New Conversation
-                            </Button>
-                        </NewConversationDialog>
+                         {loading ? (<p>Loading conversations...</p>) : (
+                            <>
+                                <MessageSquarePlus className="h-16 w-16 text-muted-foreground" />
+                                <h2 className="mt-4 text-2xl font-semibold">No Conversation Selected</h2>
+                                <p className="mt-2 text-muted-foreground">Select a conversation or start a new one.</p>
+                                <NewConversationDialog
+                                    currentUser={currentUser}
+                                    onConversationCreated={(conversationId) => {
+                                        fetchAndSetData(currentUser, conversationId);
+                                    }}
+                                >
+                                    <Button className="mt-4">
+                                        <UserPlus className="mr-2 h-4 w-4" /> New Conversation
+                                    </Button>
+                                </NewConversationDialog>
+                            </>
+                        )}
                     </div>
                 )}
             </div>
@@ -284,7 +317,7 @@ function MessagingContent() {
 
 export default function MessagesPage() {
     return (
-        <Suspense fallback={<div>Loading...</div>}>
+        <Suspense fallback={<div className="flex items-center justify-center h-full">Loading Messaging...</div>}>
             <AppLayout userRole="student">
                 <MessagingContent />
             </AppLayout>
