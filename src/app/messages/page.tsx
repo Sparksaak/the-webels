@@ -30,6 +30,7 @@ function MessagingContent() {
     const [messages, setMessages] = useState<Message[]>([]);
     const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
+    const [loadingMessages, setLoadingMessages] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -39,7 +40,6 @@ function MessagingContent() {
     };
     
     const fetchAndSetData = useCallback(async (user: AppUser, conversationIdToSelect?: string) => {
-        setLoading(true);
         try {
             const fetchedConversations = await getConversations(user.id);
             setConversations(fetchedConversations);
@@ -50,8 +50,11 @@ function MessagingContent() {
             }
 
             if (idToSelect) {
-                router.replace(`/messages?conversation_id=${idToSelect}`, { scroll: false });
                 setActiveConversationId(idToSelect);
+                if (searchParams.get('conversation_id') !== idToSelect) {
+                    router.replace(`/messages?conversation_id=${idToSelect}`, { scroll: false });
+                }
+                setLoadingMessages(true);
                 const fetchedMessages = await getMessages(idToSelect);
                 setMessages(fetchedMessages);
             } else {
@@ -62,12 +65,13 @@ function MessagingContent() {
             console.error('Failed to fetch data:', error);
         } finally {
             setLoading(false);
+            setLoadingMessages(false);
         }
     }, [router, searchParams]);
 
-
     useEffect(() => {
-        const getUser = async () => {
+        const getUserAndData = async () => {
+            setLoading(true);
             const { data: { user } } = await supabase.auth.getUser();
             if (user) {
                 const appUser: AppUser = {
@@ -81,20 +85,25 @@ function MessagingContent() {
                 await fetchAndSetData(appUser);
             } else {
                 router.push('/login');
+                setLoading(false);
             }
         };
-        getUser();
+        getUserAndData();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    const handleConversationSelect = (conversationId: string) => {
-        setLoading(true);
-        router.push(`/messages?conversation_id=${conversationId}`, { scroll: false });
+    const handleConversationSelect = async (conversationId: string) => {
+        setLoadingMessages(true);
         setActiveConversationId(conversationId);
-        getMessages(conversationId).then(fetchedMessages => {
+        router.push(`/messages?conversation_id=${conversationId}`, { scroll: false });
+        try {
+            const fetchedMessages = await getMessages(conversationId);
             setMessages(fetchedMessages);
-            setLoading(false);
-        });
+        } catch (error) {
+            console.error("Failed to load messages", error)
+        } finally {
+            setLoadingMessages(false);
+        }
     };
 
     useEffect(() => {
@@ -106,7 +115,7 @@ function MessagingContent() {
 
         const { data: senderData, error } = await supabase
             .from('users')
-            .select('id, full_name, email, user_metadata')
+            .select('id, full_name, email, role')
             .eq('id', newMessagePayload.sender_id)
             .single();
 
@@ -119,7 +128,7 @@ function MessagingContent() {
             id: senderData.id,
             name: senderData.full_name || senderData.email,
             email: senderData.email!,
-            role: senderData.user_metadata?.role || 'student',
+            role: senderData.role || 'student',
             avatarUrl: `https://placehold.co/100x100.png`
         };
 
@@ -172,8 +181,12 @@ function MessagingContent() {
 
     const activeConversation = conversations.find(c => c.id === activeConversationId);
 
+    if (loading) {
+        return <div className="flex items-center justify-center h-full">Loading conversations...</div>;
+    }
+
     if (!currentUser) {
-        return <div className="flex items-center justify-center h-full">Loading...</div>;
+        return <div className="flex items-center justify-center h-full">Loading user...</div>;
     }
 
     return (
@@ -239,7 +252,7 @@ function MessagingContent() {
                             </div>
                         </header>
                         <ScrollArea className="flex-1 p-4 md:p-6">
-                            {loading ? (
+                            {loadingMessages ? (
                                 <div className="flex justify-center items-center h-full">
                                     <p>Loading messages...</p>
                                 </div>
@@ -291,11 +304,11 @@ function MessagingContent() {
                     </>
                 ) : (
                     <div className="flex flex-col items-center justify-center h-full text-center">
-                         {loading ? (<p>Loading conversations...</p>) : (
+                         {conversations.length === 0 ? (
                             <>
                                 <MessageSquarePlus className="h-16 w-16 text-muted-foreground" />
-                                <h2 className="mt-4 text-2xl font-semibold">No Conversation Selected</h2>
-                                <p className="mt-2 text-muted-foreground">Select a conversation or start a new one.</p>
+                                <h2 className="mt-4 text-2xl font-semibold">Start a Conversation</h2>
+                                <p className="mt-2 text-muted-foreground">You don't have any messages yet.</p>
                                 <NewConversationDialog
                                     currentUser={currentUser}
                                     onConversationCreated={(conversationId) => {
@@ -306,6 +319,12 @@ function MessagingContent() {
                                         <UserPlus className="mr-2 h-4 w-4" /> New Conversation
                                     </Button>
                                 </NewConversationDialog>
+                            </>
+                        ) : (
+                             <>
+                                <MessageSquarePlus className="h-16 w-16 text-muted-foreground" />
+                                <h2 className="mt-4 text-2xl font-semibold">No Conversation Selected</h2>
+                                <p className="mt-2 text-muted-foreground">Select a conversation from the list to view messages.</p>
                             </>
                         )}
                     </div>
@@ -324,3 +343,5 @@ export default function MessagesPage() {
         </Suspense>
     )
 }
+
+    
