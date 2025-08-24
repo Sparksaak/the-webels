@@ -1,8 +1,5 @@
 
-'use server';
-
 import { createClient } from '@supabase/supabase-js';
-import { cookies } from 'next/headers';
 
 // Note: supabaseAdmin uses the SERVICE_ROLE_KEY which you must only use in a secure server environment.
 // Never expose this key to the client-side.
