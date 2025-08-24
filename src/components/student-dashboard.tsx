@@ -37,9 +37,10 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
   useEffect(() => {
     const fetchTeacher = async () => {
       const supabase = createClient();
+      // SECURITY DEFINER views may require specific select clauses.
       const { data, error } = await supabase
         .from('users')
-        .select('id, full_name, email')
+        .select('id, full_name, email') 
         .eq('role', 'teacher')
         .limit(1)
         .single();
@@ -56,7 +57,7 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
   }, []);
   
   return (
-    <div className="flex flex-col gap-8">
+    <div className="p-4 sm:p-6 md:p-8 space-y-8">
         <div>
             <h1 className="text-3xl font-bold tracking-tight">Student Dashboard</h1>
             <p className="text-muted-foreground">Welcome back, {user.name}!</p>

@@ -121,7 +121,7 @@ export function AppLayout({ children, userRole }: AppLayoutProps) {
                 </div>
                 <UserNav user={currentUser} />
             </header>
-            <main className="flex-1 overflow-auto p-0 sm:p-0">
+            <main className="flex-1 overflow-auto">
               <div className="mx-auto max-w-full">
                 {children}
               </div>
