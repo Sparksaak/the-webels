@@ -16,27 +16,28 @@ export async function createConversation(formData: FormData) {
 
     const participantIds = formData.getAll('participants') as string[];
     const name = formData.get('name') as string || null;
-    const type = participantIds.length > 1 ? 'group' : 'direct';
+    
+    // Add the current user to the participant list
+    const allParticipantIds = [...new Set([user.id, ...participantIds])];
+    const type = allParticipantIds.length > 2 ? 'group' : 'direct';
 
     if (participantIds.length === 0) {
         return { error: 'You must select at least one participant.' };
     }
-    
-    // Add the current user to the participant list
-    const allParticipantIds = [...new Set([user.id, ...participantIds])];
 
     try {
-        // For direct messages, check if a conversation already exists
+        // For direct messages, check if a conversation already exists between the two users
         if (type === 'direct' && allParticipantIds.length === 2) {
-            const { data: existing, error: existingError } = await supabase.rpc('get_existing_conversation', {
-                user_ids: allParticipantIds
+             const { data: existing, error: existingError } = await supabase.rpc('get_existing_conversation_direct', {
+                user_id_1: allParticipantIds[0],
+                user_id_2: allParticipantIds[1]
             });
 
             if (existingError) throw existingError;
-
-            if (existing) {
-                // Conversation already exists, redirect or return the existing conversation id
-                return { success: true, conversationId: existing };
+            
+            if (existing && existing.length > 0) {
+                // Conversation already exists, return the existing conversation id
+                return { success: true, conversationId: existing[0].id };
             }
         }
 
@@ -98,7 +99,8 @@ export async function sendMessage(formData: FormData) {
 
         if (error) throw error;
         
-        revalidatePath(`/messages`);
+        revalidatePath(`/messages/${conversationId}`);
+        revalidatePath('/messages');
         return { success: true };
 
     } catch (error: any) {
@@ -114,39 +116,38 @@ export async function getUsers() {
 
     if (!currentUser) return [];
 
+    // Fetch all users except the current one
     const { data: users, error } = await supabase
         .from('users')
-        .select('id, full_name, email, role, user_metadata->>learning_preference as learning_preference')
+        .select('id, full_name, email, role, learning_preference')
         .neq('id', currentUser.id);
 
     if (error) {
         console.error('Error fetching users:', error);
         return [];
     }
-
-    const { data: teacherData, error: teacherError } = await supabase
-        .from('users')
-        .select('id, full_name, email, role')
-        .eq('role', 'teacher')
-        .single();
-
-    if (teacherError && teacherError.code !== 'PGRST116') { // Ignore 'No rows found' error
-        console.error('Error fetching teacher:', teacherError);
-    }
     
-    const teacher = teacherData;
-    const studentLearningPreference = currentUser.user_metadata?.learning_preference;
+    // If the current user is a teacher, they can message anyone.
+    if (currentUser.user_metadata?.role === 'teacher') {
+        return users.map(u => ({ id: u.id, full_name: u.full_name, email: u.email, role: u.role as 'teacher' | 'student' }));
+    }
 
-    if (currentUser.role === 'student') {
-         return users.filter(user => {
-            if (user.role === 'teacher') return true; // Always allow messaging the teacher
+    // If the current user is a student, filter the list.
+    if (currentUser.user_metadata?.role === 'student') {
+        const studentLearningPreference = currentUser.user_metadata?.learning_preference;
+        
+        return users.filter(user => {
+            // Students can always message teachers.
+            if (user.role === 'teacher') return true;
+            
+            // Students can message other students with the same learning preference.
             if (user.role === 'student') {
                 return user.learning_preference === studentLearningPreference;
             }
+            
             return false;
-        });
+        }).map(u => ({ id: u.id, full_name: u.full_name, email: u.email, role: u.role as 'teacher' | 'student' }));
     }
-
-    // Teacher can message anyone
-    return users.map(u => ({ id: u.id, full_name: u.full_name, email: u.email, role: u.role as 'teacher' | 'student' }));
+    
+    return [];
 }
