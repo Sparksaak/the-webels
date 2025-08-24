@@ -23,48 +23,32 @@ export async function createConversation(formData: FormData) {
     }
     
     const allParticipantIds = [...new Set([user.id, ...participantIds])];
-    const otherParticipantIds = participantIds.filter(id => id !== user.id);
     const type = allParticipantIds.length > 2 ? 'group' : 'direct';
 
     try {
-        // For direct messages, check if a conversation already exists using the admin client
+        // For direct messages, check if a conversation already exists
         if (type === 'direct' && allParticipantIds.length === 2) {
-             const { data: existing, error: existingError } = await supabaseAdmin.rpc('get_existing_conversation_direct', {
-                user_id_1: allParticipantIds[0],
-                user_id_2: allParticipantIds[1]
-            });
+            const { data: existingConvos, error: existingConvoError } = await supabaseAdmin
+                .from('conversation_participants')
+                .select('conversation_id')
+                .in('user_id', allParticipantIds);
 
-            if (existingError) {
-                // If function doesn't exist, fallback to manual check
-                if (existingError.code === '42883') {
-                    const { data: manualCheck, error: manualCheckError } = await supabaseAdmin
-                        .from('conversation_participants')
-                        .select('conversation_id, user_id')
-                        .in('user_id', allParticipantIds);
-                    
-                    if (manualCheck) {
-                        const convsByUser = manualCheck.reduce((acc, { conversation_id, user_id }) => {
-                            if (!acc[conversation_id]) acc[conversation_id] = [];
-                            acc[conversation_id].push(user_id);
-                            return acc;
-                        }, {} as Record<string, string[]>);
+            if (existingConvoError) throw existingConvoError;
 
-                        for(const convId in convsByUser) {
-                            const participants = convsByUser[convId];
-                            if (participants.length === 2 && participants.includes(allParticipantIds[0]) && participants.includes(allParticipantIds[1])) {
-                                const { data: convType } = await supabaseAdmin.from('conversations').select('type').eq('id', convId).single();
-                                if (convType?.type === 'direct') {
-                                    return { success: true, conversationId: convId };
-                                }
-                            }
-                        }
+            if (existingConvos.length > 0) {
+                const convoCounts = existingConvos.reduce((acc, { conversation_id }) => {
+                    acc[conversation_id] = (acc[conversation_id] || 0) + 1;
+                    return acc;
+                }, {} as Record<string, number>);
+
+                const existingDmId = Object.keys(convoCounts).find(convoId => convoCounts[convoId] === 2);
+                
+                if(existingDmId) {
+                    const {data: convoData, error: convoError} = await supabaseAdmin.from('conversations').select('type').eq('id', existingDmId).single();
+                    if(convoData && convoData.type === 'direct') {
+                        return { success: true, conversationId: existingDmId };
                     }
-                } else {
-                     console.error("Error checking for existing DM:", existingError);
                 }
-            }
-             if (existing) {
-                return { success: true, conversationId: existing };
             }
         }
 
@@ -78,26 +62,18 @@ export async function createConversation(formData: FormData) {
         if (convError) throw convError;
         const conversationId = conversation.id;
 
-        // 2. Add creator first - this is allowed by the 'Allow participant to add' policy we are about to create
-         const { error: creatorParticipantError } = await supabase
-            .from('conversation_participants')
-            .insert({ conversation_id: conversationId, user_id: user.id });
+        // 2. Add all participants. The RLS "Allow creator to insert participants" allows this.
+        const participantsData = allParticipantIds.map(userId => ({
+            conversation_id: conversationId,
+            user_id: userId,
+        }));
         
-        if (creatorParticipantError) throw creatorParticipantError;
+        // We use the standard client here, relying on the RLS we just created.
+        const { error: participantsError } = await supabase
+            .from('conversation_participants')
+            .insert(participantsData);
 
-
-        // 3. Add the rest of the participants. The creator is now a participant, so RLS allows this.
-        if (otherParticipantIds.length > 0) {
-            const otherParticipantsData = otherParticipantIds.map(userId => ({
-                conversation_id: conversationId,
-                user_id: userId,
-            }));
-            const { error: otherParticipantsError } = await supabase
-                .from('conversation_participants')
-                .insert(otherParticipantsData);
-
-            if (otherParticipantsError) throw otherParticipantsError;
-        }
+        if (participantsError) throw participantsError;
 
         revalidatePath('/messages');
         return { success: true, conversationId: conversationId };
