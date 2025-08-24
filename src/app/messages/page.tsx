@@ -39,36 +39,10 @@ function MessagingContent() {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     };
     
-    const fetchAndSetData = useCallback(async (user: AppUser, conversationIdToSelect?: string) => {
-        setLoading(true);
-        try {
-            const fetchedConversations = await getConversations(user.id);
-            setConversations(fetchedConversations);
-
-            let idToSelect = conversationIdToSelect || searchParams.get('conversation_id');
-            if (!idToSelect && fetchedConversations.length > 0) {
-                idToSelect = fetchedConversations[0].id;
-            }
-
-            if (idToSelect) {
-                await handleConversationSelect(idToSelect, false); // false to avoid pushing router history again
-            } else {
-                 setActiveConversationId(null);
-                 setMessages([]);
-            }
-        } catch (error) {
-            console.error('Failed to fetch data:', error);
-        } finally {
-            setLoading(false);
-        }
-    }, [router, searchParams]); // handleConversationSelect is memoized, so it's safe to exclude.
-
-    const handleConversationSelect = useCallback(async (conversationId: string, pushHistory = true) => {
+    const handleConversationSelect = useCallback(async (conversationId: string) => {
         setLoadingMessages(true);
         setActiveConversationId(conversationId);
-        if (pushHistory) {
-            router.push(`/messages?conversation_id=${conversationId}`, { scroll: false });
-        }
+        router.push(`/messages?conversation_id=${conversationId}`, { scroll: false });
         try {
             const fetchedMessages = await getMessages(conversationId);
             setMessages(fetchedMessages);
@@ -78,6 +52,30 @@ function MessagingContent() {
             setLoadingMessages(false);
         }
     }, [router]);
+
+    const fetchInitialData = useCallback(async (user: AppUser) => {
+        setLoading(true);
+        try {
+            const fetchedConversations = await getConversations(user.id);
+            setConversations(fetchedConversations);
+            
+            const conversationIdFromUrl = searchParams.get('conversation_id');
+            
+            if (conversationIdFromUrl && fetchedConversations.some(c => c.id === conversationIdFromUrl)) {
+                 await handleConversationSelect(conversationIdFromUrl);
+            } else if (fetchedConversations.length > 0) {
+                // Do not auto-select a conversation to allow for "No conversation selected" state
+                setActiveConversationId(null);
+                setMessages([]);
+            }
+
+        } catch (error) {
+            console.error('Failed to fetch initial data:', error);
+        } finally {
+            setLoading(false);
+        }
+    }, [searchParams, handleConversationSelect]);
+
 
     useEffect(() => {
         const getUserAndData = async () => {
@@ -91,15 +89,14 @@ function MessagingContent() {
                     avatarUrl: `https://placehold.co/100x100.png`
                 };
                 setCurrentUser(appUser);
-                await fetchAndSetData(appUser);
+                await fetchInitialData(appUser);
             } else {
                 router.push('/login');
-                setLoading(false);
             }
         };
         getUserAndData();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [fetchInitialData, router, supabase.auth]);
+
 
     useEffect(() => {
         scrollToBottom();
@@ -135,14 +132,17 @@ function MessagingContent() {
             sender: sender,
         };
         
+        // If the new message belongs to the currently active conversation, add it to the view
         if (newMessage.conversationId === activeConversationId) {
              setMessages(currentMessages => [...currentMessages, newMessage]);
         }
-
-        // Update the conversation in the list with the new last message
+        
+        // Update the conversation list with the new last message and re-sort
         setConversations(prevConvos => {
+            let convoExists = false;
             const updatedConvos = prevConvos.map(convo => {
                 if (convo.id === newMessage.conversationId) {
+                    convoExists = true;
                     return {
                         ...convo,
                         last_message: {
@@ -153,15 +153,25 @@ function MessagingContent() {
                 }
                 return convo;
             });
+            
+            // If the conversation is new and not in the list, fetch all conversations again
+            if (!convoExists) {
+                if(currentUser) fetchInitialData(currentUser);
+                return prevConvos;
+            }
+
             // Re-sort the conversations to bring the updated one to the top
             return updatedConvos.sort((a, b) => {
-                const aTime = a.last_message ? new Date(a.last_message.timestamp).getTime() : new Date(a.created_at).getTime();
-                const bTime = b.last_message ? new Date(b.last_message.timestamp).getTime() : new Date(b.created_at).getTime();
-                return bTime - aTime;
+                 const aTime = a.last_message ? new Date(a.last_message.timestamp).getTime() : 0;
+                 const bTime = b.last_message ? new Date(b.last_message.timestamp).getTime() : 0;
+                 if (aTime > 0 && bTime > 0) return bTime - aTime;
+                 if (aTime > 0) return -1;
+                 if (bTime > 0) return 1;
+                 return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
             });
         });
         
-    }, [activeConversationId, supabase]);
+    }, [activeConversationId, supabase, currentUser, fetchInitialData]);
 
     useEffect(() => {
         const channel = supabase
@@ -194,9 +204,13 @@ function MessagingContent() {
                     <h2 className="text-xl font-bold">Chats</h2>
                     <NewConversationDialog
                         currentUser={currentUser}
-                        onConversationCreated={(conversationId) => {
+                        onConversationCreated={async (conversationId) => {
                             if (currentUser) {
-                                fetchAndSetData(currentUser, conversationId);
+                                // Re-fetch all conversations to include the new one
+                                const fetchedConversations = await getConversations(currentUser.id);
+                                setConversations(fetchedConversations);
+                                // Automatically select the new conversation
+                                await handleConversationSelect(conversationId);
                             }
                         }}
                     />
@@ -246,7 +260,7 @@ function MessagingContent() {
                                 <p className="text-sm text-muted-foreground">
                                     {activeConversation.type === 'group' 
                                         ? `${activeConversation.participants.length} members`
-                                        : `Direct message with ${activeConversation.participants.find(p => p.id !== currentUser.id)?.name}`
+                                        : `Direct message`
                                     }
                                 </p>
                             </div>
@@ -320,9 +334,11 @@ function MessagingContent() {
                                 <p className="mt-2 text-muted-foreground">You don't have any messages yet.</p>
                                 <NewConversationDialog
                                     currentUser={currentUser}
-                                    onConversationCreated={(conversationId) => {
+                                    onConversationCreated={async (conversationId) => {
                                         if (currentUser) {
-                                            fetchAndSetData(currentUser, conversationId);
+                                            const fetchedConversations = await getConversations(currentUser.id);
+                                            setConversations(fetchedConversations);
+                                            await handleConversationSelect(conversationId);
                                         }
                                     }}
                                 >

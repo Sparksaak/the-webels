@@ -182,7 +182,7 @@ export function NewConversationDialog({ currentUser, onConversationCreated, chil
                 )}
             </div>
             <DialogFooter>
-            <Button type="submit">Start Conversation</Button>
+            <Button type="submit" disabled={selectedUsers.length === 0}>Start Conversation</Button>
             </DialogFooter>
         </form>
       </DialogContent>

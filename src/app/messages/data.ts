@@ -9,7 +9,6 @@ export async function getConversations(userId: string): Promise<Conversation[]> 
     const cookieStore = cookies();
     const supabase = createClient(cookieStore);
 
-    // Fetch conversations the user is a part of
     const { data: userConvos, error: userConvosError } = await supabase
         .from('conversation_participants')
         .select('conversation_id')
@@ -26,7 +25,6 @@ export async function getConversations(userId: string): Promise<Conversation[]> 
 
     const conversationIds = userConvos.map(c => c.conversation_id);
 
-    // Fetch conversation details including participants
     const { data: conversations, error: conversationsError } = await supabase
         .from('conversations')
         .select(`
@@ -38,35 +36,32 @@ export async function getConversations(userId: string): Promise<Conversation[]> 
                 user:users(id, full_name, email, role)
             )
         `)
-        .in('id', conversationIds);
+        .in('id', conversationIds)
+        .order('created_at', { ascending: false });
 
     if (conversationsError) {
         console.error('Error fetching conversation details:', conversationsError);
         return [];
     }
-
-    // Fetch last message for each conversation in a single query
-    const { data: lastMessages, error: lastMessagesError } = await supabase.rpc('get_last_message_for_conversations', {
-        c_ids: conversationIds
-    });
-
-    if (lastMessagesError) {
-        console.error('Error fetching last messages:', lastMessagesError);
-        // We can continue without last messages if this fails
-    }
     
+    // Separately fetch last messages to avoid complex query issues.
+    const { data: lastMessagesData, error: lastMessageError } = await supabase
+        .from('last_messages_view')
+        .select('*')
+        .in('conversation_id', conversationIds);
+
+    if (lastMessageError) {
+        console.error("Error fetching last messages", lastMessageError);
+    }
+
     const lastMessageMap = new Map<string, { content: string, timestamp: string }>();
-    if (lastMessages) {
-        for (const msg of lastMessages) {
-            lastMessageMap.set(msg.conversation_id, {
-                content: msg.content,
-                timestamp: msg.created_at,
-            });
+    if (lastMessagesData) {
+        for (const msg of lastMessagesData) {
+            lastMessageMap.set(msg.conversation_id, { content: msg.content, timestamp: msg.created_at });
         }
     }
-
-    // Map and format conversation data
-    const conversationsWithDetails = conversations.map((conv) => {
+    
+    const detailedConversations = conversations.map((conv) => {
         const participants = conv.participants.map((p: any) => ({
             id: p.user.id,
             name: p.user.full_name || p.user.email,
@@ -74,9 +69,8 @@ export async function getConversations(userId: string): Promise<Conversation[]> 
             role: p.user.role,
             avatarUrl: `https://placehold.co/100x100.png`
         }));
-
+        
         let conversationName = conv.name;
-        // For direct messages, derive the name from the other participant
         if (conv.type === 'direct' && !conv.name) {
             const otherParticipant = participants.find(p => p.id !== userId);
             conversationName = otherParticipant?.name || 'Direct Message';
@@ -85,20 +79,24 @@ export async function getConversations(userId: string): Promise<Conversation[]> 
         return {
             ...conv,
             name: conversationName,
-            participants: participants,
+            participants,
             last_message: lastMessageMap.get(conv.id) || null,
         };
     });
 
-    // Sort conversations: those with messages are sorted by last message time,
-    // and those without are sorted by creation time.
-    conversationsWithDetails.sort((a, b) => {
-        const aTime = a.last_message ? new Date(a.last_message.timestamp).getTime() : new Date(a.created_at).getTime();
-        const bTime = b.last_message ? new Date(b.last_message.timestamp).getTime() : new Date(b.created_at).getTime();
-        return bTime - aTime;
+    // Sort conversations: those with messages first, sorted by time, then those without, by creation time.
+    detailedConversations.sort((a, b) => {
+        const aTime = a.last_message ? new Date(a.last_message.timestamp).getTime() : 0;
+        const bTime = b.last_message ? new Date(b.last_message.timestamp).getTime() : 0;
+
+        if (aTime > 0 && bTime > 0) return bTime - aTime;
+        if (aTime > 0) return -1;
+        if (bTime > 0) return 1;
+
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
 
-    return conversationsWithDetails as Conversation[];
+    return detailedConversations as Conversation[];
 }
 
 
