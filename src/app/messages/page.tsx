@@ -40,6 +40,7 @@ function MessagingContent() {
     };
     
     const fetchAndSetData = useCallback(async (user: AppUser, conversationIdToSelect?: string) => {
+        setLoading(true);
         try {
             const fetchedConversations = await getConversations(user.id);
             setConversations(fetchedConversations);
@@ -50,13 +51,7 @@ function MessagingContent() {
             }
 
             if (idToSelect) {
-                setActiveConversationId(idToSelect);
-                if (searchParams.get('conversation_id') !== idToSelect) {
-                    router.replace(`/messages?conversation_id=${idToSelect}`, { scroll: false });
-                }
-                setLoadingMessages(true);
-                const fetchedMessages = await getMessages(idToSelect);
-                setMessages(fetchedMessages);
+                await handleConversationSelect(idToSelect, false); // false to avoid pushing router history again
             } else {
                  setActiveConversationId(null);
                  setMessages([]);
@@ -65,13 +60,27 @@ function MessagingContent() {
             console.error('Failed to fetch data:', error);
         } finally {
             setLoading(false);
+        }
+    }, [router, searchParams]); // handleConversationSelect is memoized, so it's safe to exclude.
+
+    const handleConversationSelect = useCallback(async (conversationId: string, pushHistory = true) => {
+        setLoadingMessages(true);
+        setActiveConversationId(conversationId);
+        if (pushHistory) {
+            router.push(`/messages?conversation_id=${conversationId}`, { scroll: false });
+        }
+        try {
+            const fetchedMessages = await getMessages(conversationId);
+            setMessages(fetchedMessages);
+        } catch (error) {
+            console.error("Failed to load messages", error)
+        } finally {
             setLoadingMessages(false);
         }
-    }, [router, searchParams]);
+    }, [router]);
 
     useEffect(() => {
         const getUserAndData = async () => {
-            setLoading(true);
             const { data: { user } } = await supabase.auth.getUser();
             if (user) {
                 const appUser: AppUser = {
@@ -91,20 +100,6 @@ function MessagingContent() {
         getUserAndData();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
-
-    const handleConversationSelect = async (conversationId: string) => {
-        setLoadingMessages(true);
-        setActiveConversationId(conversationId);
-        router.push(`/messages?conversation_id=${conversationId}`, { scroll: false });
-        try {
-            const fetchedMessages = await getMessages(conversationId);
-            setMessages(fetchedMessages);
-        } catch (error) {
-            console.error("Failed to load messages", error)
-        } finally {
-            setLoadingMessages(false);
-        }
-    };
 
     useEffect(() => {
         scrollToBottom();
@@ -144,8 +139,9 @@ function MessagingContent() {
              setMessages(currentMessages => [...currentMessages, newMessage]);
         }
 
+        // Update the conversation in the list with the new last message
         setConversations(prevConvos => {
-            return prevConvos.map(convo => {
+            const updatedConvos = prevConvos.map(convo => {
                 if (convo.id === newMessage.conversationId) {
                     return {
                         ...convo,
@@ -156,7 +152,9 @@ function MessagingContent() {
                     };
                 }
                 return convo;
-            }).sort((a, b) => {
+            });
+            // Re-sort the conversations to bring the updated one to the top
+            return updatedConvos.sort((a, b) => {
                 const aTime = a.last_message ? new Date(a.last_message.timestamp).getTime() : new Date(a.created_at).getTime();
                 const bTime = b.last_message ? new Date(b.last_message.timestamp).getTime() : new Date(b.created_at).getTime();
                 return bTime - aTime;
@@ -186,7 +184,7 @@ function MessagingContent() {
     }
 
     if (!currentUser) {
-        return <div className="flex items-center justify-center h-full">Loading user...</div>;
+        return null; // Should be redirected by the effect hook
     }
 
     return (
@@ -197,7 +195,9 @@ function MessagingContent() {
                     <NewConversationDialog
                         currentUser={currentUser}
                         onConversationCreated={(conversationId) => {
-                            fetchAndSetData(currentUser, conversationId);
+                            if (currentUser) {
+                                fetchAndSetData(currentUser, conversationId);
+                            }
                         }}
                     />
                 </CardHeader>
@@ -258,21 +258,28 @@ function MessagingContent() {
                                 </div>
                             ) : (
                                 <div className="space-y-6">
-                                    {messages.map((msg) => (
-                                        <div key={msg.id} className={cn('flex items-end gap-2', msg.sender.id === currentUser.id ? 'justify-end' : 'justify-start')}>
-                                            {msg.sender.id !== currentUser.id && (
-                                                <Avatar className="h-8 w-8" data-ai-hint="person portrait">
-                                                    <AvatarImage src={msg.sender.avatarUrl} />
-                                                    <AvatarFallback>{msg.sender.name?.charAt(0).toUpperCase()}</AvatarFallback>
-                                                </Avatar>
-                                            )}
-                                            <div className={cn('max-w-xs md:max-w-md lg:max-w-lg rounded-lg p-3 text-sm', msg.sender.id === currentUser.id ? 'bg-primary text-primary-foreground' : 'bg-card')}>
-                                                <p className="font-bold mb-1">{msg.sender.name}</p>
-                                                <p>{msg.content}</p>
-                                                <p className="text-xs opacity-70 mt-1.5 text-right">{format(parseISO(msg.createdAt), 'p')}</p>
-                                            </div>
+                                    {messages.length === 0 ? (
+                                        <div className="text-center text-muted-foreground py-24">
+                                            <p>This is the beginning of your conversation.</p>
+                                            <p className="text-sm">Send a message to get started!</p>
                                         </div>
-                                    ))}
+                                    ) : (
+                                        messages.map((msg) => (
+                                            <div key={msg.id} className={cn('flex items-end gap-2', msg.sender.id === currentUser.id ? 'justify-end' : 'justify-start')}>
+                                                {msg.sender.id !== currentUser.id && (
+                                                    <Avatar className="h-8 w-8" data-ai-hint="person portrait">
+                                                        <AvatarImage src={msg.sender.avatarUrl} />
+                                                        <AvatarFallback>{msg.sender.name?.charAt(0).toUpperCase()}</AvatarFallback>
+                                                    </Avatar>
+                                                )}
+                                                <div className={cn('max-w-xs md:max-w-md lg:max-w-lg rounded-lg p-3 text-sm', msg.sender.id === currentUser.id ? 'bg-primary text-primary-foreground' : 'bg-card')}>
+                                                    <p className="font-bold mb-1">{msg.sender.name}</p>
+                                                    <p>{msg.content}</p>
+                                                    <p className="text-xs opacity-70 mt-1.5 text-right">{format(parseISO(msg.createdAt), 'p')}</p>
+                                                </div>
+                                            </div>
+                                        ))
+                                    )}
                                     <div ref={messagesEndRef} />
                                 </div>
                             )}
@@ -281,10 +288,12 @@ function MessagingContent() {
                             <form 
                                 ref={formRef}
                                 action={async (formData) => {
+                                    if (!formData.get('content')) return;
                                     setIsSubmitting(true);
                                     await sendMessage(formData);
                                     formRef.current?.reset();
                                     setIsSubmitting(false);
+                                    scrollToBottom();
                                 }} 
                                 className="relative"
                             >
@@ -312,7 +321,9 @@ function MessagingContent() {
                                 <NewConversationDialog
                                     currentUser={currentUser}
                                     onConversationCreated={(conversationId) => {
-                                        fetchAndSetData(currentUser, conversationId);
+                                        if (currentUser) {
+                                            fetchAndSetData(currentUser, conversationId);
+                                        }
                                     }}
                                 >
                                     <Button className="mt-4">
@@ -343,5 +354,3 @@ export default function MessagesPage() {
         </Suspense>
     )
 }
-
-    
