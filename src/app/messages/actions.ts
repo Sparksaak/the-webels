@@ -26,25 +26,23 @@ export async function createConversation(formData: FormData) {
     const type = allParticipantIds.length > 2 ? 'group' : 'direct';
 
     try {
-         // For direct messages, check if a conversation already exists
+        // For direct messages, check if a conversation already exists using the admin client
         if (type === 'direct' && allParticipantIds.length === 2) {
-            const { data: existingConvo, error: existingConvoError } = await supabaseAdmin.rpc(
-                'get_existing_direct_conversation', {
-                    user_id_1: allParticipantIds[0],
-                    user_id_2: allParticipantIds[1]
+             const { data: existingConvo, error: rpcError } = await supabaseAdmin.rpc('get_existing_direct_conversation', {
+                user_id_1: allParticipantIds[0],
+                user_id_2: allParticipantIds[1]
+            });
+            if (rpcError) {
+                // We can ignore the "function not found" error if the function doesn't exist.
+                if (!rpcError.message.includes('function get_existing_direct_conversation')) {
+                    console.error('Error checking for existing DM:', rpcError);
                 }
-            );
-
-            if (existingConvoError && !existingConvoError.message.includes('function get_existing_direct_conversation')) {
-               console.error("Error checking for existing DM:", existingConvoError);
             }
             if (existingConvo) {
                 return { success: true, conversationId: existingConvo };
             }
         }
-
-
-        // Use ADMIN client to bypass RLS for initial creation
+        
         // 1. Create the conversation
         const { data: conversation, error: convError } = await supabaseAdmin
             .from('conversations')
@@ -93,6 +91,7 @@ export async function sendMessage(formData: FormData) {
     }
 
     try {
+        // Use the standard client which respects RLS policies for sending messages
         const { error } = await supabase
             .from('messages')
             .insert({
@@ -107,7 +106,8 @@ export async function sendMessage(formData: FormData) {
         revalidatePath('/messages');
         return { success: true };
 
-    } catch (error: any) {
+    } catch (error: any)
+    {
         console.error('Error sending message:', error);
         return { error: 'Could not send message: ' + error.message };
     }

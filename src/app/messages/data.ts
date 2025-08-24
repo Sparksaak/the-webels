@@ -75,11 +75,24 @@ export async function getConversations(userId: string): Promise<Conversation[]> 
         })
     );
     
-    // Sort conversations by the timestamp of the last message
+    // Sort conversations: those with messages by last message timestamp, those without by creation date (newest first)
     conversationsWithDetails.sort((a, b) => {
-        if (!a.last_message) return 1;
-        if (!b.last_message) return -1;
-        return new Date(b.last_message.timestamp).getTime() - new Date(a.last_message.timestamp).getTime();
+        const aTime = a.last_message ? new Date(a.last_message.timestamp).getTime() : new Date(a.created_at).getTime();
+        const bTime = b.last_message ? new Date(b.last_message.timestamp).getTime() : new Date(b.created_at).getTime();
+        
+        // If both have messages, sort by last message time
+        if (a.last_message && b.last_message) {
+            return bTime - aTime;
+        }
+        // If only one has messages, the one with messages comes first
+        if (a.last_message && !b.last_message) {
+            return -1;
+        }
+        if (!a.last_message && b.last_message) {
+            return 1;
+        }
+        // If neither has messages, sort by creation time
+        return bTime - aTime;
     });
 
     return conversationsWithDetails as Conversation[];
