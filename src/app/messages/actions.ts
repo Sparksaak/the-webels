@@ -26,24 +26,19 @@ export async function createConversation(formData: FormData) {
     const type = allParticipantIds.length > 2 ? 'group' : 'direct';
 
     try {
-        // For direct messages, check if a conversation already exists using the admin client
         if (type === 'direct' && allParticipantIds.length === 2) {
              const { data: existingConvo, error: rpcError } = await supabaseAdmin.rpc('get_existing_direct_conversation', {
                 user_id_1: allParticipantIds[0],
                 user_id_2: allParticipantIds[1]
             });
-            if (rpcError) {
-                // We can ignore the "function not found" error if the function doesn't exist.
-                if (!rpcError.message.includes('function get_existing_direct_conversation')) {
-                    console.error('Error checking for existing DM:', rpcError);
-                }
+            if (rpcError && !rpcError.message.includes('function get_existing_direct_conversation')) {
+                console.error('Error checking for existing DM:', rpcError);
             }
             if (existingConvo) {
                 return { success: true, conversationId: existingConvo };
             }
         }
         
-        // 1. Create the conversation
         const { data: conversation, error: convError } = await supabaseAdmin
             .from('conversations')
             .insert({ name, type, creator_id: user.id })
@@ -53,7 +48,6 @@ export async function createConversation(formData: FormData) {
         if (convError) throw convError;
         const conversationId = conversation.id;
 
-        // 2. Add all participants using the ADMIN client
         const participantsData = allParticipantIds.map(userId => ({
             conversation_id: conversationId,
             user_id: userId,
@@ -64,6 +58,32 @@ export async function createConversation(formData: FormData) {
             .insert(participantsData);
 
         if (participantsError) throw participantsError;
+        
+        // --- Add initial system message ---
+        const { data: usersData, error: usersError } = await supabaseAdmin.auth.admin.listUsers({
+          page: 1,
+          perPage: 1000
+        });
+
+        if (usersError) throw usersError;
+        
+        const participantNames = allParticipantIds.map(id => {
+            const participantUser = usersData.users.find(u => u.id === id);
+            return participantUser?.user_metadata?.full_name || participantUser?.email || 'Unknown User';
+        });
+        
+        const welcomeMessageContent = `A new conversation was created between ${participantNames.join(', ')} at ${new Date().toLocaleString()}.`;
+
+        const { error: messageError } = await supabaseAdmin
+            .from('messages')
+            .insert({
+                conversation_id: conversationId,
+                sender_id: user.id, // Attributed to the creator
+                content: welcomeMessageContent,
+            });
+
+        if (messageError) throw messageError;
+        // --- End of adding initial message ---
 
         revalidatePath('/messages');
         return { success: true, conversationId: conversationId };
@@ -91,7 +111,6 @@ export async function sendMessage(formData: FormData) {
     }
 
     try {
-        // Use the standard client which respects RLS policies for sending messages
         const { error } = await supabase
             .from('messages')
             .insert({
@@ -120,7 +139,6 @@ export async function getUsers() {
 
     if (!currentUser) return [];
 
-    // Use the admin client to fetch all users securely
     const { data: { users }, error } = await supabaseAdmin.auth.admin.listUsers();
 
     if (error) {
@@ -141,17 +159,13 @@ export async function getUsers() {
     const currentUserRole = currentUser.user_metadata?.role;
     const currentUserLearningPreference = currentUser.user_metadata?.learning_preference;
 
-    // Teachers can message anyone
     if (currentUserRole === 'teacher') {
         return allUsers;
     }
 
-    // Students can message teachers and other students in their same learning track
     if (currentUserRole === 'student') {
         return allUsers.filter(user => {
-            // Allow messaging all teachers
             if (user.role === 'teacher') return true;
-            // Allow messaging students with the same learning preference
             if (user.role === 'student' && user.learning_preference === currentUserLearningPreference) return true;
             return false;
         });
