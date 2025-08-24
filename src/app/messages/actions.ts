@@ -18,49 +18,29 @@ export async function createConversation(formData: FormData) {
     const participantIds = formData.getAll('participants') as string[];
     const name = formData.get('name') as string || null;
     
-    const allParticipantIds = [...new Set([user.id, ...participantIds])];
-    const type = allParticipantIds.length > 2 ? 'group' : 'direct';
-
     if (participantIds.length === 0) {
         return { error: 'You must select at least one participant.' };
     }
+    
+    const allParticipantIds = [...new Set([user.id, ...participantIds])];
+    const otherParticipantIds = participantIds.filter(id => id !== user.id);
+    const type = allParticipantIds.length > 2 ? 'group' : 'direct';
 
     try {
-        // For direct messages, check if a conversation already exists between the two users
+        // For direct messages, check if a conversation already exists
         if (type === 'direct' && allParticipantIds.length === 2) {
-            // Use the admin client to query all conversations, as RLS may prevent seeing existing ones.
-            const { data: existingConversations, error: existingError } = await supabaseAdmin
-                .from('conversation_participants')
-                .select('conversation_id')
-                .in('user_id', allParticipantIds);
-        
-            if (existingError) {
-                console.error("Error checking for existing conversations:", existingError);
-            } else if (existingConversations) {
-                const conversationCounts: { [key: string]: number } = {};
-                for (const uc of existingConversations) {
-                    conversationCounts[uc.conversation_id] = (conversationCounts[uc.conversation_id] || 0) + 1;
-                }
-        
-                for (const convId in conversationCounts) {
-                    if (conversationCounts[convId] === 2) {
-                         const { data: convDetails, error: convDetailsError } = await supabaseAdmin
-                            .from('conversations')
-                            .select('id, type')
-                            .eq('id', convId)
-                            .eq('type', 'direct')
-                            .single();
-                        
-                        if (convDetails) {
-                            return { success: true, conversationId: convDetails.id };
-                        }
-                    }
-                }
+            const { data: existing, error: existingError } = await supabaseAdmin.rpc('get_existing_conversation_direct', {
+                user_id_1: allParticipantIds[0],
+                user_id_2: allParticipantIds[1]
+            });
+
+            if (existingError) console.error("Error checking for existing DM:", existingError);
+            if (existing) {
+                return { success: true, conversationId: existing };
             }
         }
 
-
-        // Create the conversation
+        // 1. Create the conversation
         const { data: conversation, error: convError } = await supabase
             .from('conversations')
             .insert({ name, type, creator_id: user.id })
@@ -68,21 +48,30 @@ export async function createConversation(formData: FormData) {
             .single();
 
         if (convError) throw convError;
+        const conversationId = conversation.id;
 
-        // Add participants
-        const participantData = allParticipantIds.map(userId => ({
-            conversation_id: conversation.id,
-            user_id: userId,
-        }));
-
-        const { error: participantsError } = await supabase
+        // 2. Add the creator as the first participant (this is always allowed by RLS)
+        const { error: creatorParticipantError } = await supabase
             .from('conversation_participants')
-            .insert(participantData);
+            .insert({ conversation_id: conversationId, user_id: user.id });
+        
+        if (creatorParticipantError) throw creatorParticipantError;
 
-        if (participantsError) throw participantsError;
+        // 3. Add the rest of the participants using the admin client to bypass RLS checks
+        if (otherParticipantIds.length > 0) {
+            const otherParticipantsData = otherParticipantIds.map(userId => ({
+                conversation_id: conversationId,
+                user_id: userId,
+            }));
+            const { error: otherParticipantsError } = await supabaseAdmin
+                .from('conversation_participants')
+                .insert(otherParticipantsData);
+
+            if (otherParticipantsError) throw otherParticipantsError;
+        }
 
         revalidatePath('/messages');
-        return { success: true, conversationId: conversation.id };
+        return { success: true, conversationId: conversationId };
 
     } catch (error: any) {
         console.error('Error creating conversation:', error);
@@ -133,8 +122,7 @@ export async function getUsers() {
     const { data: { user: currentUser } } = await supabase.auth.getUser();
 
     if (!currentUser) return [];
-    
-    // Use the admin client to fetch all users, as only it has the required permissions.
+
     const { data: { users }, error } = await supabaseAdmin.auth.admin.listUsers();
 
     if (error) {
