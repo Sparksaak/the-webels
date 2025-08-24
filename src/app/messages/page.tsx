@@ -38,19 +38,21 @@ function MessagingContent() {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     };
 
-    const fetchAndSetData = useCallback(async (user: AppUser) => {
+    const fetchAndSetData = useCallback(async (user: AppUser, conversationIdToSelect?: string) => {
         setLoading(true);
         try {
             const fetchedConversations = await getConversations(user.id);
             setConversations(fetchedConversations);
 
-            let currentConversationId = searchParams.get('conversation_id');
+            let currentConversationId = conversationIdToSelect || searchParams.get('conversation_id');
             if (!currentConversationId && fetchedConversations.length > 0) {
                 currentConversationId = fetchedConversations[0].id;
             }
 
             if (currentConversationId) {
-                setActiveConversationId(currentConversationId);
+                if(currentConversationId !== activeConversationId) {
+                    setActiveConversationId(currentConversationId);
+                }
                 const fetchedMessages = await getMessages(currentConversationId);
                 setMessages(fetchedMessages);
                 if (window.location.search.split('?')[1] !== `conversation_id=${currentConversationId}`) {
@@ -62,7 +64,7 @@ function MessagingContent() {
         } finally {
             setLoading(false);
         }
-    }, [router, searchParams]);
+    }, [router, searchParams, activeConversationId]);
 
     useEffect(() => {
         const getUser = async () => {
@@ -87,30 +89,55 @@ function MessagingContent() {
     useEffect(() => {
         scrollToBottom();
     }, [messages]);
+    
+    const handleNewMessage = useCallback(async (payload: any) => {
+        const newMessagePayload = payload.new;
+        if (newMessagePayload.conversation_id !== activeConversationId) return;
+
+        // Fetch full sender data as it's not in the payload
+        const { data: senderData, error } = await supabase
+            .from('users')
+            .select('id, full_name, email, role')
+            .eq('id', newMessagePayload.sender_id)
+            .single();
+
+        if (error) {
+            console.error('Error fetching sender for new message:', error);
+            return;
+        }
+
+        const sender: AppUser = {
+            id: senderData.id,
+            name: senderData.full_name || senderData.email,
+            email: senderData.email!,
+            role: senderData.role,
+            avatarUrl: `https://placehold.co/100x100.png`
+        };
+
+        const newMessage: Message = {
+            id: newMessagePayload.id,
+            content: newMessagePayload.content,
+            createdAt: newMessagePayload.created_at,
+            conversationId: newMessagePayload.conversation_id,
+            sender: sender,
+        };
+
+        setMessages(currentMessages => [...currentMessages, newMessage]);
+    }, [activeConversationId, supabase]);
 
     useEffect(() => {
         const channel = supabase
             .channel('realtime-messages')
-            .on('postgres_changes', {
-                event: 'INSERT',
-                schema: 'public',
-                table: 'messages',
-                filter: `conversation_id=eq.${activeConversationId}`
-            }, (payload) => {
-                const newMessage = payload.new as Message;
-                // This is a temp fix to get sender data
-                const sender = conversations.find(c => c.id === newMessage.conversationId)
-                                ?.participants.find(p => p.id === (payload.new as any).sender_id);
-                if (sender) {
-                    setMessages(currentMessages => [...currentMessages, { ...newMessage, sender }]);
-                }
-            })
+            .on('postgres_changes', 
+                { event: 'INSERT', schema: 'public', table: 'messages' }, 
+                handleNewMessage
+            )
             .subscribe();
 
         return () => {
             supabase.removeChannel(channel);
         };
-    }, [supabase, activeConversationId, conversations]);
+    }, [supabase, handleNewMessage]);
 
 
     const handleConversationSelect = (conversationId: string) => {
@@ -121,8 +148,8 @@ function MessagingContent() {
 
     const activeConversation = conversations.find(c => c.id === activeConversationId);
 
-    if (loading) {
-        return <div className="flex items-center justify-center h-full">Loading messages...</div>;
+    if (loading && !currentUser) {
+        return <div className="flex items-center justify-center h-full">Loading...</div>;
     }
     
     if (!currentUser) {
@@ -137,8 +164,7 @@ function MessagingContent() {
                     <NewConversationDialog
                         currentUser={currentUser}
                         onConversationCreated={(conversationId) => {
-                            fetchAndSetData(currentUser);
-                            handleConversationSelect(conversationId);
+                            fetchAndSetData(currentUser, conversationId);
                         }}
                     />
                 </CardHeader>
@@ -242,8 +268,7 @@ function MessagingContent() {
                         <NewConversationDialog
                             currentUser={currentUser}
                             onConversationCreated={(conversationId) => {
-                                fetchAndSetData(currentUser);
-                                handleConversationSelect(conversationId);
+                                fetchAndSetData(currentUser, conversationId);
                             }}
                         >
                             <Button className="mt-4">
