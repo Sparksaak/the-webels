@@ -40,6 +40,7 @@ function MessagingContent() {
     };
     
     const handleConversationSelect = useCallback(async (conversationId: string) => {
+        if (!conversationId) return;
         setLoadingMessages(true);
         setActiveConversationId(conversationId);
         router.push(`/messages?conversation_id=${conversationId}`, { scroll: false });
@@ -63,8 +64,7 @@ function MessagingContent() {
             
             if (conversationIdFromUrl && fetchedConversations.some(c => c.id === conversationIdFromUrl)) {
                  await handleConversationSelect(conversationIdFromUrl);
-            } else if (fetchedConversations.length > 0) {
-                // Do not auto-select a conversation to allow for "No conversation selected" state
+            } else {
                 setActiveConversationId(null);
                 setMessages([]);
             }
