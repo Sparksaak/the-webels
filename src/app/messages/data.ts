@@ -3,96 +3,39 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { cookies } from 'next/headers';
-import type { Conversation, Message } from './types';
+import type { Conversation, Message, AppUser } from './types';
 
+// This function now directly calls the SQL function in the database.
 export async function getConversations(userId: string): Promise<Conversation[]> {
     const cookieStore = cookies();
     const supabase = createClient(cookieStore);
 
-    const { data: userConvos, error: userConvosError } = await supabase
-        .from('conversation_participants')
-        .select('conversation_id')
-        .eq('user_id', userId);
+    const { data, error } = await supabase.rpc('get_user_conversations_with_details', { p_user_id: userId });
 
-    if (userConvosError) {
-        console.error('Error fetching user conversations:', userConvosError);
+    if (error) {
+        console.error('Error fetching conversations via RPC:', error);
         return [];
     }
 
-    if (!userConvos || userConvos.length === 0) {
-        return [];
-    }
-
-    const conversationIds = userConvos.map(c => c.conversation_id);
-
-    const { data: conversations, error: conversationsError } = await supabase
-        .from('conversations')
-        .select(`
-            id,
-            name,
-            type,
-            created_at,
-            participants:conversation_participants(
-                user_id,
-                user:users(id, full_name, email, role)
-            )
-        `)
-        .in('id', conversationIds)
-        .order('created_at', { ascending: false });
-
-    if (conversationsError) {
-        console.error('Error fetching conversation details:', conversationsError);
+    if (!data) {
         return [];
     }
     
-    // Separately fetch last messages to avoid complex query issues.
-    const { data: lastMessagesData, error: lastMessageError } = await supabase
-        .from('last_messages_view')
-        .select('*')
-        .in('conversation_id', conversationIds);
-
-    if (lastMessageError) {
-        console.error("Error fetching last messages", lastMessageError);
-    }
-
-    const lastMessageMap = new Map<string, { content: string, timestamp: string }>();
-    if (lastMessagesData) {
-        for (const msg of lastMessagesData) {
-            lastMessageMap.set(msg.conversation_id, { content: msg.content, timestamp: msg.created_at });
-        }
-    }
-    
-    const detailedConversations = conversations.map((conv) => {
-        const participants = conv.participants.map((p: any) => ({
-            id: p.user.id,
-            name: p.user.full_name || p.user.email,
-            email: p.user.email,
-            role: p.user.role,
-            avatarUrl: `https://placehold.co/100x100.png`
-        }));
-        
+    // The data from the SQL function is already in the desired shape.
+    // We just need to handle the conversation name for direct messages.
+    const conversations = data.map((conv: any) => {
         let conversationName = conv.name;
         if (conv.type === 'direct' && !conv.name) {
-            const otherParticipant = participants.find(p => p.id !== userId);
+            const otherParticipant = conv.participants.find((p: AppUser) => p.id !== userId);
             conversationName = otherParticipant?.name || 'Direct Message';
         }
-
         return {
             ...conv,
             name: conversationName,
-            participants,
-            last_message: lastMessageMap.get(conv.id) || null,
         };
     });
 
-    // Sort conversations: those with messages first, sorted by time, then those without, by creation time.
-    detailedConversations.sort((a, b) => {
-        const aTime = a.last_message ? new Date(a.last_message.timestamp).getTime() : new Date(a.created_at).getTime();
-        const bTime = b.last_message ? new Date(b.last_message.timestamp).getTime() : new Date(b.created_at).getTime();
-        return bTime - aTime;
-    });
-
-    return detailedConversations as Conversation[];
+    return conversations as Conversation[];
 }
 
 

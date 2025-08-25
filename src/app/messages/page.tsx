@@ -49,15 +49,15 @@ function MessagingContent() {
             const activeId = conversationIdFromUrl && fetchedConversations.some(c => c.id === conversationIdFromUrl)
                 ? conversationIdFromUrl
                 : null;
-
-            setActiveConversationId(activeId);
-
-            if (activeId) {
+            
+            if (activeId && activeId !== activeConversationId) {
+                setActiveConversationId(activeId);
                 setLoadingMessages(true);
                 const fetchedMessages = await getMessages(activeId);
                 setMessages(fetchedMessages);
                 setLoadingMessages(false);
-            } else {
+            } else if (!activeId) {
+                setActiveConversationId(null);
                 setMessages([]);
             }
         } catch (error) {
@@ -66,15 +66,14 @@ function MessagingContent() {
         } finally {
             setLoading(false);
         }
-    }, [searchParams]);
+    }, [searchParams, activeConversationId]);
 
     const handleConversationSelect = useCallback(async (conversationId: string) => {
         if (!conversationId || conversationId === activeConversationId) return;
 
-        setLoadingMessages(true);
-        setActiveConversationId(conversationId);
         router.push(`/messages?conversation_id=${conversationId}`, { scroll: false });
-        
+        setActiveConversationId(conversationId);
+        setLoadingMessages(true);
         try {
             const fetchedMessages = await getMessages(conversationId);
             setMessages(fetchedMessages);
@@ -105,7 +104,8 @@ function MessagingContent() {
             }
         };
         getUserAndData();
-    }, [fetchAndSetData, router, supabase.auth]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [supabase.auth, router]); // Only run once on mount
 
 
     useEffect(() => {
@@ -115,11 +115,12 @@ function MessagingContent() {
     const handleNewMessage = useCallback((payload: any) => {
         const newMessagePayload = payload.new;
 
-        const isConversationInList = conversations.some(c => c.id === newMessagePayload.conversation_id);
+        const isForActiveConversation = newMessagePayload.conversation_id === activeConversationId;
+        const isParticipant = conversations.some(c => c.participants.some(p => p.id === currentUser?.id));
 
-        if (!isConversationInList) {
-             if(currentUser) fetchAndSetData(currentUser);
-             return;
+        if (!isParticipant) {
+            if(currentUser) fetchAndSetData(currentUser);
+            return;
         }
 
         setConversations(prevConvos => {
@@ -143,9 +144,9 @@ function MessagingContent() {
             });
         });
 
-        if (newMessagePayload.conversation_id === activeConversationId) {
+        if (isForActiveConversation) {
              const sender = conversations
-                .flatMap(c => c.participants)
+                .find(c => c.id === activeConversationId)?.participants
                 .find(p => p.id === newMessagePayload.sender_id);
             
             if (sender) {
