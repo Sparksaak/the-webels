@@ -33,6 +33,7 @@ export async function getConversations(userId: string): Promise<Conversation[]> 
             type,
             created_at,
             participants:conversation_participants(
+                user_id,
                 user:users(id, full_name, email, role)
             )
         `)
@@ -86,14 +87,9 @@ export async function getConversations(userId: string): Promise<Conversation[]> 
 
     // Sort conversations: those with messages first, sorted by time, then those without, by creation time.
     detailedConversations.sort((a, b) => {
-        const aTime = a.last_message ? new Date(a.last_message.timestamp).getTime() : 0;
-        const bTime = b.last_message ? new Date(b.last_message.timestamp).getTime() : 0;
-
-        if (aTime > 0 && bTime > 0) return bTime - aTime;
-        if (aTime > 0) return -1;
-        if (bTime > 0) return 1;
-
-        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        const aTime = a.last_message ? new Date(a.last_message.timestamp).getTime() : new Date(a.created_at).getTime();
+        const bTime = b.last_message ? new Date(b.last_message.timestamp).getTime() : new Date(b.created_at).getTime();
+        return bTime - aTime;
     });
 
     return detailedConversations as Conversation[];

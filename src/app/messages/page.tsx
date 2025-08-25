@@ -38,45 +38,55 @@ function MessagingContent() {
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     };
-    
-    const handleConversationSelect = useCallback(async (conversationId: string) => {
-        if (!conversationId) return;
-        setLoadingMessages(true);
-        setActiveConversationId(conversationId);
-        router.push(`/messages?conversation_id=${conversationId}`, { scroll: false });
-        try {
-            const fetchedMessages = await getMessages(conversationId);
-            setMessages(fetchedMessages);
-        } catch (error) {
-            console.error("Failed to load messages", error)
-        } finally {
-            setLoadingMessages(false);
-        }
-    }, [router]);
 
-    const fetchInitialData = useCallback(async (user: AppUser) => {
+    const fetchAndSetData = useCallback(async (user: AppUser) => {
         setLoading(true);
         try {
             const fetchedConversations = await getConversations(user.id);
             setConversations(fetchedConversations);
             
             const conversationIdFromUrl = searchParams.get('conversation_id');
-            
-            if (conversationIdFromUrl && fetchedConversations.some(c => c.id === conversationIdFromUrl)) {
-                 await handleConversationSelect(conversationIdFromUrl);
+            const activeId = conversationIdFromUrl && fetchedConversations.some(c => c.id === conversationIdFromUrl)
+                ? conversationIdFromUrl
+                : null;
+
+            setActiveConversationId(activeId);
+
+            if (activeId) {
+                setLoadingMessages(true);
+                const fetchedMessages = await getMessages(activeId);
+                setMessages(fetchedMessages);
+                setLoadingMessages(false);
             } else {
-                setActiveConversationId(null);
                 setMessages([]);
             }
-
         } catch (error) {
             console.error('Failed to fetch initial data:', error);
+            setMessages([]);
         } finally {
             setLoading(false);
         }
-    }, [searchParams, handleConversationSelect]);
+    }, [searchParams]);
 
+    const handleConversationSelect = useCallback(async (conversationId: string) => {
+        if (!conversationId || conversationId === activeConversationId) return;
 
+        setLoadingMessages(true);
+        setActiveConversationId(conversationId);
+        router.push(`/messages?conversation_id=${conversationId}`, { scroll: false });
+        
+        try {
+            const fetchedMessages = await getMessages(conversationId);
+            setMessages(fetchedMessages);
+        } catch (error) {
+            console.error("Failed to load messages", error)
+            setMessages([]);
+        } finally {
+            setLoadingMessages(false);
+        }
+    }, [router, activeConversationId]);
+    
+    
     useEffect(() => {
         const getUserAndData = async () => {
             const { data: { user } } = await supabase.auth.getUser();
@@ -89,89 +99,68 @@ function MessagingContent() {
                     avatarUrl: `https://placehold.co/100x100.png`
                 };
                 setCurrentUser(appUser);
-                await fetchInitialData(appUser);
+                await fetchAndSetData(appUser);
             } else {
                 router.push('/login');
             }
         };
         getUserAndData();
-    }, [fetchInitialData, router, supabase.auth]);
+    }, [fetchAndSetData, router, supabase.auth]);
 
 
     useEffect(() => {
         scrollToBottom();
     }, [messages]);
     
-    const handleNewMessage = useCallback(async (payload: any) => {
+    const handleNewMessage = useCallback((payload: any) => {
         const newMessagePayload = payload.new;
 
-        const { data: senderData, error } = await supabase
-            .from('users')
-            .select('id, full_name, email, role')
-            .eq('id', newMessagePayload.sender_id)
-            .single();
+        const isConversationInList = conversations.some(c => c.id === newMessagePayload.conversation_id);
 
-        if (error) {
-            console.error('Error fetching sender for new message:', error);
-            return;
+        if (!isConversationInList) {
+             if(currentUser) fetchAndSetData(currentUser);
+             return;
         }
 
-        const sender: AppUser = {
-            id: senderData.id,
-            name: senderData.full_name || senderData.email,
-            email: senderData.email!,
-            role: senderData.role || 'student',
-            avatarUrl: `https://placehold.co/100x100.png`
-        };
-
-        const newMessage: Message = {
-            id: newMessagePayload.id,
-            content: newMessagePayload.content,
-            createdAt: newMessagePayload.created_at,
-            conversationId: newMessagePayload.conversation_id,
-            sender: sender,
-        };
-        
-        // If the new message belongs to the currently active conversation, add it to the view
-        if (newMessage.conversationId === activeConversationId) {
-             setMessages(currentMessages => [...currentMessages, newMessage]);
-        }
-        
-        // Update the conversation list with the new last message and re-sort
         setConversations(prevConvos => {
-            let convoExists = false;
-            const updatedConvos = prevConvos.map(convo => {
-                if (convo.id === newMessage.conversationId) {
-                    convoExists = true;
+             const updatedConvos = prevConvos.map(convo => {
+                if (convo.id === newMessagePayload.conversation_id) {
                     return {
                         ...convo,
                         last_message: {
-                            content: newMessage.content,
-                            timestamp: newMessage.createdAt
+                            content: newMessagePayload.content,
+                            timestamp: newMessagePayload.created_at
                         }
                     };
                 }
                 return convo;
             });
-            
-            // If the conversation is new and not in the list, fetch all conversations again
-            if (!convoExists) {
-                if(currentUser) fetchInitialData(currentUser);
-                return prevConvos;
-            }
 
-            // Re-sort the conversations to bring the updated one to the top
-            return updatedConvos.sort((a, b) => {
-                 const aTime = a.last_message ? new Date(a.last_message.timestamp).getTime() : 0;
-                 const bTime = b.last_message ? new Date(b.last_message.timestamp).getTime() : 0;
-                 if (aTime > 0 && bTime > 0) return bTime - aTime;
-                 if (aTime > 0) return -1;
-                 if (bTime > 0) return 1;
-                 return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+             return updatedConvos.sort((a, b) => {
+                 const aTime = a.last_message ? new Date(a.last_message.timestamp).getTime() : new Date(a.created_at).getTime();
+                 const bTime = b.last_message ? new Date(b.last_message.timestamp).getTime() : new Date(b.created_at).getTime();
+                 return bTime - aTime;
             });
         });
+
+        if (newMessagePayload.conversation_id === activeConversationId) {
+             const sender = conversations
+                .flatMap(c => c.participants)
+                .find(p => p.id === newMessagePayload.sender_id);
+            
+            if (sender) {
+                const newMessage: Message = {
+                    id: newMessagePayload.id,
+                    content: newMessagePayload.content,
+                    createdAt: newMessagePayload.created_at,
+                    conversationId: newMessagePayload.conversation_id,
+                    sender: sender,
+                };
+                setMessages(currentMessages => [...currentMessages, newMessage]);
+            }
+        }
         
-    }, [activeConversationId, supabase, currentUser, fetchInitialData]);
+    }, [activeConversationId, currentUser, conversations, fetchAndSetData]);
 
     useEffect(() => {
         const channel = supabase
@@ -208,8 +197,7 @@ function MessagingContent() {
                             onConversationCreated={async (conversationId) => {
                                 if (currentUser) {
                                     // Re-fetch all conversations to include the new one
-                                    const fetchedConversations = await getConversations(currentUser.id);
-                                    setConversations(fetchedConversations);
+                                    await fetchAndSetData(currentUser);
                                     // Automatically select the new conversation
                                     await handleConversationSelect(conversationId);
                                 }
@@ -337,8 +325,7 @@ function MessagingContent() {
                                         currentUser={currentUser}
                                         onConversationCreated={async (conversationId) => {
                                             if (currentUser) {
-                                                const fetchedConversations = await getConversations(currentUser.id);
-                                                setConversations(fetchedConversations);
+                                                await fetchAndSetData(currentUser);
                                                 await handleConversationSelect(conversationId);
                                             }
                                         }}

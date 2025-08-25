@@ -27,15 +27,22 @@ export async function createConversation(formData: FormData) {
 
     try {
         if (type === 'direct' && allParticipantIds.length === 2) {
-             const { data: existingConvo, error: rpcError } = await supabaseAdmin.rpc('get_existing_direct_conversation', {
+             const { data: existingConvoId, error: rpcError } = await supabaseAdmin.rpc('get_existing_direct_conversation', {
                 user_id_1: allParticipantIds[0],
                 user_id_2: allParticipantIds[1]
             });
-            if (rpcError && !rpcError.message.includes('function get_existing_direct_conversation')) {
-                console.error('Error checking for existing DM:', rpcError);
+
+            if (rpcError) {
+                 // The function might not exist, which is fine, we'll just create a new convo.
+                 // We only throw if it's a different, unexpected error.
+                if (!rpcError.message.includes('function get_existing_direct_conversation(user_id_1 => uuid, user_id_2 => uuid) does not exist')) {
+                    console.error('Error checking for existing DM:', rpcError);
+                    throw rpcError;
+                }
             }
-            if (existingConvo) {
-                return { success: true, conversationId: existingConvo };
+            
+            if (existingConvoId) {
+                return { success: true, conversationId: existingConvoId };
             }
         }
         
@@ -60,25 +67,25 @@ export async function createConversation(formData: FormData) {
         if (participantsError) throw participantsError;
         
         // --- Add initial system message ---
-        const { data: usersData, error: usersError } = await supabaseAdmin.auth.admin.listUsers({
-          page: 1,
-          perPage: 1000
-        });
+        const { data: { users: allUsersList }, error: usersError } = await supabaseAdmin.auth.admin.listUsers();
 
         if (usersError) throw usersError;
         
         const participantNames = allParticipantIds.map(id => {
-            const participantUser = usersData.users.find(u => u.id === id);
+            const participantUser = allUsersList.find(u => u.id === id);
             return participantUser?.user_metadata?.full_name || participantUser?.email || 'Unknown User';
         });
         
-        const welcomeMessageContent = `A new conversation was created between ${participantNames.join(', ')} at ${new Date().toLocaleString()}.`;
+        let welcomeMessageContent = `A new conversation was started.`;
+        if (participantNames.length > 0) {
+            welcomeMessageContent = `Conversation with ${participantNames.join(', ')} started.`
+        }
 
         const { error: messageError } = await supabaseAdmin
             .from('messages')
             .insert({
                 conversation_id: conversationId,
-                sender_id: user.id, // Attributed to the creator
+                sender_id: user.id, // Can be null for system messages, but associating with creator is fine
                 content: welcomeMessageContent,
             });
 
