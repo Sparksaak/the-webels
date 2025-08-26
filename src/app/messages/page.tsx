@@ -38,35 +38,12 @@ function MessagingContent() {
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     };
-
-    const fetchAndSetData = useCallback(async (user: AppUser) => {
-        setLoading(true);
-        try {
-            const fetchedConversations = await getConversations(user.id);
-            setConversations(fetchedConversations);
-            
-            const conversationIdFromUrl = searchParams.get('conversation_id');
-            const activeId = conversationIdFromUrl && fetchedConversations.some(c => c.id === conversationIdFromUrl)
-                ? conversationIdFromUrl
-                : null;
-            
-            if (activeId && activeId !== activeConversationId) {
-                setActiveConversationId(activeId);
-                setLoadingMessages(true);
-                const fetchedMessages = await getMessages(activeId);
-                setMessages(fetchedMessages);
-                setLoadingMessages(false);
-            } else if (!activeId) {
-                setActiveConversationId(null);
-                setMessages([]);
-            }
-        } catch (error) {
-            console.error('Failed to fetch initial data:', error);
-            setMessages([]);
-        } finally {
-            setLoading(false);
-        }
-    }, [searchParams, activeConversationId]);
+    
+    const fetchAndSetConversations = useCallback(async (userId: string) => {
+        const fetchedConversations = await getConversations(userId);
+        setConversations(fetchedConversations);
+        return fetchedConversations;
+    }, []);
 
     const handleConversationSelect = useCallback(async (conversationId: string) => {
         if (!conversationId || conversationId === activeConversationId) return;
@@ -98,14 +75,26 @@ function MessagingContent() {
                     avatarUrl: `https://placehold.co/100x100.png`
                 };
                 setCurrentUser(appUser);
-                await fetchAndSetData(appUser);
+                setLoading(true);
+                const convos = await fetchAndSetConversations(user.id);
+                setLoading(false);
+
+                const conversationIdFromUrl = searchParams.get('conversation_id');
+                const activeId = conversationIdFromUrl && convos.some(c => c.id === conversationIdFromUrl)
+                    ? conversationIdFromUrl
+                    : null;
+                
+                if (activeId) {
+                    await handleConversationSelect(activeId);
+                }
+
             } else {
                 router.push('/login');
             }
         };
         getUserAndData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [supabase.auth, router]); // Only run once on mount
+    }, [supabase.auth, router, searchParams]);
 
 
     useEffect(() => {
@@ -114,43 +103,20 @@ function MessagingContent() {
     
     const handleNewMessage = useCallback((payload: any) => {
         const newMessagePayload = payload.new;
-
         const isForActiveConversation = newMessagePayload.conversation_id === activeConversationId;
-        const isParticipant = conversations.some(c => c.participants.some(p => p.id === currentUser?.id));
-
-        if (!isParticipant) {
-            if(currentUser) fetchAndSetData(currentUser);
-            return;
+        
+        // Re-fetch conversations to update the last message preview
+        if (currentUser) {
+            fetchAndSetConversations(currentUser.id);
         }
 
-        setConversations(prevConvos => {
-             const updatedConvos = prevConvos.map(convo => {
-                if (convo.id === newMessagePayload.conversation_id) {
-                    return {
-                        ...convo,
-                        last_message: {
-                            content: newMessagePayload.content,
-                            timestamp: newMessagePayload.created_at
-                        }
-                    };
-                }
-                return convo;
-            });
-
-             return updatedConvos.sort((a, b) => {
-                 const aTime = a.last_message ? new Date(a.last_message.timestamp).getTime() : new Date(a.created_at).getTime();
-                 const bTime = b.last_message ? new Date(b.last_message.timestamp).getTime() : new Date(b.created_at).getTime();
-                 return bTime - aTime;
-            });
-        });
-
         if (isForActiveConversation) {
-             const sender = conversations
-                .find(c => c.id === activeConversationId)?.participants
-                .find(p => p.id === newMessagePayload.sender_id);
-            
+            // Need to get sender details from the active conversation's participant list
+            const activeConvo = conversations.find(c => c.id === activeConversationId);
+            const sender = activeConvo?.participants.find(p => p.id === newMessagePayload.sender_id);
+
             if (sender) {
-                const newMessage: Message = {
+                 const newMessage: Message = {
                     id: newMessagePayload.id,
                     content: newMessagePayload.content,
                     createdAt: newMessagePayload.created_at,
@@ -158,10 +124,15 @@ function MessagingContent() {
                     sender: sender,
                 };
                 setMessages(currentMessages => [...currentMessages, newMessage]);
+            } else {
+                // Sender not found in existing state, might need to refetch messages
+                if (activeConversationId) {
+                    getMessages(activeConversationId).then(setMessages);
+                }
             }
         }
         
-    }, [activeConversationId, currentUser, conversations, fetchAndSetData]);
+    }, [activeConversationId, currentUser, fetchAndSetConversations, conversations]);
 
     useEffect(() => {
         const channel = supabase
@@ -186,6 +157,32 @@ function MessagingContent() {
     if (!currentUser) {
         return null; // Should be redirected by the effect hook
     }
+    
+    const handleSendMessage = async (formData: FormData) => {
+        if (!formData.get('content')) return;
+        
+        setIsSubmitting(true);
+        const result = await sendMessage(formData);
+        
+        if (result && result.success && result.message) {
+            const resultMessage = result.message as any;
+            const newMessage: Message = {
+                id: resultMessage.id,
+                content: resultMessage.content,
+                createdAt: resultMessage.created_at,
+                conversationId: resultMessage.conversation_id,
+                sender: resultMessage.sender,
+            };
+            setMessages(currentMessages => [...currentMessages, newMessage]);
+            formRef.current?.reset();
+        } else if (result?.error) {
+            // Handle error, e.g., show a toast
+            console.error(result.error);
+        }
+        
+        setIsSubmitting(false);
+        scrollToBottom();
+    };
 
     return (
         <AppLayout userRole={currentUser.role}>
@@ -197,9 +194,7 @@ function MessagingContent() {
                             currentUser={currentUser}
                             onConversationCreated={async (conversationId) => {
                                 if (currentUser) {
-                                    // Re-fetch all conversations to include the new one
-                                    await fetchAndSetData(currentUser);
-                                    // Automatically select the new conversation
+                                    await fetchAndSetConversations(currentUser.id);
                                     await handleConversationSelect(conversationId);
                                 }
                             }}
@@ -291,14 +286,7 @@ function MessagingContent() {
                             <div className="p-4 border-t bg-background">
                                 <form 
                                     ref={formRef}
-                                    action={async (formData) => {
-                                        if (!formData.get('content')) return;
-                                        setIsSubmitting(true);
-                                        await sendMessage(formData);
-                                        formRef.current?.reset();
-                                        setIsSubmitting(false);
-                                        scrollToBottom();
-                                    }} 
+                                    action={handleSendMessage} 
                                     className="relative"
                                 >
                                     <Input
@@ -326,7 +314,7 @@ function MessagingContent() {
                                         currentUser={currentUser}
                                         onConversationCreated={async (conversationId) => {
                                             if (currentUser) {
-                                                await fetchAndSetData(currentUser);
+                                                await fetchAndSetConversations(currentUser.id);
                                                 await handleConversationSelect(conversationId);
                                             }
                                         }}

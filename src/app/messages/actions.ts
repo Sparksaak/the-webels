@@ -33,8 +33,6 @@ export async function createConversation(formData: FormData) {
             });
 
             if (rpcError) {
-                 // The function might not exist, which is fine, we'll just create a new convo.
-                 // We only throw if it's a different, unexpected error.
                 if (!rpcError.message.includes('function get_existing_direct_conversation(user_id_1 => uuid, user_id_2 => uuid) does not exist')) {
                     console.error('Error checking for existing DM:', rpcError);
                     throw rpcError;
@@ -65,32 +63,6 @@ export async function createConversation(formData: FormData) {
             .insert(participantsData);
 
         if (participantsError) throw participantsError;
-        
-        // --- Add initial system message ---
-        const { data: { users: allUsersList }, error: usersError } = await supabaseAdmin.auth.admin.listUsers();
-
-        if (usersError) throw usersError;
-        
-        const participantNames = allParticipantIds.map(id => {
-            const participantUser = allUsersList.find(u => u.id === id);
-            return participantUser?.user_metadata?.full_name || participantUser?.email || 'Unknown User';
-        });
-        
-        let welcomeMessageContent = `A new conversation was started.`;
-        if (participantNames.length > 0) {
-            welcomeMessageContent = `Conversation with ${participantNames.join(', ')} started.`
-        }
-
-        const { error: messageError } = await supabaseAdmin
-            .from('messages')
-            .insert({
-                conversation_id: conversationId,
-                sender_id: user.id, // Can be null for system messages, but associating with creator is fine
-                content: welcomeMessageContent,
-            });
-
-        if (messageError) throw messageError;
-        // --- End of adding initial message ---
 
         revalidatePath('/messages');
         return { success: true, conversationId: conversationId };
@@ -118,19 +90,40 @@ export async function sendMessage(formData: FormData) {
     }
 
     try {
-        const { error } = await supabase
+        // Use supabaseAdmin to get the sender's details securely
+        const { data: senderData, error: userError } = await supabaseAdmin.auth.admin.getUserById(user.id);
+        if (userError) throw userError;
+
+        const sender = {
+            id: senderData.user.id,
+            name: senderData.user.user_metadata.full_name || senderData.user.email,
+            email: senderData.user.email,
+            role: senderData.user.user_metadata.role,
+            avatarUrl: 'https://placehold.co/100x100.png',
+        };
+
+        const { data: newMessage, error } = await supabase
             .from('messages')
             .insert({
                 conversation_id: conversationId,
                 sender_id: user.id,
                 content: content,
-            });
+            })
+            .select()
+            .single();
 
         if (error) throw error;
         
-        revalidatePath(`/messages?conversation_id=${conversationId}`);
+        // Manually trigger a revalidation for the conversation list
         revalidatePath('/messages');
-        return { success: true };
+        
+        return { 
+            success: true, 
+            message: {
+                ...newMessage,
+                sender: sender
+            }
+        };
 
     } catch (error: any)
     {
