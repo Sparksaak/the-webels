@@ -84,9 +84,11 @@ function MessagingContent() {
                     ? conversationIdFromUrl
                     : null;
                 
-                setActiveConversationId(activeId);
                 if (activeId) {
                     await handleConversationSelect(activeId);
+                } else {
+                    setActiveConversationId(null);
+                    setMessages([]);
                 }
 
             } else {
@@ -104,35 +106,17 @@ function MessagingContent() {
     
     const handleNewMessage = useCallback((payload: any) => {
         const newMessagePayload = payload.new;
-        const isForActiveConversation = newMessagePayload.conversation_id === activeConversationId;
         
-        // Re-fetch conversations to update the last message preview
         if (currentUser) {
             fetchAndSetConversations(currentUser.id);
         }
 
-        if (isForActiveConversation) {
-            const activeConvo = conversations.find(c => c.id === activeConversationId);
-            const sender = activeConvo?.participants.find(p => p.id === newMessagePayload.sender_id);
-
-            if (sender) {
-                 const newMessage: Message = {
-                    id: newMessagePayload.id,
-                    content: newMessagePayload.content,
-                    createdAt: newMessagePayload.created_at,
-                    conversationId: newMessagePayload.conversation_id,
-                    sender: sender,
-                };
-                setMessages(currentMessages => [...currentMessages, newMessage]);
-            } else {
-                // Sender not found in existing state, might need to refetch messages
-                if (activeConversationId) {
-                    getMessages(activeConversationId).then(setMessages);
-                }
-            }
+        if (newMessagePayload.conversation_id === activeConversationId) {
+            // Re-fetch messages for the active conversation to get the new message with sender details
+            getMessages(activeConversationId).then(setMessages);
         }
         
-    }, [activeConversationId, currentUser, fetchAndSetConversations, conversations]);
+    }, [activeConversationId, currentUser, fetchAndSetConversations]);
 
     useEffect(() => {
         const channel = supabase
@@ -147,6 +131,15 @@ function MessagingContent() {
             supabase.removeChannel(channel);
         };
     }, [supabase, handleNewMessage]);
+    
+    useEffect(() => {
+        const conversationIdFromUrl = searchParams.get('conversation_id');
+        if (conversationIdFromUrl) {
+            handleConversationSelect(conversationIdFromUrl);
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [searchParams.get('conversation_id')]);
+
 
     const activeConversation = conversations.find(c => c.id === activeConversationId);
 
@@ -162,29 +155,12 @@ function MessagingContent() {
         if (!formData.get('content') || !activeConversationId) return;
         
         setIsSubmitting(true);
-        const optimisticMessage: Message = {
-            id: `temp-${Date.now()}`,
-            content: formData.get('content') as string,
-            createdAt: new Date().toISOString(),
-            conversationId: activeConversationId,
-            sender: currentUser,
-        };
-
-        setMessages(currentMessages => [...currentMessages, optimisticMessage]);
         formRef.current?.reset();
         
         const result = await sendMessage(formData);
         
         if (result?.error) {
              console.error(result.error);
-             // Revert optimistic update on error
-             setMessages(currentMessages => currentMessages.filter(m => m.id !== optimisticMessage.id));
-        } else if (result && result.success && result.message) {
-            // Replace optimistic message with the real one from the server
-            const finalMessage = result.message as Message;
-            setMessages(currentMessages => 
-                currentMessages.map(m => m.id === optimisticMessage.id ? finalMessage : m)
-            );
         }
         
         setIsSubmitting(false);
@@ -202,7 +178,7 @@ function MessagingContent() {
                             onConversationCreated={async (conversationId) => {
                                 if (currentUser) {
                                     await fetchAndSetConversations(currentUser.id);
-                                    await handleConversationSelect(conversationId);
+                                    handleConversationSelect(conversationId);
                                 }
                             }}
                         />
@@ -322,7 +298,7 @@ function MessagingContent() {
                                         onConversationCreated={async (conversationId) => {
                                             if (currentUser) {
                                                 await fetchAndSetConversations(currentUser.id);
-                                                await handleConversationSelect(conversationId);
+                                                handleConversationSelect(conversationId);
                                             }
                                         }}
                                     >
@@ -353,3 +329,5 @@ export default function MessagesPage() {
         </Suspense>
     )
 }
+
+    
