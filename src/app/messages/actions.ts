@@ -90,7 +90,6 @@ export async function sendMessage(formData: FormData) {
     }
 
     try {
-        // Use supabaseAdmin to get the sender's details securely
         const { data: senderData, error: userError } = await supabaseAdmin.auth.admin.getUserById(user.id);
         if (userError) throw userError;
 
@@ -102,7 +101,7 @@ export async function sendMessage(formData: FormData) {
             avatarUrl: 'https://placehold.co/100x100.png',
         };
 
-        const { data: newMessage, error } = await supabase
+        const { data: newMessage, error } = await supabaseAdmin
             .from('messages')
             .insert({
                 conversation_id: conversationId,
@@ -114,7 +113,6 @@ export async function sendMessage(formData: FormData) {
 
         if (error) throw error;
         
-        // Manually trigger a revalidation for the conversation list
         revalidatePath('/messages');
         
         return { 
