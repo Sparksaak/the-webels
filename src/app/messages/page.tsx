@@ -84,6 +84,7 @@ function MessagingContent() {
                     ? conversationIdFromUrl
                     : null;
                 
+                setActiveConversationId(activeId);
                 if (activeId) {
                     await handleConversationSelect(activeId);
                 }
@@ -94,7 +95,7 @@ function MessagingContent() {
         };
         getUserAndData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [supabase.auth, router, searchParams]);
+    }, [supabase.auth, router, searchParams.get('conversation_id')]);
 
 
     useEffect(() => {
@@ -111,7 +112,6 @@ function MessagingContent() {
         }
 
         if (isForActiveConversation) {
-            // Need to get sender details from the active conversation's participant list
             const activeConvo = conversations.find(c => c.id === activeConversationId);
             const sender = activeConvo?.participants.find(p => p.id === newMessagePayload.sender_id);
 
@@ -159,25 +159,32 @@ function MessagingContent() {
     }
     
     const handleSendMessage = async (formData: FormData) => {
-        if (!formData.get('content')) return;
+        if (!formData.get('content') || !activeConversationId) return;
         
         setIsSubmitting(true);
+        const optimisticMessage: Message = {
+            id: `temp-${Date.now()}`,
+            content: formData.get('content') as string,
+            createdAt: new Date().toISOString(),
+            conversationId: activeConversationId,
+            sender: currentUser,
+        };
+
+        setMessages(currentMessages => [...currentMessages, optimisticMessage]);
+        formRef.current?.reset();
+        
         const result = await sendMessage(formData);
         
-        if (result && result.success && result.message) {
-            const resultMessage = result.message as any;
-            const newMessage: Message = {
-                id: resultMessage.id,
-                content: resultMessage.content,
-                createdAt: resultMessage.created_at,
-                conversationId: resultMessage.conversation_id,
-                sender: resultMessage.sender,
-            };
-            setMessages(currentMessages => [...currentMessages, newMessage]);
-            formRef.current?.reset();
-        } else if (result?.error) {
-            // Handle error, e.g., show a toast
-            console.error(result.error);
+        if (result?.error) {
+             console.error(result.error);
+             // Revert optimistic update on error
+             setMessages(currentMessages => currentMessages.filter(m => m.id !== optimisticMessage.id));
+        } else if (result && result.success && result.message) {
+            // Replace optimistic message with the real one from the server
+            const finalMessage = result.message as Message;
+            setMessages(currentMessages => 
+                currentMessages.map(m => m.id === optimisticMessage.id ? finalMessage : m)
+            );
         }
         
         setIsSubmitting(false);
