@@ -71,6 +71,8 @@ export async function getMessages(conversationId: string): Promise<Message[]> {
      
     if (usersError) {
         console.error('Error fetching users:', usersError);
+        // If we can't fetch users, we can still return messages but sender info will be partial.
+        // Or we can return []
         return [];
     }
 

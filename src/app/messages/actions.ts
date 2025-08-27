@@ -26,6 +26,7 @@ export async function createConversation(formData: FormData) {
     const type = allParticipantIds.length > 2 ? 'group' : 'direct';
 
     try {
+        // If it's a DM, check if one already exists between the two users
         if (type === 'direct' && allParticipantIds.length === 2) {
              const { data: existingConvoId, error: rpcError } = await supabaseAdmin.rpc('get_existing_direct_conversation', {
                 user_id_1: allParticipantIds[0],
@@ -33,6 +34,9 @@ export async function createConversation(formData: FormData) {
             });
 
             if (rpcError) {
+                // This is a bit of a hack. If the function doesn't exist, we can ignore the error.
+                // This might happen if migrations haven't run yet.
+                // A better solution would be to ensure migrations run before the app starts.
                 if (!rpcError.message.includes('function get_existing_direct_conversation(user_id_1 => uuid, user_id_2 => uuid) does not exist')) {
                     console.error('Error checking for existing DM:', rpcError);
                     throw rpcError;
@@ -44,6 +48,7 @@ export async function createConversation(formData: FormData) {
             }
         }
         
+        // Create the new conversation
         const { data: conversation, error: convError } = await supabaseAdmin
             .from('conversations')
             .insert({ name, type, creator_id: user.id })
@@ -53,6 +58,7 @@ export async function createConversation(formData: FormData) {
         if (convError) throw convError;
         const conversationId = conversation.id;
 
+        // Add participants
         const participantsData = allParticipantIds.map(userId => ({
             conversation_id: conversationId,
             user_id: userId,
@@ -90,6 +96,7 @@ export async function sendMessage(formData: FormData) {
     }
 
     try {
+        // Fetch sender details using admin client to ensure we have access
         const { data: senderData, error: userError } = await supabaseAdmin.auth.admin.getUserById(user.id);
         if (userError) throw userError;
 
@@ -113,13 +120,14 @@ export async function sendMessage(formData: FormData) {
 
         if (error) throw error;
         
+        // This will trigger the client to re-fetch conversations, which will now have the new last message
         revalidatePath('/messages');
         
         return { 
             success: true, 
             message: {
                 ...newMessage,
-                sender: sender
+                sender: sender // Return the full sender object
             }
         };
 
@@ -144,8 +152,9 @@ export async function getUsers() {
         return [];
     }
 
+    // Filter out the current user from the list
     const allUsers = users
-      .filter(u => u.id !== currentUser.id) // Exclude current user
+      .filter(u => u.id !== currentUser.id)
       .map(u => ({
           id: u.id,
           full_name: u.user_metadata.full_name || u.email,
@@ -157,10 +166,12 @@ export async function getUsers() {
     const currentUserRole = currentUser.user_metadata?.role;
     const currentUserLearningPreference = currentUser.user_metadata?.learning_preference;
 
+    // Teachers can message anyone
     if (currentUserRole === 'teacher') {
         return allUsers;
     }
 
+    // Students can message teachers and other students in their same learning track
     if (currentUserRole === 'student') {
         return allUsers.filter(user => {
             if (user.role === 'teacher') return true;
