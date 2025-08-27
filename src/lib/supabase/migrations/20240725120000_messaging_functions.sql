@@ -1,110 +1,96 @@
--- Drop existing functions and types if they exist, to ensure a clean slate for recreation.
-DROP FUNCTION IF EXISTS public.get_user_conversations_with_details(p_user_id uuid);
-DROP FUNCTION IF EXISTS public.get_existing_direct_conversation(user_id_1 uuid, user_id_2 uuid);
-DROP TYPE IF EXISTS public.conversation_type;
-
--- Create the custom ENUM type for conversation types.
+-- Create the ENUM type for conversation type
 CREATE TYPE public.conversation_type AS ENUM ('direct', 'group');
 
--- Alter the 'conversations' table to use the new 'conversation_type' for the 'type' column.
--- This is crucial to prevent type mismatch errors in functions.
-ALTER TABLE public.conversations
-ALTER COLUMN type TYPE public.conversation_type
-USING type::conversation_type;
+-- Alter the table to use the new type
+-- Note: This assumes the 'type' column exists and is of a text-like type.
+-- If the table is empty, this is safe. If it has data, ensure data is 'direct' or 'group'.
+ALTER TABLE public.conversations ALTER COLUMN type TYPE public.conversation_type USING type::public.conversation_type;
 
-
--- Creates a function to get all conversations for a user, including participants and the last message.
--- This function is defined with SECURITY DEFINER to bypass RLS policies that were causing infinite recursion.
-CREATE OR REPLACE FUNCTION public.get_user_conversations_with_details(p_user_id uuid)
-RETURNS TABLE(
-    id uuid,
-    name text,
-    type conversation_type,
-    participants jsonb,
-    last_message jsonb,
-    created_at timestamptz
-)
-LANGUAGE plpgsql
-SECURITY DEFINER
-AS $$
+-- Function to get all conversations for a user with participant and last message details
+CREATE OR REPLACE FUNCTION get_user_conversations_with_details(p_user_id UUID)
+RETURNS TABLE (
+    id UUID,
+    name TEXT,
+    type public.conversation_type,
+    participants JSONB,
+    last_message JSONB,
+    created_at TIMESTAMPTZ
+) AS $$
 BEGIN
     RETURN QUERY
     WITH user_convos AS (
-        SELECT c.id, c.name, c.type, c.created_at
-        FROM conversations c
-        JOIN conversation_participants cp ON c.id = cp.conversation_id
-        WHERE cp.user_id = p_user_id
+        -- Get all conversation IDs for the user
+        SELECT conversation_id FROM public.conversation_participants WHERE user_id = p_user_id
     ),
     convo_participants AS (
+        -- Get all participants for each conversation
         SELECT
-            uc.id AS conversation_id,
-            jsonb_agg(
-                jsonb_build_object(
-                    'id', u.id,
-                    'name', u.raw_user_meta_data->>'full_name',
-                    'email', u.email,
-                    'role', u.raw_user_meta_data->>'role',
-                    'avatarUrl', 'https://placehold.co/100x100.png'
-                )
-            ) AS participants
-        FROM user_convos uc
-        JOIN conversation_participants cp ON uc.id = cp.conversation_id
+            cp.conversation_id,
+            jsonb_agg(jsonb_build_object(
+                'id', u.id,
+                'name', u.raw_user_meta_data->>'full_name',
+                'email', u.email,
+                'role', u.raw_user_meta_data->>'role',
+                'avatarUrl', 'https://placehold.co/100x100.png'
+            )) AS participants
+        FROM public.conversation_participants cp
         JOIN auth.users u ON cp.user_id = u.id
-        GROUP BY uc.id
+        WHERE cp.conversation_id IN (SELECT conversation_id FROM user_convos)
+        GROUP BY cp.conversation_id
     ),
     last_messages AS (
+        -- Get the last message for each conversation
         SELECT
-            m.conversation_id,
+            conversation_id,
             jsonb_build_object(
-                'content', m.content,
-                'timestamp', m.created_at
+                'content', content,
+                'timestamp', created_at
             ) AS last_message
         FROM (
             SELECT
-                m.conversation_id,
-                m.content,
-                m.created_at,
-                ROW_NUMBER() OVER(PARTITION BY m.conversation_id ORDER BY m.created_at DESC) as rn
-            FROM messages m
-            WHERE m.conversation_id IN (SELECT id FROM user_convos)
+                conversation_id,
+                content,
+                created_at,
+                ROW_NUMBER() OVER(PARTITION BY conversation_id ORDER BY created_at DESC) as rn
+            FROM public.messages
+            WHERE conversation_id IN (SELECT conversation_id FROM user_convos)
         ) m
-        WHERE m.rn = 1
+        WHERE rn = 1
     )
+    -- Final SELECT to join everything together
     SELECT
-        uc.id,
-        uc.name,
-        uc.type,
+        c.id,
+        c.name,
+        c.type,
         cp.participants,
         lm.last_message,
-        uc.created_at
-    FROM user_convos uc
-    LEFT JOIN convo_participants cp ON uc.id = cp.conversation_id
-    LEFT JOIN last_messages lm ON uc.id = lm.conversation_id
-    ORDER BY lm.last_message->>'timestamp' DESC NULLS LAST, uc.created_at DESC;
+        c.created_at
+    FROM public.conversations c
+    JOIN convo_participants cp ON c.id = cp.conversation_id
+    LEFT JOIN last_messages lm ON c.id = lm.conversation_id
+    WHERE c.id IN (SELECT conversation_id FROM user_convos)
+    ORDER BY (lm.last_message->>'timestamp')::TIMESTAMPTZ DESC NULLS LAST;
 END;
-$$;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 
--- Creates a function to find an existing direct conversation between two users.
--- This helps prevent creating duplicate DM channels.
-CREATE OR REPLACE FUNCTION public.get_existing_direct_conversation(user_id_1 uuid, user_id_2 uuid)
-RETURNS uuid
-LANGUAGE plpgsql
-SECURITY DEFINER
-AS $$
+-- Function to check if a direct message conversation already exists between two users
+CREATE OR REPLACE FUNCTION get_existing_direct_conversation(user_id_1 UUID, user_id_2 UUID)
+RETURNS UUID AS $$
 DECLARE
-    conversation_uuid uuid;
+    conversation_uuid UUID;
 BEGIN
-    SELECT cp1.conversation_id INTO conversation_uuid
-    FROM conversation_participants cp1
-    JOIN conversation_participants cp2 ON cp1.conversation_id = cp2.conversation_id
-    JOIN conversations c ON cp1.conversation_id = c.id
-    WHERE c.type = 'direct'
-      AND cp1.user_id = user_id_1
-      AND cp2.user_id = user_id_2
-    GROUP BY cp1.conversation_id
-    HAVING COUNT(*) = 2;
+    SELECT c.id INTO conversation_uuid
+    FROM public.conversations c
+    WHERE c.type = 'direct'::public.conversation_type
+    AND (
+        SELECT COUNT(*)
+        FROM public.conversation_participants cp
+        WHERE cp.conversation_id = c.id
+        AND (cp.user_id = user_id_1 OR cp.user_id = user_id_2)
+    ) = 2
+    LIMIT 1;
 
     RETURN conversation_uuid;
 END;
-$$;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
