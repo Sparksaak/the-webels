@@ -50,8 +50,7 @@ export async function getMessages(conversationId: string): Promise<Message[]> {
             content,
             created_at,
             conversation_id,
-            sender_id,
-            users (
+            sender:users (
                 id,
                 raw_user_meta_data
             )
@@ -70,12 +69,13 @@ export async function getMessages(conversationId: string): Promise<Message[]> {
         createdAt: msg.created_at,
         conversationId: msg.conversation_id,
         sender: {
-            id: msg.users.id,
-            name: msg.users.raw_user_meta_data.full_name,
-            email: msg.users.raw_user_meta_data.email,
-            role: msg.users.raw_user_meta_data.role,
+            id: msg.sender.id,
+            name: msg.sender.raw_user_meta_data.full_name,
+            email: msg.sender.raw_user_meta_data.email,
+            role: msg.sender.raw_user_meta_data.role,
             avatarUrl: `https://placehold.co/100x100.png`
         }
     }));
 }
+
 
