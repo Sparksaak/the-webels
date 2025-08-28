@@ -4,7 +4,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Megaphone, MessageSquare } from 'lucide-react';
+import { LayoutDashboard, Megaphone, MessageSquare, BookOpen, FileText } from 'lucide-react';
 import {
   Sidebar,
   SidebarHeader,
@@ -60,6 +60,7 @@ export function AppLayout({ children, userRole }: AppLayoutProps) {
   const navItems = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/announcements', label: 'Announcements', icon: Megaphone },
+    { href: '/assignments', label: 'Assignments', icon: FileText },
     { href: '/messages', label: 'Messages', icon: MessageSquare },
   ];
   
@@ -120,7 +121,7 @@ export function AppLayout({ children, userRole }: AppLayoutProps) {
               <UserNav user={currentUser} />
           </header>
           <main className="flex-1 overflow-auto">
-            <div className="mx-auto max-w-full">
+            <div className="mx-auto max-w-full p-4 sm:p-6 md:p-8">
               {children}
             </div>
           </main>
