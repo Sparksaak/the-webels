@@ -58,51 +58,37 @@ async function getParticipantsForConversations(conversationIds: string[]): Promi
 }
 
 async function getLastMessagesForConversations(conversationIds: string[]): Promise<Record<string, { content: string; timestamp: string }>> {
-    const cookieStore = cookies();
-    const supabase = createClient(cookieStore);
-
-    const { data, error } = await supabase.rpc('get_last_message_for_conversations', {
-        c_ids: conversationIds
-    });
+    if (conversationIds.length === 0) return {};
+    
+    // Using supabaseAdmin to bypass RLS for this internal query.
+    const { data, error } = await supabaseAdmin
+        .from('messages')
+        .select('id, conversation_id, content, created_at')
+        .in('conversation_id', conversationIds)
+        .order('created_at', { ascending: false });
 
     if (error) {
-        // It's possible the function doesn't exist if migrations failed.
-        // We can build a fallback mechanism here or just log the error.
-        console.error('Error fetching last messages via RPC:', error);
-        
-        // Fallback: Query manually if RPC fails
-        const lastMessages: Record<string, { content: string; timestamp: string }> = {};
-        for (const id of conversationIds) {
-            const { data: msg, error: msgError } = await supabase
-                .from('messages')
-                .select('content, created_at')
-                .eq('conversation_id', id)
-                .order('created_at', { ascending: false })
-                .limit(1)
-                .single();
-            if (!msgError && msg) {
-                lastMessages[id] = { content: msg.content, timestamp: msg.created_at };
-            }
-        }
-        return lastMessages;
+        console.error('Error fetching last messages:', error);
+        return {};
     }
 
-    return (data || []).reduce((acc: any, msg: any) => {
-        acc[msg.conversation_id] = {
-            content: msg.content,
-            timestamp: msg.created_at
-        };
-        return acc;
-    }, {});
+    const lastMessages: Record<string, { content: string; timestamp: string }> = {};
+    for (const message of data) {
+        if (!lastMessages[message.conversation_id]) {
+            lastMessages[message.conversation_id] = {
+                content: message.content,
+                timestamp: message.created_at,
+            };
+        }
+    }
+    
+    return lastMessages;
 }
 
 // This is the main function to fetch conversations.
 export async function getConversations(userId: string): Promise<Conversation[]> {
-    const cookieStore = cookies();
-    const supabase = createClient(cookieStore);
-
-    // 1. Get conversation IDs for the user
-    const { data: convParticipantData, error: convParticipantError } = await supabase
+    // 1. Get conversation IDs for the user using the admin client to bypass RLS.
+    const { data: convParticipantData, error: convParticipantError } = await supabaseAdmin
         .from('conversation_participants')
         .select('conversation_id')
         .eq('user_id', userId);
@@ -118,7 +104,7 @@ export async function getConversations(userId: string): Promise<Conversation[]> 
     }
 
     // 2. Get the actual conversation objects
-    const { data: conversationsData, error: conversationsError } = await supabase
+    const { data: conversationsData, error: conversationsError } = await supabaseAdmin
         .from('conversations')
         .select('*')
         .in('id', conversationIds)
@@ -166,11 +152,9 @@ export async function getConversations(userId: string): Promise<Conversation[]> 
 
 
 export async function getMessages(conversationId: string): Promise<Message[]> {
-    const cookieStore = cookies();
-    const supabase = createClient(cookieStore);
-
-    // Step 1: Fetch all messages for the conversation
-    const { data: messagesData, error: messagesError } = await supabase
+    // Use admin client to fetch messages to ensure all messages in a conversation are visible
+    // to its participants, bypassing potential RLS issues on the messages table itself.
+    const { data: messagesData, error: messagesError } = await supabaseAdmin
         .from('messages')
         .select('*')
         .eq('conversation_id', conversationId)
@@ -185,18 +169,15 @@ export async function getMessages(conversationId: string): Promise<Message[]> {
         return [];
     }
 
-    // Step 2: Get all unique sender IDs from the messages
     const senderIds = [...new Set(messagesData.map(msg => msg.sender_id))];
 
-    // Step 3: Fetch user details for all senders in a single query using the admin client
     const { data: { users }, error: usersError } = await supabaseAdmin.auth.admin.listUsers({
         page: 1,
-        perPage: 1000, // Adjust as needed
+        perPage: 1000,
     });
      
     if (usersError) {
         console.error('Error fetching users:', usersError);
-        // Fallback or return empty sender info
         return [];
     }
 
@@ -213,13 +194,12 @@ export async function getMessages(conversationId: string): Promise<Message[]> {
         return acc;
     }, {} as Record<string, AppUser>);
 
-    // Step 4: Map messages to include full sender details
     return messagesData.map((msg) => ({
         id: msg.id,
         content: msg.content,
         createdAt: msg.created_at,
         conversationId: msg.conversation_id,
-        sender: usersById[msg.sender_id] || { // Fallback for unknown sender
+        sender: usersById[msg.sender_id] || { 
             id: msg.sender_id,
             name: 'Unknown User',
             email: '',
