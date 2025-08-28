@@ -105,30 +105,34 @@ export function MessagingContent({
     
 
     const handleSendMessage = async (formData: FormData) => {
-        if (!formData.get('content') || !activeConversationId) return;
+        const content = formData.get('content') as string;
+        if (!content || !activeConversationId) return;
         
         setIsSubmitting(true);
         formRef.current?.reset();
 
-        const tempId = `temp-${Date.now()}`;
-        const content = formData.get('content') as string;
-        
-        setMessages(prev => [...prev, {
-            id: tempId,
+        const optimisticMessage: Message = {
+            id: `temp-${Date.now()}`,
             content: content,
             createdAt: new Date().toISOString(),
             conversationId: activeConversationId,
             sender: currentUser,
-        }]);
+        };
+        
+        setMessages(prev => [...prev, optimisticMessage]);
         scrollToBottom();
         
         const result = await sendMessage(formData);
         
         if (result?.error) {
              console.error(result.error);
-             setMessages(prev => prev.filter(m => m.id !== tempId));
+             setMessages(prev => prev.filter(m => m.id !== optimisticMessage.id));
         } else if (result?.success && result.message) {
-            setMessages(prev => prev.map(m => m.id === tempId ? result.message as Message : m));
+            const finalMessage = {
+                ...result.message,
+                createdAt: result.message.created_at
+            } as Message;
+            setMessages(prev => prev.map(m => m.id === optimisticMessage.id ? finalMessage : m));
             fetchAndSetConversations(currentUser.id);
         }
         
