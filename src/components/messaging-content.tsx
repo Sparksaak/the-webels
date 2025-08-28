@@ -17,7 +17,6 @@ import { getConversations, getMessages } from '@/app/messages/data';
 import { sendMessage } from '@/app/messages/actions';
 import type { AppUser, Conversation, Message } from '@/app/messages/types';
 import { NewConversationDialog } from '@/components/new-conversation-dialog';
-import { supabaseAdmin } from '@/lib/supabase/admin';
 
 interface MessagingContentProps {
     initialCurrentUser: AppUser;
@@ -76,60 +75,32 @@ export function MessagingContent({
         scrollToBottom();
     }, [messages]);
     
-     useEffect(() => {
+    useEffect(() => {
         const channel = supabase
-            .channel('realtime-messages')
-            .on('postgres_changes', { 
-                event: 'INSERT', 
-                schema: 'public', 
-                table: 'messages' 
-            }, async (payload) => {
-                const newMessagePayload = payload.new as any;
-                
-                // Always refresh the conversation list to update the sidebar
-                if (currentUser) {
-                    await fetchAndSetConversations(currentUser.id);
-                }
+          .channel('realtime-messages')
+          .on(
+            'postgres_changes',
+            { event: 'INSERT', schema: 'public', table: 'messages' },
+            async (payload) => {
+              const newMessage = payload.new as Message;
 
-                // If the new message is in the active conversation, append it
-                if (newMessagePayload.conversation_id === activeConversationId) {
-                    // Fetch sender details for the new message
-                    const { data: userData, error: userError } = await createClient()
-                        .from('users')
-                        .select('id, full_name, email, user_metadata')
-                        .eq('id', newMessagePayload.sender_id)
-                        .single();
+              // Always refresh the conversation list to update the sidebar
+              await fetchAndSetConversations(currentUser.id);
 
-                    if (userError) {
-                        console.error("Error fetching sender for new message:", userError);
-                        return;
-                    }
-                     
-                    const sender: AppUser = {
-                        id: userData.id,
-                        name: userData.user_metadata.full_name || userData.email,
-                        email: userData.email!,
-                        role: userData.user_metadata.role || 'student',
-                        avatarUrl: 'https://placehold.co/100x100.png'
-                    };
-
-                    const finalMessage: Message = {
-                        id: newMessagePayload.id,
-                        content: newMessagePayload.content,
-                        createdAt: newMessagePayload.created_at,
-                        conversationId: newMessagePayload.conversation_id,
-                        sender: sender
-                    };
-
-                    setMessages(prevMessages => [...prevMessages, finalMessage]);
-                }
-            })
-            .subscribe();
-
+              if (newMessage.conversationId === activeConversationId) {
+                // To get the sender details, we'll just refetch all messages for the active conversation.
+                // This is simpler and more reliable than trying to fetch sender details separately.
+                const newMessages = await getMessages(activeConversationId);
+                setMessages(newMessages);
+              }
+            }
+          )
+          .subscribe();
+    
         return () => {
-            supabase.removeChannel(channel);
+          supabase.removeChannel(channel);
         };
-    }, [supabase, currentUser, activeConversationId, fetchAndSetConversations]);
+    }, [supabase, activeConversationId, currentUser.id, fetchAndSetConversations]);
     
 
     const handleSendMessage = async (formData: FormData) => {
@@ -156,7 +127,7 @@ export function MessagingContent({
              console.error(result.error);
              setMessages(prev => prev.filter(m => m.id !== optimisticMessage.id));
         } else if (result?.success && result.message) {
-             const finalMessage: Message = {
+            const finalMessage: Message = {
                 ...result.message,
                 createdAt: result.message.created_at, 
             };
@@ -321,7 +292,5 @@ export function MessagingContent({
             </div>
     );
 }
-
-    
 
     
