@@ -110,7 +110,6 @@ export function MessagingContent({
         setIsSubmitting(true);
         formRef.current?.reset();
 
-        // Optimistically add the message to the UI
         const tempId = `temp-${Date.now()}`;
         const content = formData.get('content') as string;
         
@@ -127,12 +126,9 @@ export function MessagingContent({
         
         if (result?.error) {
              console.error(result.error);
-             // Revert optimistic update on error
              setMessages(prev => prev.filter(m => m.id !== tempId));
         } else if (result?.success && result.message) {
-            // Replace optimistic message with the real one from the server
             setMessages(prev => prev.map(m => m.id === tempId ? result.message as Message : m));
-            // Refresh conversation list to show new last message and order
             fetchAndSetConversations(currentUser.id);
         }
         
