@@ -75,33 +75,32 @@ export function MessagingContent({
         scrollToBottom();
     }, [messages]);
     
-    const handleNewMessage = useCallback((payload: any) => {
-        const newMessagePayload = payload.new;
-        
-        if (currentUser) {
-            fetchAndSetConversations(currentUser.id);
-        }
-
-        if (newMessagePayload.conversation_id === activeConversationId) {
-            // Re-fetch messages for the active conversation to get the new message with sender details
-            getMessages(activeConversationId).then(setMessages);
-        }
-        
-    }, [activeConversationId, currentUser, fetchAndSetConversations]);
-
     useEffect(() => {
         const channel = supabase
-            .channel('realtime-messages')
-            .on('postgres_changes', 
-                { event: 'INSERT', schema: 'public', table: 'messages' }, 
-                handleNewMessage
-            )
+            .channel('realtime-messages-and-conversations')
+            .on('postgres_changes', { 
+                event: 'INSERT', 
+                schema: 'public', 
+                table: 'messages' 
+            }, (payload) => {
+                const newMessage = payload.new;
+                
+                // Refresh conversations list to update last message preview
+                if (currentUser) {
+                    fetchAndSetConversations(currentUser.id);
+                }
+
+                // If the new message is in the active conversation, refresh messages
+                if (newMessage.conversation_id === activeConversationId) {
+                    getMessages(activeConversationId).then(setMessages);
+                }
+            })
             .subscribe();
 
         return () => {
             supabase.removeChannel(channel);
         };
-    }, [supabase, handleNewMessage]);
+    }, [supabase, currentUser, activeConversationId, fetchAndSetConversations]);
     
 
     const handleSendMessage = async (formData: FormData) => {
@@ -128,10 +127,10 @@ export function MessagingContent({
              console.error(result.error);
              setMessages(prev => prev.filter(m => m.id !== optimisticMessage.id));
         } else if (result?.success && result.message) {
-            const finalMessage = {
+             const finalMessage: Message = {
                 ...result.message,
-                createdAt: result.message.created_at
-            } as Message;
+                createdAt: result.message.created_at, 
+            };
             setMessages(prev => prev.map(m => m.id === optimisticMessage.id ? finalMessage : m));
             fetchAndSetConversations(currentUser.id);
         }
