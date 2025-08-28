@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { LayoutDashboard, Megaphone, MessageSquare } from 'lucide-react';
 import {
-  SidebarProvider,
   Sidebar,
   SidebarHeader,
   SidebarContent,
@@ -77,58 +76,56 @@ export function AppLayout({ children, userRole }: AppLayoutProps) {
   }
 
   return (
-    <SidebarProvider>
-      <div className="flex min-h-screen bg-background">
-        <Sidebar collapsible="icon" className="border-r border-border/20">
-          <SidebarHeader>
-            <div className="flex items-center gap-2 p-2">
-                <Logo className="size-8" />
-                <span className="font-bold text-lg">Classroom</span>
-            </div>
-          </SidebarHeader>
-          <SidebarContent>
-            <SidebarMenu>
-              {navItems.map((item) => (
-                <SidebarMenuItem key={item.href}>
-                  <Link href={`${item.href}`}>
-                    <SidebarMenuButton 
-                      isActive={isActive(item.href)}
-                      tooltip={{children: item.label, side: "right"}}
-                    >
-                      <item.icon />
-                      <span>{item.label}</span>
-                    </SidebarMenuButton>
-                  </Link>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarContent>
-          <SidebarFooter>
-             <div className="flex items-center gap-2 w-full p-2">
-                 <UserNav user={currentUser} />
-                 <div className="flex flex-col text-sm">
-                     <span className="font-semibold">{currentUser.name}</span>
-                     <span className="text-muted-foreground capitalize">{currentUser.role}</span>
-                 </div>
-             </div>
-          </SidebarFooter>
-        </Sidebar>
-        <SidebarInset>
-          <div className="flex flex-col w-full">
-            <header className="sticky top-0 z-10 flex h-14 items-center justify-between gap-4 border-b bg-background/80 px-4 backdrop-blur-sm sm:px-6 md:justify-end">
-                <div className="md:hidden">
-                    <SidebarTrigger />
-                </div>
-                <UserNav user={currentUser} />
-            </header>
-            <main className="flex-1 overflow-auto">
-              <div className="mx-auto max-w-full">
-                {children}
-              </div>
-            </main>
+    <div className="flex min-h-screen bg-background">
+      <Sidebar collapsible="icon" className="border-r border-border/20">
+        <SidebarHeader>
+          <div className="flex items-center gap-2 p-2">
+              <Logo className="size-8" />
+              <span className="font-bold text-lg">Classroom</span>
           </div>
-        </SidebarInset>
-      </div>
-    </SidebarProvider>
+        </SidebarHeader>
+        <SidebarContent>
+          <SidebarMenu>
+            {navItems.map((item) => (
+              <SidebarMenuItem key={item.href}>
+                <Link href={`${item.href}`}>
+                  <SidebarMenuButton 
+                    isActive={isActive(item.href)}
+                    tooltip={{children: item.label, side: "right"}}
+                  >
+                    <item.icon />
+                    <span>{item.label}</span>
+                  </SidebarMenuButton>
+                </Link>
+              </SidebarMenuItem>
+            ))}
+          </SidebarMenu>
+        </SidebarContent>
+        <SidebarFooter>
+            <div className="flex items-center gap-2 w-full p-2">
+                <UserNav user={currentUser} />
+                <div className="flex flex-col text-sm">
+                    <span className="font-semibold">{currentUser.name}</span>
+                    <span className="text-muted-foreground capitalize">{currentUser.role}</span>
+                </div>
+            </div>
+        </SidebarFooter>
+      </Sidebar>
+      <SidebarInset>
+        <div className="flex flex-col w-full">
+          <header className="sticky top-0 z-10 flex h-14 items-center justify-between gap-4 border-b bg-background/80 px-4 backdrop-blur-sm sm:px-6 md:justify-end">
+              <div className="md:hidden">
+                  <SidebarTrigger />
+              </div>
+              <UserNav user={currentUser} />
+          </header>
+          <main className="flex-1 overflow-auto">
+            <div className="mx-auto max-w-full">
+              {children}
+            </div>
+          </main>
+        </div>
+      </SidebarInset>
+    </div>
   );
 }
