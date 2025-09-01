@@ -18,8 +18,6 @@ import {
 } from '@/components/ui/sidebar';
 import { UserNav } from '@/components/user-nav';
 import { Logo } from '@/components/logo';
-import { useEffect, useState } from 'react';
-import { createClient } from '@/lib/supabase/client';
 
 type User = {
   id: string;
@@ -31,31 +29,11 @@ type User = {
 
 interface AppLayoutProps {
   children: React.ReactNode;
-  userRole: 'teacher' | 'student';
+  user: User;
 }
 
-export function AppLayout({ children, userRole }: AppLayoutProps) {
+export function AppLayout({ children, user }: AppLayoutProps) {
   const pathname = usePathname();
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-
-  useEffect(() => {
-    const fetchUser = async () => {
-        const supabase = createClient();
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-            const role = user.user_metadata.role || 'student';
-            const fetchedUser: User = {
-                id: user.id,
-                name: user.user_metadata.full_name,
-                email: user.email!,
-                role: role,
-                avatarUrl: `https://placehold.co/100x100.png`
-            };
-            setCurrentUser(fetchedUser);
-        }
-    };
-    fetchUser();
-  }, []);
 
   const navItems = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -68,7 +46,7 @@ export function AppLayout({ children, userRole }: AppLayoutProps) {
     return pathname.startsWith(href);
   };
   
-  if (!currentUser) {
+  if (!user) {
       return (
           <div className="flex min-h-screen bg-background items-center justify-center">
               <div>Loading...</div>
@@ -104,10 +82,10 @@ export function AppLayout({ children, userRole }: AppLayoutProps) {
         </SidebarContent>
         <SidebarFooter>
             <div className="flex items-center gap-2 w-full p-2">
-                <UserNav user={currentUser} />
+                <UserNav user={user} />
                 <div className="flex flex-col text-sm">
-                    <span className="font-semibold">{currentUser.name}</span>
-                    <span className="text-muted-foreground capitalize">{currentUser.role}</span>
+                    <span className="font-semibold">{user.name}</span>
+                    <span className="text-muted-foreground capitalize">{user.role}</span>
                 </div>
             </div>
         </SidebarFooter>
@@ -118,7 +96,7 @@ export function AppLayout({ children, userRole }: AppLayoutProps) {
               <div className="md:hidden">
                   <SidebarTrigger />
               </div>
-              <UserNav user={currentUser} />
+              <UserNav user={user} />
           </header>
           <main className="flex-1 overflow-auto">
             <div className="mx-auto max-w-full p-4 sm:p-6 md:p-8">

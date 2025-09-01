@@ -6,6 +6,7 @@ import { getConversations, getMessages } from './data';
 import type { AppUser } from './types';
 import { MessagingContent } from '@/components/messaging-content';
 import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
 
 async function MessagesPage({ searchParams }: { searchParams: { [key: string]: string | string[] | undefined } }) {
     const cookieStore = cookies();
@@ -14,12 +15,7 @@ async function MessagesPage({ searchParams }: { searchParams: { [key: string]: s
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
-        // This should be handled by middleware, but as a fallback
-        return (
-            <div className="flex items-center justify-center h-screen">
-                <p>You must be logged in to view messages.</p>
-            </div>
-        );
+        redirect('/login');
     }
     
     const currentUser: AppUser = {
@@ -40,7 +36,7 @@ async function MessagesPage({ searchParams }: { searchParams: { [key: string]: s
     const activeConversation = conversations.find(c => c.id === conversationIdFromUrl) || null;
     
     return (
-        <AppLayout userRole={currentUser.role}>
+        <AppLayout user={currentUser}>
             <MessagingContent 
                 initialCurrentUser={currentUser}
                 initialConversations={conversations}

@@ -1,13 +1,12 @@
 
-"use client";
-
-import { Suspense, useEffect, useState } from 'react';
-import { createClient } from '@/lib/supabase/client';
+import { Suspense } from 'react';
+import { createClient } from '@/lib/supabase/server';
 import { AppLayout } from '@/components/app-layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { FileText, PlusCircle } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { redirect } from 'next/navigation';
+import { cookies } from 'next/headers';
 
 type AppUser = {
     id: string;
@@ -17,50 +16,28 @@ type AppUser = {
     avatarUrl: string;
 };
 
-function AssignmentsContent() {
-  const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
-  const [loading, setLoading] = useState(true);
-  const router = useRouter();
+async function AssignmentsContent() {
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
+  const { data: { user } } = await supabase.auth.getUser();
 
-  useEffect(() => {
-    const fetchUser = async () => {
-        const supabase = createClient();
-        const { data: { user } } = await supabase.auth.getUser();
-
-        if (user) {
-            const role = user.user_metadata?.role || 'student';
-            const name = user.user_metadata?.full_name || user.email;
-
-            const fetchedUser: AppUser = {
-                id: user.id,
-                name: name,
-                email: user.email!,
-                role: role,
-                avatarUrl: `https://placehold.co/100x100.png`,
-            };
-            setCurrentUser(fetchedUser);
-        } else {
-            router.push('/login');
-        }
-        setLoading(false);
-    };
-    fetchUser();
-  }, [router]);
-
-  if (loading) {
-    return (
-        <div className="flex items-center justify-center">
-            <div>Loading assignments...</div>
-        </div>
-    );
+  if (!user) {
+    redirect('/login');
   }
 
-  if (!currentUser) {
-      return null;
-  }
+  const role = user.user_metadata?.role || 'student';
+  const name = user.user_metadata?.full_name || user.email;
+
+  const currentUser: AppUser = {
+      id: user.id,
+      name: name,
+      email: user.email!,
+      role: role,
+      avatarUrl: `https://placehold.co/100x100.png`,
+  };
 
   return (
-    <AppLayout userRole={currentUser.role}>
+    <AppLayout user={currentUser}>
         <div className="flex items-center justify-between">
             <div>
                 <h1 className="text-3xl font-bold tracking-tight">Assignments</h1>
@@ -98,7 +75,7 @@ function AssignmentsContent() {
 
 export default function AssignmentsPage() {
     return (
-        <Suspense fallback={<div>Loading...</div>}>
+        <Suspense fallback={<div className="flex min-h-screen bg-background items-center justify-center"><div>Loading assignments...</div></div>}>
             <AssignmentsContent />
         </Suspense>
     )
