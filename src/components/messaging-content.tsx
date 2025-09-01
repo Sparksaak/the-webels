@@ -2,7 +2,7 @@
 'use client';
 
 import { useCallback, useEffect, useState, useRef } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -82,14 +82,12 @@ export function MessagingContent({
             'postgres_changes',
             { event: 'INSERT', schema: 'public', table: 'messages' },
             async (payload) => {
-              const newMessage = payload.new as Message;
+              const newMessage = payload.new as { conversation_id: string };
 
               // Always refresh the conversation list to update the sidebar
               await fetchAndSetConversations(currentUser.id);
 
-              if (newMessage.conversationId === activeConversationId) {
-                // To get the sender details, we'll just refetch all messages for the active conversation.
-                // This is simpler and more reliable than trying to fetch sender details separately.
+              if (newMessage.conversation_id === activeConversationId) {
                 const newMessages = await getMessages(activeConversationId);
                 setMessages(newMessages);
               }
@@ -127,12 +125,12 @@ export function MessagingContent({
              console.error(result.error);
              setMessages(prev => prev.filter(m => m.id !== optimisticMessage.id));
         } else if (result?.success && result.message) {
-            const finalMessage: Message = {
-                ...result.message,
-                createdAt: result.message.created_at, 
-            };
-            setMessages(prev => prev.map(m => m.id === optimisticMessage.id ? finalMessage : m));
-            fetchAndSetConversations(currentUser.id);
+            // Replace the optimistic message with the final one from the server
+             setMessages(prev => prev.map(m => m.id === optimisticMessage.id ? {
+                 ...result.message,
+                 createdAt: result.message.created_at,
+             } as Message : m));
+            await fetchAndSetConversations(currentUser.id);
         }
         
         setIsSubmitting(false);
