@@ -4,6 +4,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Conversation, Message, AppUser } from './types';
 import { supabaseAdmin } from '@/lib/supabase/admin';
+import { createClient } from '@/lib/supabase/server';
 
 async function getParticipantsForConversations(conversationIds: string[]): Promise<Record<string, AppUser[]>> {
     const { data: participantsData, error: participantsError } = await supabaseAdmin
@@ -85,7 +86,7 @@ async function getLastMessagesForConversations(conversationIds: string[]): Promi
 }
 
 // This is the main function to fetch conversations.
-export async function getConversations(supabase: SupabaseClient, userId: string): Promise<Conversation[]> {
+export async function getConversations(userId: string): Promise<Conversation[]> {
     // 1. Get conversation IDs for the user using the admin client to bypass RLS.
     const { data: convParticipantData, error: convParticipantError } = await supabaseAdmin
         .from('conversation_participants')
@@ -150,7 +151,7 @@ export async function getConversations(supabase: SupabaseClient, userId: string)
 }
 
 
-export async function getMessages(supabase: SupabaseClient, conversationId: string): Promise<Message[]> {
+export async function getMessages(conversationId: string): Promise<Message[]> {
     // Use admin client to fetch messages to ensure all messages in a conversation are visible
     // to its participants, bypassing potential RLS issues on the messages table itself.
     const { data: messagesData, error: messagesError } = await supabaseAdmin
