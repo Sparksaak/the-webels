@@ -7,7 +7,6 @@ import type { AppUser } from './types';
 import { MessagingContent } from '@/components/messaging-content';
 import { redirect } from 'next/navigation';
 import { ClientOnly } from '@/components/client-only';
-import { cookies } from 'next/headers';
 
 async function MessagesPage({ searchParams }: { searchParams: { [key: string]: string | string[] | undefined } }) {
     const supabase = createClient();
