@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Megaphone, PlusCircle } from 'lucide-react';
 import { redirect } from 'next/navigation';
+import { cookies } from 'next/headers';
 
 type AppUser = {
     id: string;
@@ -16,7 +17,8 @@ type AppUser = {
 };
 
 async function AnnouncementsContent() {
-  const supabase = createClient();
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {

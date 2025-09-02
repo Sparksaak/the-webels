@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { FileText, PlusCircle } from 'lucide-react';
 import { redirect } from 'next/navigation';
+import { cookies } from 'next/headers';
 
 type AppUser = {
     id: string;
@@ -16,7 +17,8 @@ type AppUser = {
 };
 
 async function AssignmentsContent() {
-  const supabase = createClient();
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
@@ -58,7 +60,7 @@ async function AssignmentsContent() {
                     <CardDescription>
                        A list of all assignments.
                     </CardDescription>
-                </CardHeader>
+                </Header>
                 <CardContent>
                     <div className="text-center text-muted-foreground py-24">
                         <FileText className="mx-auto h-12 w-12 text-gray-400" />

@@ -4,9 +4,11 @@
 import { createClient } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { revalidatePath } from 'next/cache';
+import { cookies } from 'next/headers';
 
 export async function createConversation(formData: FormData) {
-    const supabase = createClient();
+    const cookieStore = cookies();
+    const supabase = createClient(cookieStore);
 
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
@@ -78,7 +80,8 @@ export async function createConversation(formData: FormData) {
 }
 
 export async function sendMessage(formData: FormData) {
-    const supabase = createClient();
+    const cookieStore = cookies();
+    const supabase = createClient(cookieStore);
 
     const content = formData.get('content') as string;
     const conversationId = formData.get('conversationId') as string;
@@ -134,7 +137,8 @@ export async function sendMessage(formData: FormData) {
 }
 
 export async function getUsers() {
-    const supabase = createClient();
+    const cookieStore = cookies();
+    const supabase = createClient(cookieStore);
     const { data: { user: currentUser } } = await supabase.auth.getUser();
 
     if (!currentUser) return [];
