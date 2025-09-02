@@ -3,11 +3,10 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import { headers, cookies } from 'next/headers';
+import { headers } from 'next/headers';
 
 export async function signup(prevState: { error: string } | null, formData: FormData) {
-  const cookieStore = cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = createClient();
 
   const name = formData.get('name') as string;
   const email = formData.get('email') as string;
@@ -53,8 +52,7 @@ export async function signup(prevState: { error: string } | null, formData: Form
 
 
 export async function login(prevState: { error?: string; success?: boolean } | null, formData: FormData) {
-  const cookieStore = cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = createClient();
 
   const email = formData.get('email') as string
   const password = formData.get('password') as string
@@ -79,8 +77,7 @@ export async function login(prevState: { error?: string; success?: boolean } | n
 }
 
 export async function logout() {
-    const cookieStore = cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = createClient();
     await supabase.auth.signOut();
     redirect('/login');
 }

@@ -5,13 +5,11 @@ import { AppLayout } from '@/components/app-layout';
 import { getConversations, getMessages } from './data';
 import type { AppUser } from './types';
 import { MessagingContent } from '@/components/messaging-content';
-import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { ClientOnly } from '@/components/client-only';
 
 async function MessagesPage({ searchParams }: { searchParams: { [key: string]: string | string[] | undefined } }) {
-    const cookieStore = cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = createClient();
 
     const { data: { user } } = await supabase.auth.getUser();
 

@@ -3,12 +3,10 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
-import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 
 export async function createConversation(formData: FormData) {
-    const cookieStore = cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = createClient();
 
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
@@ -80,8 +78,7 @@ export async function createConversation(formData: FormData) {
 }
 
 export async function sendMessage(formData: FormData) {
-    const cookieStore = cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = createClient();
 
     const content = formData.get('content') as string;
     const conversationId = formData.get('conversationId') as string;
@@ -137,8 +134,7 @@ export async function sendMessage(formData: FormData) {
 }
 
 export async function getUsers() {
-    const cookieStore = cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = createClient();
     const { data: { user: currentUser } } = await supabase.auth.getUser();
 
     if (!currentUser) return [];

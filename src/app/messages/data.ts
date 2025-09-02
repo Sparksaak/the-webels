@@ -2,7 +2,6 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
-import { cookies } from 'next/headers';
 import type { Conversation, Message, AppUser } from './types';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 

@@ -5,7 +5,6 @@ import { AppLayout } from '@/components/app-layout';
 import { TeacherDashboard } from '@/components/teacher-dashboard';
 import { StudentDashboard } from '@/components/student-dashboard';
 import { redirect } from 'next/navigation';
-import { cookies } from 'next/headers';
 
 type AppUser = {
     id: string;
@@ -16,8 +15,7 @@ type AppUser = {
 };
 
 async function DashboardPage() {
-  const cookieStore = cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
