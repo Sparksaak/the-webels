@@ -48,6 +48,10 @@ export function MessagingContent({
     useEffect(() => {
         activeConversationIdRef.current = activeConversationId;
     }, [activeConversationId]);
+    
+    useEffect(() => {
+      setMessages(initialMessages);
+    }, [initialMessages]);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -80,31 +84,23 @@ export function MessagingContent({
         scrollToBottom();
     }, [messages]);
     
-     useEffect(() => {
-        const channel = supabase
-          .channel('realtime-messages-subscription')
-          .on(
-            'postgres_changes',
-            { event: 'INSERT', schema: 'public', table: 'messages' },
-            async (payload) => {
-              const newMessage = payload.new as { conversation_id: string };
-              
-              // Always refresh conversations to update sidebar
-              await fetchAndSetConversations(currentUser.id);
-
-              // If the new message is in the active conversation, refresh messages
-              if (newMessage.conversation_id === activeConversationIdRef.current) {
-                const newMessages = await getMessages(activeConversationIdRef.current);
-                setMessages(newMessages);
-              }
-            }
-          )
-          .subscribe();
-    
-        return () => {
-          supabase.removeChannel(channel);
-        };
-      }, [supabase, currentUser.id, fetchAndSetConversations]);
+    useEffect(() => {
+      const channel = supabase
+        .channel('realtime-messages-and-conversations')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public' },
+          (payload) => {
+            // This will re-fetch server components & re-run server actions
+            router.refresh();
+          }
+        )
+        .subscribe();
+  
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }, [supabase, router]);
     
 
     const handleSendMessage = async (formData: FormData) => {
@@ -296,3 +292,5 @@ export function MessagingContent({
             </div>
     );
 }
+
+    
