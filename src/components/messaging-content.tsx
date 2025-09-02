@@ -84,22 +84,42 @@ export function MessagingContent({
     }, [messages]);
     
     useEffect(() => {
+        if (!activeConversationId) {
+          return;
+        }
+    
         const channel = supabase
-            .channel('public:messages')
-            .on(
-                'postgres_changes',
-                { event: 'INSERT', schema: 'public', table: 'messages' },
-                (payload) => {
-                    // This will re-fetch server components & re-run server actions
-                    router.refresh();
-                }
-            )
-            .subscribe();
+          .channel(`messages:${activeConversationId}`)
+          .on(
+            'postgres_changes',
+            {
+              event: 'INSERT',
+              schema: 'public',
+              table: 'messages',
+              filter: `conversation_id=eq.${activeConversationId}`,
+            },
+            (payload) => {
+                const newMessage = payload.new as Message;
 
+                // Optimistically update the UI to avoid waiting for router.refresh()
+                // But we need to fetch the sender details.
+                // A simple router.refresh() is more robust here.
+                router.refresh();
+            }
+          )
+          .subscribe((status, err) => {
+            if (status === 'SUBSCRIBED') {
+              console.log(`Successfully subscribed to channel: messages:${activeConversationId}`);
+            }
+            if (status === 'CHANNEL_ERROR') {
+              console.error(`Failed to subscribe to channel: messages:${activeConversationId}`, err);
+            }
+          });
+    
         return () => {
-            supabase.removeChannel(channel);
+          supabase.removeChannel(channel);
         };
-    }, [supabase, router]);
+      }, [supabase, router, activeConversationId]);
     
 
     const handleSendMessage = async (formData: FormData) => {
@@ -125,9 +145,13 @@ export function MessagingContent({
         if (result?.error) {
              console.error(result.error);
              setMessages(prev => prev.filter(m => m.id !== optimisticMessage.id));
+        } else {
+             // Let the realtime update handle showing the final message
+             // to avoid duplicates.
         }
         
         setIsSubmitting(false);
+        router.refresh();
     };
     
     const activeConversation = conversations.find(c => c.id === activeConversationId);
@@ -284,5 +308,7 @@ export function MessagingContent({
             </div>
     );
 }
+
+    
 
     
