@@ -7,6 +7,7 @@ import type { AppUser } from './types';
 import { MessagingContent } from '@/components/messaging-content';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { ClientOnly } from '@/components/client-only';
 
 async function MessagesPage({ searchParams }: { searchParams: { [key: string]: string | string[] | undefined } }) {
     const cookieStore = cookies();
@@ -33,16 +34,16 @@ async function MessagesPage({ searchParams }: { searchParams: { [key: string]: s
         ? await getMessages(conversationIdFromUrl) 
         : [];
     
-    const activeConversation = conversations.find(c => c.id === conversationIdFromUrl) || null;
-    
     return (
         <AppLayout user={currentUser}>
-            <MessagingContent 
-                initialCurrentUser={currentUser}
-                initialConversations={conversations}
-                initialMessages={messages}
-                initialActiveConversationId={conversationIdFromUrl}
-            />
+            <ClientOnly>
+                <MessagingContent 
+                    initialCurrentUser={currentUser}
+                    initialConversations={conversations}
+                    initialMessages={messages}
+                    initialActiveConversationId={conversationIdFromUrl}
+                />
+            </ClientOnly>
         </AppLayout>
     );
 }
