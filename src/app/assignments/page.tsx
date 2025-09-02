@@ -60,7 +60,7 @@ async function AssignmentsContent() {
                     <CardDescription>
                        A list of all assignments.
                     </CardDescription>
-                </Header>
+                </CardHeader>
                 <CardContent>
                     <div className="text-center text-muted-foreground py-24">
                         <FileText className="mx-auto h-12 w-12 text-gray-400" />
