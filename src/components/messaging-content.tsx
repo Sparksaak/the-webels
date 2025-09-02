@@ -43,11 +43,10 @@ export function MessagingContent({
     const [isSubmitting, setIsSubmitting] = useState(false);
     
     const messagesEndRef = useRef<HTMLDivElement>(null);
-    const activeConversationIdRef = useRef(activeConversationId);
-
+    
     useEffect(() => {
-        activeConversationIdRef.current = activeConversationId;
-    }, [activeConversationId]);
+        setConversations(initialConversations);
+    }, [initialConversations]);
     
     useEffect(() => {
       setMessages(initialMessages);
@@ -89,7 +88,7 @@ export function MessagingContent({
         .channel('realtime-messages-and-conversations')
         .on(
           'postgres_changes',
-          { event: '*', schema: 'public' },
+          { event: '*', schema: 'public', table: 'messages' },
           (payload) => {
             // This will re-fetch server components & re-run server actions
             router.refresh();
@@ -126,13 +125,6 @@ export function MessagingContent({
         if (result?.error) {
              console.error(result.error);
              setMessages(prev => prev.filter(m => m.id !== optimisticMessage.id));
-        } else if (result?.success && result.message) {
-            // Replace the optimistic message with the final one from the server
-             setMessages(prev => prev.map(m => m.id === optimisticMessage.id ? {
-                 ...result.message,
-                 createdAt: result.message.created_at,
-             } as Message : m));
-            await fetchAndSetConversations(currentUser.id);
         }
         
         setIsSubmitting(false);
@@ -292,5 +284,7 @@ export function MessagingContent({
             </div>
     );
 }
+
+    
 
     

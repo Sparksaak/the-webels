@@ -11,7 +11,7 @@ import { cookies } from 'next/headers';
 
 async function MessagesPage({ searchParams }: { searchParams: { [key: string]: string | string[] | undefined } }) {
     const cookieStore = cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
@@ -26,7 +26,8 @@ async function MessagesPage({ searchParams }: { searchParams: { [key: string]: s
         avatarUrl: `https://placehold.co/100x100.png`
     };
 
-    const conversationIdFromUrl = typeof searchParams.conversation_id === 'string' ? searchParams.conversation_id : null;
+    const awaitedSearchParams = await searchParams;
+    const conversationIdFromUrl = typeof awaitedSearchParams.conversation_id === 'string' ? awaitedSearchParams.conversation_id : null;
     
     const [conversations, messages] = await Promise.all([
       getConversations(currentUser.id),
