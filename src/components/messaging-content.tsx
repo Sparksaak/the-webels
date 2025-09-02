@@ -84,21 +84,21 @@ export function MessagingContent({
     }, [messages]);
     
     useEffect(() => {
-      const channel = supabase
-        .channel('realtime-messages-and-conversations')
-        .on(
-          'postgres_changes',
-          { event: '*', schema: 'public', table: 'messages' },
-          (payload) => {
-            // This will re-fetch server components & re-run server actions
-            router.refresh();
-          }
-        )
-        .subscribe();
-  
-      return () => {
-        supabase.removeChannel(channel);
-      };
+        const channel = supabase
+            .channel('public:messages')
+            .on(
+                'postgres_changes',
+                { event: 'INSERT', schema: 'public', table: 'messages' },
+                (payload) => {
+                    // This will re-fetch server components & re-run server actions
+                    router.refresh();
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
     }, [supabase, router]);
     
 
@@ -284,7 +284,5 @@ export function MessagingContent({
             </div>
     );
 }
-
-    
 
     
