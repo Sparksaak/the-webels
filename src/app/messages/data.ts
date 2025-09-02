@@ -1,7 +1,6 @@
 
 'use server';
 
-import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Conversation, Message, AppUser } from './types';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';

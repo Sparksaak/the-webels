@@ -7,10 +7,10 @@ import type { AppUser } from './types';
 import { MessagingContent } from '@/components/messaging-content';
 import { redirect } from 'next/navigation';
 import { ClientOnly } from '@/components/client-only';
+import { cookies } from 'next/headers';
 
 async function MessagesPage({ searchParams }: { searchParams: { [key: string]: string | string[] | undefined } }) {
     const supabase = createClient();
-
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
@@ -25,12 +25,12 @@ async function MessagesPage({ searchParams }: { searchParams: { [key: string]: s
         avatarUrl: `https://placehold.co/100x100.png`
     };
 
-    const conversations = await getConversations(currentUser.id);
     const conversationIdFromUrl = typeof searchParams.conversation_id === 'string' ? searchParams.conversation_id : null;
     
-    const messages = conversationIdFromUrl 
-        ? await getMessages(conversationIdFromUrl) 
-        : [];
+    const [conversations, messages] = await Promise.all([
+      getConversations(currentUser.id),
+      conversationIdFromUrl ? getMessages(conversationIdFromUrl) : Promise.resolve([])
+    ]);
     
     return (
         <AppLayout user={currentUser}>
