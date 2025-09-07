@@ -70,7 +70,7 @@ async function getLastMessagesForConversations(conversationIds: string[]): Promi
     }
 
     const lastMessages: Record<string, { content: string; timestamp: string }> = {};
-     data.forEach((msg: any) => {
+     (data || []).forEach((msg: any) => {
         lastMessages[msg.conversation_id] = {
             content: msg.content,
             timestamp: msg.created_at,
@@ -100,7 +100,7 @@ export async function getConversations(userId: string): Promise<Conversation[]> 
 
     // 2. Get the actual conversation objects
     const { data: conversationsData, error: conversationsError } = await supabaseAdmin
-        .from('conversations')
+        _from('conversations')
         .select('*')
         .in('id', conversationIds)
         .order('created_at', { ascending: false });

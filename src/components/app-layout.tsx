@@ -1,6 +1,5 @@
 
-
-"use client";
+'use client';
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -32,20 +31,39 @@ interface AppLayoutProps {
   user: User;
 }
 
-export function AppLayout({ children, user }: AppLayoutProps) {
-  const pathname = usePathname();
+function NavItems() {
+    const pathname = usePathname();
+    const navItems = [
+        { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+        { href: '/announcements', label: 'Announcements', icon: Megaphone },
+        { href: '/assignments', label: 'Assignments', icon: FileText },
+        { href: '/messages', label: 'Messages', icon: MessageSquare },
+    ];
 
-  const navItems = [
-    { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/announcements', label: 'Announcements', icon: Megaphone },
-    { href: '/assignments', label: 'Assignments', icon: FileText },
-    { href: '/messages', label: 'Messages', icon: MessageSquare },
-  ];
-  
-  const isActive = (href: string) => {
-    return pathname.startsWith(href);
-  };
-  
+    const isActive = (href: string) => {
+        return pathname.startsWith(href);
+    };
+
+    return (
+        <SidebarMenu>
+            {navItems.map((item) => (
+              <SidebarMenuItem key={item.href}>
+                <Link href={`${item.href}`}>
+                  <SidebarMenuButton 
+                    isActive={isActive(item.href)}
+                    tooltip={{children: item.label, side: "right"}}
+                  >
+                    <item.icon />
+                    <span>{item.label}</span>
+                  </SidebarMenuButton>
+                </Link>
+              </SidebarMenuItem>
+            ))}
+        </SidebarMenu>
+    )
+}
+
+export function AppLayout({ children, user }: AppLayoutProps) {
   if (!user) {
       return (
           <div className="flex min-h-screen bg-background items-center justify-center">
@@ -64,21 +82,7 @@ export function AppLayout({ children, user }: AppLayoutProps) {
           </div>
         </SidebarHeader>
         <SidebarContent>
-          <SidebarMenu>
-            {navItems.map((item) => (
-              <SidebarMenuItem key={item.href}>
-                <Link href={`${item.href}`}>
-                  <SidebarMenuButton 
-                    isActive={isActive(item.href)}
-                    tooltip={{children: item.label, side: "right"}}
-                  >
-                    <item.icon />
-                    <span>{item.label}</span>
-                  </SidebarMenuButton>
-                </Link>
-              </SidebarMenuItem>
-            ))}
-          </SidebarMenu>
+            <NavItems />
         </SidebarContent>
         <SidebarFooter>
             <div className="flex items-center gap-2 w-full p-2">
