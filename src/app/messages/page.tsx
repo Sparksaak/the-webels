@@ -7,10 +7,8 @@ import type { AppUser } from './types';
 import { MessagingContent } from '@/components/messaging-content';
 import { redirect } from 'next/navigation';
 import { ClientOnly } from '@/components/client-only';
-import { cookies } from 'next/headers';
 
 async function MessagesPage({ searchParams }: { searchParams: { [key: string]: string | string[] | undefined } }) {
-    const cookieStore = cookies();
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
@@ -26,8 +24,7 @@ async function MessagesPage({ searchParams }: { searchParams: { [key: string]: s
         avatarUrl: `https://placehold.co/100x100.png`
     };
 
-    const awaitedSearchParams = await searchParams;
-    const conversationIdFromUrl = typeof awaitedSearchParams.conversation_id === 'string' ? awaitedSearchParams.conversation_id : null;
+    const conversationIdFromUrl = typeof searchParams.conversation_id === 'string' ? searchParams.conversation_id : null;
     
     const [conversations, messages] = await Promise.all([
       getConversations(currentUser.id),
