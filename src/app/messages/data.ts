@@ -61,10 +61,8 @@ async function getLastMessagesForConversations(conversationIds: string[]): Promi
     
     // Using supabaseAdmin to bypass RLS for this internal query.
     const { data, error } = await supabaseAdmin
-        .from('messages')
-        .select('id, conversation_id, content, created_at')
-        .in('conversation_id', conversationIds)
-        .order('created_at', { ascending: false });
+        .rpc('get_last_messages_for_conversations', { c_ids: conversationIds });
+
 
     if (error) {
         console.error('Error fetching last messages:', error);
@@ -72,14 +70,12 @@ async function getLastMessagesForConversations(conversationIds: string[]): Promi
     }
 
     const lastMessages: Record<string, { content: string; timestamp: string }> = {};
-    for (const message of data) {
-        if (!lastMessages[message.conversation_id]) {
-            lastMessages[message.conversation_id] = {
-                content: message.content,
-                timestamp: message.created_at,
-            };
-        }
-    }
+     data.forEach((msg: any) => {
+        lastMessages[msg.conversation_id] = {
+            content: msg.content,
+            timestamp: msg.created_at,
+        };
+    });
     
     return lastMessages;
 }

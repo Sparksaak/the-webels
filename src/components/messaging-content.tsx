@@ -17,6 +17,7 @@ import { getConversations, getMessages } from '@/app/messages/data';
 import { sendMessage } from '@/app/messages/actions';
 import type { AppUser, Conversation, Message } from '@/app/messages/types';
 import { NewConversationDialog } from '@/components/new-conversation-dialog';
+import { useToast } from '@/hooks/use-toast';
 
 interface MessagingContentProps {
     initialCurrentUser: AppUser;
@@ -34,6 +35,7 @@ export function MessagingContent({
     const router = useRouter();
     const supabase = createClient();
     const formRef = useRef<HTMLFormElement>(null);
+    const { toast } = useToast();
 
     const [currentUser] = useState<AppUser>(initialCurrentUser);
     const [conversations, setConversations] = useState<Conversation[]>(initialConversations);
@@ -98,13 +100,36 @@ export function MessagingContent({
               table: 'messages',
               filter: `conversation_id=eq.${activeConversationId}`,
             },
-            (payload) => {
+            async (payload) => {
                 const newMessage = payload.new as Message;
+                
+                // We need to fetch the sender's details for the new message
+                const { data: userData } = await supabase
+                    .from('users')
+                    .select('id, user_metadata')
+                    .eq('id', newMessage.sender_id)
+                    .single();
 
-                // Optimistically update the UI to avoid waiting for router.refresh()
-                // But we need to fetch the sender details.
-                // A simple router.refresh() is more robust here.
-                router.refresh();
+                const sender: AppUser = {
+                    id: userData.id,
+                    name: userData.user_metadata.full_name || 'Unknown',
+                    email: userData.user_metadata.email,
+                    role: userData.user_metadata.role || 'student',
+                    avatarUrl: 'https://placehold.co/100x100.png'
+                }
+
+                const fullMessage: Message = { ...newMessage, sender };
+                
+                setMessages((currentMessages) => {
+                    // Avoid adding duplicates from optimistic update
+                    if (currentMessages.some(m => m.id === fullMessage.id)) {
+                        return currentMessages;
+                    }
+                    return [...currentMessages, fullMessage];
+                });
+
+                // Also refresh the conversation list to show new "last message"
+                fetchAndSetConversations(currentUser.id);
             }
           )
           .subscribe((status, err) => {
@@ -114,17 +139,20 @@ export function MessagingContent({
             if (status === 'CHANNEL_ERROR') {
               console.error(`Failed to subscribe to channel: messages:${activeConversationId}`, err);
             }
+            if (err) {
+              console.error('Subscription error:', err);
+            }
           });
     
         return () => {
           supabase.removeChannel(channel);
         };
-      }, [supabase, router, activeConversationId]);
+      }, [activeConversationId, supabase, currentUser.id, fetchAndSetConversations]);
     
 
     const handleSendMessage = async (formData: FormData) => {
         const content = formData.get('content') as string;
-        if (!content || !activeConversationId) return;
+        if (!content?.trim() || !activeConversationId) return;
         
         setIsSubmitting(true);
         formRef.current?.reset();
@@ -145,13 +173,18 @@ export function MessagingContent({
         if (result?.error) {
              console.error(result.error);
              setMessages(prev => prev.filter(m => m.id !== optimisticMessage.id));
+             toast({
+                title: "Error sending message",
+                description: result.error,
+                variant: "destructive",
+             });
         } else {
-             // Let the realtime update handle showing the final message
-             // to avoid duplicates.
+             // The realtime subscription will handle receiving the final message.
+             // We can remove the optimistic one once the real one arrives.
+             setMessages(prev => prev.filter(m => m.id !== optimisticMessage.id));
         }
         
         setIsSubmitting(false);
-        router.refresh();
     };
     
     const activeConversation = conversations.find(c => c.id === activeConversationId);
@@ -308,7 +341,3 @@ export function MessagingContent({
             </div>
     );
 }
-
-    
-
-    
