@@ -77,12 +77,12 @@ export function AppLayout({ children, user }: AppLayoutProps) {
   }
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex min-h-screen w-full bg-background">
       <Sidebar collapsible="icon" className="border-r border-border/20">
         <SidebarHeader>
           <div className="flex items-center gap-2 p-2">
               <Logo className="size-8" />
-              <span className="font-bold text-lg">Classroom</span>
+              <span className="font-bold text-lg">The Webels</span>
           </div>
         </SidebarHeader>
         <SidebarContent>
@@ -105,7 +105,7 @@ export function AppLayout({ children, user }: AppLayoutProps) {
               </div>
               <UserNav user={user} />
           </header>
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 w-full overflow-y-auto">
             <div className="p-4 sm:p-6 md:p-8">
               {children}
             </div>

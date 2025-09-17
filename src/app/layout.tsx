@@ -8,7 +8,7 @@ import { SidebarProvider } from '@/components/ui/sidebar';
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 
 export const metadata: Metadata = {
-  title: 'Classroom Central',
+  title: 'The Webels',
   description: 'A modern solution for managing coding classes.',
 };
 

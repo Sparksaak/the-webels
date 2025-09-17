@@ -36,7 +36,7 @@ export function SignupForm() {
         <Logo className="mx-auto" />
         <h1 className="text-3xl font-bold">Sign Up</h1>
         <p className="text-balance text-muted-foreground">
-          Create an account to get started with Classroom Central.
+          Create an account to get started with The Webels.
         </p>
       </div>
       <div className="grid gap-4">
