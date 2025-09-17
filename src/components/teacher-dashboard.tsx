@@ -5,7 +5,6 @@ import {
   Users,
   FileText,
   Megaphone,
-  MessageSquare
 } from 'lucide-react';
 import {
   Card,
@@ -14,12 +13,15 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import Link from 'next/link';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { ScrollArea } from './ui/scroll-area';
 import { useEffect, useState } from 'react';
 import type { AppUser } from '@/app/messages/types';
 import { getDashboardData } from '@/app/dashboard/actions';
+import type { Assignment } from '@/app/assignments/actions';
+import { Button } from './ui/button';
 
 interface Student {
     id: string;
@@ -41,17 +43,21 @@ interface TeacherDashboardProps {
 export function TeacherDashboard({ user }: TeacherDashboardProps) {
   const [students, setStudents] = useState<Student[]>([]);
   const [stats, setStats] = useState<TeacherStats | null>(null);
+  const [assignmentsToGrade, setAssignmentsToGrade] = useState<Assignment[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const { students: fetchedStudents, stats: fetchedStats } = await getDashboardData();
-        if (fetchedStudents) {
-          setStudents(fetchedStudents as Student[]);
+        const data = await getDashboardData();
+        if (data.students) {
+          setStudents(data.students as Student[]);
         }
-        if (fetchedStats) {
-            setStats(fetchedStats as TeacherStats);
+        if (data.stats) {
+            setStats(data.stats as TeacherStats);
+        }
+        if (data.assignmentsToGrade) {
+            setAssignmentsToGrade(data.assignmentsToGrade as Assignment[]);
         }
       } catch (error) {
          console.error('Error fetching dashboard data:', error);
@@ -68,7 +74,7 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
   const inPersonStudents = students.filter(s => s.learning_preference === 'in-person');
 
   return (
-    <div className="p-4 sm:p-6 md:p-8 space-y-8">
+    <div className="space-y-8">
         <div>
             <h1 className="text-3xl font-bold tracking-tight">Teacher Dashboard</h1>
             <p className="text-muted-foreground">Welcome back, {user.name}!</p>
@@ -107,26 +113,39 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
             </Card>
         </div>
 
-        <Card>
-            <CardHeader>
-              <CardTitle>Student Roster</CardTitle>
-              <CardDescription>An overview of all your students, organized by class type.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <Tabs defaultValue="online">
-                    <TabsList className="grid w-full grid-cols-2">
-                        <TabsTrigger value="online">Online Students ({onlineStudents.length})</TabsTrigger>
-                        <TabsTrigger value="in-person">In-Person Students ({inPersonStudents.length})</TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="online">
-                        <StudentList students={onlineStudents} loading={loading} />
-                    </TabsContent>
-                    <TabsContent value="in-person">
-                        <StudentList students={inPersonStudents} loading={loading} />
-                    </TabsContent>
-                </Tabs>
-            </CardContent>
-          </Card>
+        <div className="grid gap-6 lg:grid-cols-2">
+            <Card>
+                <CardHeader>
+                <CardTitle>Student Roster</CardTitle>
+                <CardDescription>An overview of all your students, organized by class type.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Tabs defaultValue="online">
+                        <TabsList className="grid w-full grid-cols-2">
+                            <TabsTrigger value="online">Online Students ({onlineStudents.length})</TabsTrigger>
+                            <TabsTrigger value="in-person">In-Person Students ({inPersonStudents.length})</TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="online">
+                            <StudentList students={onlineStudents} loading={loading} />
+                        </TabsContent>
+                        <TabsContent value="in-person">
+                            <StudentList students={inPersonStudents} loading={loading} />
+                        </TabsContent>
+                    </Tabs>
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader>
+                    <CardTitle>Assignments to Grade</CardTitle>
+                    <CardDescription>
+                        These assignments have new submissions that need your attention.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <AssignmentsToGradeList assignments={assignmentsToGrade} loading={loading} />
+                </CardContent>
+            </Card>
+        </div>
     </div>
   )
 }
@@ -165,4 +184,36 @@ function StudentList({ students, loading }: { students: Student[], loading: bool
             </div>
         </ScrollArea>
     );
+}
+
+
+function AssignmentsToGradeList({ assignments, loading }: { assignments: Assignment[], loading: boolean }) {
+    if (loading) {
+        return <div className="text-sm text-muted-foreground">Loading assignments...</div>;
+    }
+    if (assignments.length === 0) {
+        return <div className="text-sm text-center py-12 text-muted-foreground">No assignments need grading. You're all caught up!</div>;
+    }
+
+    return (
+        <ScrollArea className="h-72">
+            <ul className="space-y-4 pr-4">
+                {assignments.map(assignment => (
+                    <li key={assignment.id} className="flex items-center justify-between">
+                        <div>
+                            <Link href={`/assignments`} className="font-medium hover:underline">
+                                {assignment.title}
+                            </Link>
+                            <p className="text-xs text-muted-foreground">
+                                View submissions
+                            </p>
+                        </div>
+                        <Button asChild variant="secondary" size="sm">
+                            <Link href={`/assignments`}>View</Link>
+                        </Button>
+                    </li>
+                ))}
+            </ul>
+        </ScrollArea>
+    )
 }

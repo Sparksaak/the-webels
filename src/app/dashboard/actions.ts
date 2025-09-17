@@ -37,11 +37,38 @@ export async function getDashboardData() {
     
     const [
         { count: assignmentCount },
-        { count: announcementCount }
+        { count: announcementCount },
+        { data: assignmentsToGradeData, error: assignmentsToGradeError }
     ] = await Promise.all([
         supabaseAdmin.from('assignments').select('id', { count: 'exact' }).eq('teacher_id', user.id),
-        supabaseAdmin.from('announcements').select('id', { count: 'exact' }).eq('user_id', user.id)
+        supabaseAdmin.from('announcements').select('id', { count: 'exact' }).eq('user_id', user.id),
+        supabaseAdmin.from('assignments')
+            .select(`
+                *,
+                submissions:assignment_submissions ( id, grade )
+            `)
+            .eq('teacher_id', user.id)
     ]);
+    
+    if (assignmentsToGradeError) {
+      console.error('Error fetching assignments to grade:', assignmentsToGradeError);
+    }
+    
+    const assignmentsToGrade = (assignmentsToGradeData || [])
+      .filter(assignment => {
+          const hasUngradedSubmissions = assignment.submissions.some(sub => sub.grade === null);
+          return hasUngradedSubmissions;
+      })
+      .map(a => ({
+          id: a.id,
+          title: a.title,
+          description: a.description,
+          dueDate: a.due_date,
+          createdAt: a.created_at,
+          submissions: [],
+          teacher: allUsers.find(u => u.id === a.teacher_id)!
+      }));
+
 
     return { 
         students,
@@ -49,7 +76,8 @@ export async function getDashboardData() {
             totalStudents: students.length,
             assignmentsCreated: assignmentCount ?? 0,
             announcementsPosted: announcementCount ?? 0,
-        }
+        },
+        assignmentsToGrade,
     };
   }
 
