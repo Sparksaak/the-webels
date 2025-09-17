@@ -44,8 +44,7 @@ export function MessagingContent({
     const [activeConversationId, setActiveConversationId] = useState<string | null>(initialActiveConversationId);
     const [loadingMessages, setLoadingMessages] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [allUsers, setAllUsers] = useState<AppUser[]>([]);
-
+    
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     const fetchAndSetConversations = useCallback(async (userId: string) => {
@@ -53,19 +52,6 @@ export function MessagingContent({
         setConversations(fetchedConversations);
         return fetchedConversations;
     }, []);
-
-    useEffect(() => {
-        getUsers().then(users => {
-            const transformedUsers = users.map(u => ({
-                id: u.id,
-                name: u.full_name || u.email || 'Unknown',
-                email: u.email || '',
-                role: u.role || 'student',
-                avatarUrl: 'https://placehold.co/100x100.png'
-            }));
-            setAllUsers([...transformedUsers, currentUser]);
-        });
-    }, [currentUser]);
     
     useEffect(() => {
         setConversations(initialConversations);
@@ -98,77 +84,53 @@ export function MessagingContent({
     }, [router, activeConversationId]);
     
     useEffect(() => {
-        const channel = supabase
-            .channel('public:messages')
-            .on(
-                'postgres_changes',
-                { event: 'INSERT', schema: 'public', table: 'messages' },
-                (payload) => {
-                    console.log('New message received:', payload.new);
-                    const newMessageData = payload.new as any;
-                    const sender = allUsers.find(u => u.id === newMessageData.sender_id);
+        const channel = supabase.channel(`conversation-${activeConversationId || 'global'}`);
+        
+        channel
+          .on('broadcast', { event: 'new_message' }, (payload) => {
+              const newMessage: Message = payload.payload;
+              
+              if (newMessage.sender.id === currentUser.id) return;
 
-                    if (!sender) {
-                        console.warn("Could not find sender for new message");
-                        // As a fallback, just refetch conversations which will include the new message
-                        fetchAndSetConversations(currentUser.id);
-                        return;
+              if (newMessage.conversationId === activeConversationId) {
+                  setMessages(prev => {
+                      if (prev.some(m => m.id === newMessage.id)) return prev;
+                      return [...prev, newMessage];
+                  });
+              }
+
+              setConversations(prevConvs => {
+                const convIndex = prevConvs.findIndex(c => c.id === newMessage.conversationId);
+                if (convIndex === -1) {
+                    fetchAndSetConversations(currentUser.id);
+                    return prevConvs;
+                }
+                const convToUpdate = prevConvs[convIndex];
+                const updatedConv = {
+                    ...convToUpdate,
+                    last_message: {
+                        content: newMessage.content,
+                        timestamp: newMessage.createdAt,
                     }
-                    
-                    const fullMessage: Message = {
-                        id: newMessageData.id,
-                        content: newMessageData.content,
-                        createdAt: newMessageData.created_at,
-                        conversationId: newMessageData.conversation_id,
-                        sender: sender
-                    };
-
-                    if (fullMessage.conversationId === activeConversationId) {
-                        setMessages(prev => {
-                            if (prev.some(m => m.id === fullMessage.id)) return prev;
-                            return [...prev, fullMessage];
-                        });
-                    }
-                    
-                    setConversations(prevConvs => {
-                        const conversationToUpdate = prevConvs.find(c => c.id === fullMessage.conversationId);
-                        
-                        if (!conversationToUpdate) {
-                            // If conversation is not in the list, it's a new chat for this user.
-                            // A full refetch is the simplest way to handle this edge case.
-                            fetchAndSetConversations(currentUser.id);
-                            return prevConvs;
-                        }
-
-                        const updatedConversation = {
-                            ...conversationToUpdate,
-                            last_message: {
-                                content: fullMessage.content,
-                                timestamp: fullMessage.createdAt,
-                            }
-                        };
-                        
-                        const otherConversations = prevConvs.filter(c => c.id !== fullMessage.conversationId);
-                        return [updatedConversation, ...otherConversations];
-                    });
-                }
-            )
-            .subscribe((status, err) => {
-                if (status === 'SUBSCRIBED') {
-                  console.log('Successfully subscribed to realtime channel!');
-                }
-                if (status === 'CHANNEL_ERROR') {
-                  console.error('Realtime channel error:', err);
-                }
-                if (err) {
-                  console.error('Realtime subscription error:', err);
-                }
-            });
+                };
+                const newConvs = [...prevConvs];
+                newConvs.splice(convIndex, 1);
+                return [updatedConv, ...newConvs];
+              });
+          })
+          .subscribe((status, err) => {
+              if (status === 'SUBSCRIBED') {
+                console.log(`Successfully subscribed to broadcast channel!`);
+              }
+              if (status === 'CHANNEL_ERROR' || err) {
+                console.error('Realtime broadcast channel error:', err);
+              }
+          });
     
         return () => {
           supabase.removeChannel(channel);
         };
-    }, [supabase, activeConversationId, currentUser.id, fetchAndSetConversations, allUsers]);
+    }, [supabase, activeConversationId, currentUser.id, fetchAndSetConversations]);
     
     useEffect(() => {
         scrollToBottom();
@@ -205,6 +167,14 @@ export function MessagingContent({
              });
         } else if (result.message) {
              setMessages(prev => prev.map(m => m.id === optimisticMessage.id ? result.message : m));
+             
+             const channel = supabase.channel(`conversation-${activeConversationId}`);
+             channel.send({
+                 type: 'broadcast',
+                 event: 'new_message',
+                 payload: result.message,
+             });
+
              setConversations(prevConvs => {
                 const conversationToUpdate = prevConvs.find(c => c.id === result.message.conversationId);
                 if (!conversationToUpdate) return prevConvs;
