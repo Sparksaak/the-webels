@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { AppLayout } from '@/components/app-layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FileText, PlusCircle, CheckCircle, Clock, Send } from 'lucide-react';
+import { FileText } from 'lucide-react';
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import { format, formatDistanceToNow, isPast } from 'date-fns';
@@ -13,7 +13,7 @@ import { NewAssignmentDialog } from '@/components/new-assignment-dialog';
 import { ClientOnly } from '@/components/client-only';
 import { Badge } from '@/components/ui/badge';
 import { ViewAssignmentSheet } from '@/components/view-assignment-sheet';
-import { Separator } from '@/components/ui/separator';
+import { cn } from '@/lib/utils';
 
 type AppUser = {
     id: string;
