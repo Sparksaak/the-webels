@@ -1,8 +1,9 @@
 
+
 "use client";
 
 import { useState, useRef, useEffect } from 'react';
-import { format, formatDistanceToNow, isAfter, differenceInDays, setHours, setMinutes, parseISO } from 'date-fns';
+import { format, formatDistanceToNow, isAfter, differenceInDays, setHours, setMinutes, parseISO, differenceInHours } from 'date-fns';
 import {
   Sheet,
   SheetContent,
@@ -350,8 +351,13 @@ function SubmissionCard({ submission, assignment }: { submission: AssignmentSubm
         const wasLate = isAfter(submittedAt, dueDate);
         
         if (wasLate) {
+            const hoursLate = differenceInHours(submittedAt, dueDate);
+            if (hoursLate < 24) {
+                 const lateLabel = hoursLate < 1 ? 'Late' : hoursLate === 1 ? '1 hour late' : `${hoursLate} hours late`;
+                 return <Badge variant="destructive">{lateLabel}</Badge>;
+            }
             const daysLate = differenceInDays(submittedAt, dueDate);
-            const lateLabel = daysLate === 0 ? 'Late' : daysLate === 1 ? '1 day late' : `${daysLate} days late`;
+            const lateLabel = daysLate === 1 ? '1 day late' : `${daysLate} days late`;
             return <Badge variant="destructive">{lateLabel}</Badge>;
         } else {
             return <Badge className="bg-green-100 text-green-800 hover:bg-green-100/80">On Time</Badge>;
@@ -416,5 +422,7 @@ function SubmissionCard({ submission, assignment }: { submission: AssignmentSubm
     );
 }
 
+
+    
 
     
