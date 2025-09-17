@@ -42,6 +42,9 @@ function NavItems({ role }: { role: 'teacher' | 'student' }) {
     ];
 
     const isActive = (href: string) => {
+        if (href === '/dashboard') {
+            return pathname === href;
+        }
         return pathname.startsWith(href);
     };
 
@@ -104,7 +107,7 @@ export function AppLayout({ children, user }: AppLayoutProps) {
               <UserNav user={user} />
           </header>
           <main className="flex-1 overflow-auto">
-            <div className="mx-auto max-w-full p-4 sm:p-6 md:p-8">
+            <div className="mx-auto w-full max-w-full p-4 sm:p-6 md:p-8 flex-1">
               {children}
             </div>
           </main>
