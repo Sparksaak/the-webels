@@ -100,7 +100,7 @@ export async function getConversations(userId: string): Promise<Conversation[]> 
 
     // 2. Get the actual conversation objects
     const { data: conversationsData, error: conversationsError } = await supabaseAdmin
-        _from('conversations')
+        .from('conversations')
         .select('*')
         .in('id', conversationIds)
         .order('created_at', { ascending: false });
