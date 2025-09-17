@@ -58,7 +58,7 @@ function SchedulePageContent({ currentUser, initialSchedules }: { currentUser: A
                 ) : (
                      <Card className="lg:col-span-2">
                         <CardHeader>
-                            <CardTitle>{studentTrack === 'online' ? 'Online' : 'In-Person'} Class Schedule</CardTitle>
+                            <CardTitle>My Schedule</CardTitle>
                             <CardDescription>Your weekly class schedule for the {studentTrack} learning track.</CardDescription>
                         </CardHeader>
                         <CardContent>
