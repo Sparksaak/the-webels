@@ -31,13 +31,13 @@ interface AppLayoutProps {
   user: User;
 }
 
-function NavItems() {
+function NavItems({ role }: { role: 'teacher' | 'student' }) {
     const pathname = usePathname();
     const navItems = [
         { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
         { href: '/announcements', label: 'Announcements', icon: Megaphone },
         { href: '/assignments', label: 'Assignments', icon: FileText },
-        { href: '/schedule', label: 'Schedule', icon: CalendarClock },
+        ...(role === 'teacher' ? [{ href: '/schedule', label: 'Schedule', icon: CalendarClock }] : []),
         { href: '/messages', label: 'Messages', icon: MessageSquare },
     ];
 
@@ -83,7 +83,7 @@ export function AppLayout({ children, user }: AppLayoutProps) {
           </div>
         </SidebarHeader>
         <SidebarContent>
-            <NavItems />
+            <NavItems role={user.role} />
         </SidebarContent>
         <SidebarFooter>
             <div className="flex items-center gap-2 w-full p-2">

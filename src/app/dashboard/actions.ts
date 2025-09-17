@@ -44,10 +44,7 @@ export async function getDashboardData() {
         supabaseAdmin.from('assignments').select('id', { count: 'exact' }).eq('teacher_id', user.id),
         supabaseAdmin.from('announcements').select('id', { count: 'exact' }).eq('user_id', user.id),
         supabaseAdmin.from('assignments')
-            .select(`
-                *,
-                submissions:assignment_submissions ( id, grade )
-            `)
+            .select('*, submissions:assignment_submissions ( id, grade )')
             .eq('teacher_id', user.id)
     ]);
     
