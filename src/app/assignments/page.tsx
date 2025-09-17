@@ -100,7 +100,7 @@ function AssignmentCard({ assignment, user }: { assignment: Assignment, user: Ap
         </div>
         {dueDate && (
           <CardDescription className={cn('text-sm', isOverdue && assignment.submissionStatus !== 'Submitted' && assignment.submissionStatus !== 'Graded' ? 'text-destructive' : 'text-muted-foreground')}>
-            Due {format(dueDate, 'MMM d, yyyy @ p zzz')}
+            <ClientOnly>Due {format(dueDate, 'MMM d, yyyy @ p zzz')}</ClientOnly>
           </CardDescription>
         )}
       </CardHeader>
@@ -109,7 +109,7 @@ function AssignmentCard({ assignment, user }: { assignment: Assignment, user: Ap
       </CardContent>
       <CardFooter className="flex justify-between items-center">
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            Posted {formatDistanceToNow(new Date(assignment.createdAt), { addSuffix: true })} by {assignment.teacher.name}
+            <ClientOnly>Posted {formatDistanceToNow(new Date(assignment.createdAt), { addSuffix: true })} by {assignment.teacher.name}</ClientOnly>
              {user.role === 'teacher' && user.id === assignment.teacher.id && (
                 <ClientOnly>
                     <DeleteAssignmentButton assignmentId={assignment.id} />

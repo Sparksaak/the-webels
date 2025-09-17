@@ -80,7 +80,7 @@ async function AnnouncementsList({ currentUser }: { currentUser: AppUser }) {
                                     <div>
                                         <CardTitle>{announcement.title}</CardTitle>
                                         <CardDescription className="mt-2">
-                                            Posted on {format(new Date(announcement.createdAt), 'MMMM d, yyyy')}
+                                            Posted on <ClientOnly>{format(new Date(announcement.createdAt), 'MMMM d, yyyy')}</ClientOnly>
                                         </CardDescription>
                                     </div>
                                     {currentUser.role === 'teacher' && currentUser.id === announcement.author.id && (
