@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from 'react';
-import { format, formatDistanceToNow, isAfter, differenceInDays } from 'date-fns';
+import { format, formatDistanceToNow, isAfter, differenceInDays, setHours, setMinutes, parseISO } from 'date-fns';
 import {
   Sheet,
   SheetContent,
@@ -76,7 +76,7 @@ export function ViewAssignmentSheet({ assignment, user, children }: ViewAssignme
                                 <div>
                                     <SheetTitle className="text-2xl">{currentAssignment.title}</SheetTitle>
                                     <SheetDescription className="mt-2">
-                                        Due: {currentAssignment.dueDate ? format(new Date(currentAssignment.dueDate), 'PPP') : 'No due date'}
+                                        Due: {currentAssignment.dueDate ? format(new Date(currentAssignment.dueDate), 'PPP p') : 'No due date'}
                                         <span className="mx-2">•</span>
                                         Posted by {currentAssignment.teacher.name}
                                     </SheetDescription>
@@ -113,6 +113,9 @@ function EditAssignmentForm({ assignment, onCancel, onSaved }: { assignment: Ass
     const [dueDate, setDueDate] = useState<Date | undefined>(
         assignment.dueDate ? new Date(assignment.dueDate) : undefined
     );
+    const [dueTime, setDueTime] = useState(
+        assignment.dueDate ? format(new Date(assignment.dueDate), 'HH:mm') : '23:59'
+    );
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -120,7 +123,9 @@ function EditAssignmentForm({ assignment, onCancel, onSaved }: { assignment: Ass
         const formData = new FormData(event.currentTarget);
         formData.append('assignmentId', assignment.id);
         if (dueDate) {
-            formData.append('dueDate', dueDate.toISOString());
+            const [hours, minutes] = dueTime.split(':').map(Number);
+            const combinedDate = setMinutes(setHours(dueDate, hours), minutes);
+            formData.append('dueDate', combinedDate.toISOString());
         }
 
         const result = await updateAssignment(formData);
@@ -139,7 +144,7 @@ function EditAssignmentForm({ assignment, onCancel, onSaved }: { assignment: Ass
                 <SheetTitle>Edit Assignment</SheetTitle>
                 <SheetDescription>Update the assignment details below.</SheetDescription>
             </SheetHeader>
-            <div className="py-4 space-y-4 flex-1 overflow-y-auto">
+            <div className="py-4 space-y-4 flex-1 overflow-y-auto pr-4">
                 <div>
                     <Label htmlFor="title">Title</Label>
                     <Input id="title" name="title" defaultValue={assignment.title} required />
@@ -150,28 +155,36 @@ function EditAssignmentForm({ assignment, onCancel, onSaved }: { assignment: Ass
                 </div>
                 <div>
                     <Label htmlFor="dueDate">Due Date</Label>
-                     <Popover>
-                        <PopoverTrigger asChild>
-                            <Button
-                                variant={"outline"}
-                                className={cn(
-                                    "w-full justify-start text-left font-normal",
-                                    !dueDate && "text-muted-foreground"
-                                )}
-                            >
-                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                {dueDate ? format(dueDate, "PPP") : <span>Pick a date</span>}
-                            </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0">
-                            <Calendar
-                                mode="single"
-                                selected={dueDate}
-                                onSelect={setDueDate}
-                                initialFocus
-                            />
-                        </PopoverContent>
-                    </Popover>
+                     <div className="grid grid-cols-2 gap-2">
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button
+                                    variant={"outline"}
+                                    className={cn(
+                                        "justify-start text-left font-normal",
+                                        !dueDate && "text-muted-foreground"
+                                    )}
+                                >
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {dueDate ? format(dueDate, "PPP") : <span>Pick a date</span>}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0">
+                                <Calendar
+                                    mode="single"
+                                    selected={dueDate}
+                                    onSelect={setDueDate}
+                                    initialFocus
+                                />
+                            </PopoverContent>
+                        </Popover>
+                        <Input 
+                            type="time" 
+                            value={dueTime}
+                            onChange={(e) => setDueTime(e.target.value)}
+                            disabled={!dueDate}
+                        />
+                    </div>
                 </div>
             </div>
             <SheetFooter>

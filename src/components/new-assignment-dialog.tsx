@@ -20,13 +20,14 @@ import { createAssignment } from '@/app/assignments/actions';
 import { PlusCircle, Calendar as CalendarIcon } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Calendar } from './ui/calendar';
-import { format } from 'date-fns';
+import { format, setHours, setMinutes } from 'date-fns';
 import { cn } from '@/lib/utils';
 
 export function NewAssignmentDialog() {
     const [open, setOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [dueDate, setDueDate] = useState<Date | undefined>();
+    const [dueTime, setDueTime] = useState('23:59');
     const formRef = useRef<HTMLFormElement>(null);
     const { toast } = useToast();
 
@@ -35,7 +36,9 @@ export function NewAssignmentDialog() {
         setIsSubmitting(true);
         const formData = new FormData(event.currentTarget);
         if (dueDate) {
-            formData.append('dueDate', dueDate.toISOString());
+            const [hours, minutes] = dueTime.split(':').map(Number);
+            const combinedDate = setMinutes(setHours(dueDate, hours), minutes);
+            formData.append('dueDate', combinedDate.toISOString());
         }
         
         const result = await createAssignment(formData);
@@ -54,6 +57,7 @@ export function NewAssignmentDialog() {
             setOpen(false);
             formRef.current?.reset();
             setDueDate(undefined);
+            setDueTime('23:59');
         }
         setIsSubmitting(false);
     };
@@ -91,28 +95,36 @@ export function NewAssignmentDialog() {
                     <Label htmlFor="dueDate" className="text-right">
                         Due Date
                     </Label>
-                    <Popover>
-                        <PopoverTrigger asChild>
-                            <Button
-                                variant={"outline"}
-                                className={cn(
-                                    "col-span-3 justify-start text-left font-normal",
-                                    !dueDate && "text-muted-foreground"
-                                )}
-                            >
-                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                {dueDate ? format(dueDate, "PPP") : <span>Pick a date</span>}
-                            </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0">
-                            <Calendar
-                                mode="single"
-                                selected={dueDate}
-                                onSelect={setDueDate}
-                                initialFocus
-                            />
-                        </PopoverContent>
-                    </Popover>
+                    <div className="col-span-3 grid grid-cols-2 gap-2">
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button
+                                    variant={"outline"}
+                                    className={cn(
+                                        "justify-start text-left font-normal",
+                                        !dueDate && "text-muted-foreground"
+                                    )}
+                                >
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {dueDate ? format(dueDate, "PPP") : <span>Pick a date</span>}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0">
+                                <Calendar
+                                    mode="single"
+                                    selected={dueDate}
+                                    onSelect={setDueDate}
+                                    initialFocus
+                                />
+                            </PopoverContent>
+                        </Popover>
+                        <Input 
+                            type="time" 
+                            value={dueTime}
+                            onChange={(e) => setDueTime(e.target.value)}
+                            disabled={!dueDate}
+                        />
+                    </div>
                 </div>
             </div>
             <DialogFooter>
@@ -125,4 +137,3 @@ export function NewAssignmentDialog() {
     </Dialog>
   );
 }
-
