@@ -6,6 +6,7 @@ import { TeacherDashboard } from '@/components/teacher-dashboard';
 import { StudentDashboard } from '@/components/student-dashboard';
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
+import { ClientOnly } from '@/components/client-only';
 
 type AppUser = {
     id: string;
@@ -37,7 +38,9 @@ async function DashboardPage() {
 
   return (
     <AppLayout user={currentUser}>
+      <ClientOnly>
         {currentUser.role === 'teacher' ? <TeacherDashboard user={currentUser} /> : <StudentDashboard user={currentUser} />}
+      </ClientOnly>
     </AppLayout>
   );
 }

@@ -18,6 +18,7 @@ import { sendMessage } from '@/app/messages/actions';
 import type { AppUser, Conversation, Message } from '@/app/messages/types';
 import { NewConversationDialog } from '@/components/new-conversation-dialog';
 import { useToast } from '@/hooks/use-toast';
+import { ClientOnly } from './client-only';
 
 interface MessagingContentProps {
     initialCurrentUser: AppUser;
@@ -227,7 +228,9 @@ export function MessagingContent({
                                     </div>
                                      {conv.last_message && (
                                         <div className="text-xs text-muted-foreground ml-auto whitespace-nowrap">
-                                            {formatDistanceToNow(parseISO(conv.last_message.timestamp), { addSuffix: true })}
+                                            <ClientOnly>
+                                                {formatDistanceToNow(parseISO(conv.last_message.timestamp), { addSuffix: true })}
+                                            </ClientOnly>
                                         </div>
                                     )}
                                 </Button>
@@ -278,7 +281,11 @@ export function MessagingContent({
                                                     <div className={cn('max-w-xs md:max-w-md lg:max-w-lg rounded-lg p-3 text-sm', msg.sender.id === currentUser.id ? 'bg-primary text-primary-foreground' : 'bg-card')}>
                                                         <p className="font-bold mb-1">{msg.sender.name}</p>
                                                         <p>{msg.content}</p>
-                                                        <p className="text-xs opacity-70 mt-1.5 text-right">{format(parseISO(msg.createdAt), 'p')}</p>
+                                                        <p className="text-xs opacity-70 mt-1.5 text-right">
+                                                            <ClientOnly>
+                                                                {format(parseISO(msg.createdAt), 'p')}
+                                                            </ClientOnly>
+                                                        </p>
                                                     </div>
                                                 </div>
                                             ))
