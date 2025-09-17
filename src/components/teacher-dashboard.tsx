@@ -28,35 +28,44 @@ interface Student {
     learning_preference: 'online' | 'in-person';
 }
 
+interface TeacherStats {
+    totalStudents: number;
+    assignmentsCreated: number;
+    announcementsPosted: number;
+}
+
 interface TeacherDashboardProps {
     user: AppUser;
 }
 
 export function TeacherDashboard({ user }: TeacherDashboardProps) {
   const [students, setStudents] = useState<Student[]>([]);
+  const [stats, setStats] = useState<TeacherStats | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchStudents = async () => {
+    const fetchDashboardData = async () => {
       try {
-        const { students: fetchedStudents } = await getDashboardData();
+        const { students: fetchedStudents, stats: fetchedStats } = await getDashboardData();
         if (fetchedStudents) {
           setStudents(fetchedStudents as Student[]);
         }
+        if (fetchedStats) {
+            setStats(fetchedStats as TeacherStats);
+        }
       } catch (error) {
-         console.error('Error fetching students:', error);
+         console.error('Error fetching dashboard data:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchStudents();
+    fetchDashboardData();
   }, []);
 
 
   const onlineStudents = students.filter(s => s.learning_preference === 'online');
   const inPersonStudents = students.filter(s => s.learning_preference === 'in-person');
-  const totalStudents = students.length;
 
   return (
     <div className="p-4 sm:p-6 md:p-8 space-y-8">
@@ -72,7 +81,7 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
                 <Users className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                <div className="text-2xl font-bold">{totalStudents}</div>
+                <div className="text-2xl font-bold">{loading ? '...' : stats?.totalStudents ?? 0}</div>
                  <p className="text-xs text-muted-foreground">in online & in-person classes</p>
                 </CardContent>
             </Card>
@@ -82,8 +91,8 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
                 <FileText className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                <div className="text-2xl font-bold">0</div>
-                <p className="text-xs text-muted-foreground">assignments graded</p>
+                <div className="text-2xl font-bold">{loading ? '...' : stats?.assignmentsCreated ?? 0}</div>
+                <p className="text-xs text-muted-foreground">assignments created</p>
                 </CardContent>
             </Card>
             <Card>
@@ -92,7 +101,7 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
                 <Megaphone className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                <div className="text-2xl font-bold">0</div>
+                <div className="text-2xl font-bold">{loading ? '...' : stats?.announcementsPosted ?? 0}</div>
                 <p className="text-xs text-muted-foreground">announcements posted</p>
                 </CardContent>
             </Card>

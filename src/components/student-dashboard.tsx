@@ -30,25 +30,34 @@ interface Teacher {
   email: string;
 }
 
+interface StudentStats {
+    upcomingAssignments: number;
+    recentAnnouncements: number;
+}
+
 export function StudentDashboard({ user }: StudentDashboardProps) {
   const [teacher, setTeacher] = useState<Teacher | null>(null);
+  const [stats, setStats] = useState<StudentStats | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchTeacher = async () => {
+    const fetchDashboardData = async () => {
       try {
-        const { teacher: fetchedTeacher } = await getDashboardData();
+        const { teacher: fetchedTeacher, stats: fetchedStats } = await getDashboardData();
         if (fetchedTeacher) {
             setTeacher(fetchedTeacher as Teacher);
         }
+        if (fetchedStats) {
+            setStats(fetchedStats as StudentStats);
+        }
       } catch (error) {
-        console.error('Error fetching teacher:', error);
+        console.error('Error fetching dashboard data:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchTeacher();
+    fetchDashboardData();
   }, []);
   
   return (
@@ -75,7 +84,7 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
               <FileText className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">0</div>
+              <div className="text-2xl font-bold">{loading ? '...' : stats?.upcomingAssignments ?? 0}</div>
                <p className="text-xs text-muted-foreground">assignments upcoming</p>
             </CardContent>
           </Card>
@@ -85,8 +94,8 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
               <Megaphone className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">0</div>
-               <p className="text-xs text-muted-foreground">new announcements</p>
+              <div className="text-2xl font-bold">{loading ? '...' : stats?.recentAnnouncements ?? 0}</div>
+               <p className="text-xs text-muted-foreground">in the last 7 days</p>
             </CardContent>
           </Card>
            <Card>
