@@ -26,7 +26,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 type AppUser = {
     id: string;
@@ -127,10 +127,19 @@ function AssignmentsList({ currentUser, initialAssignments }: { currentUser: App
   const [filter, setFilter] = useState('all');
 
   const filteredAssignments = useMemo(() => {
-    if (currentUser.role !== 'student') {
-        return initialAssignments;
+    if (currentUser.role === 'teacher') {
+        switch (filter) {
+            case 'needs-grading':
+                return initialAssignments.filter(a => a.submissions.some(s => !s.grade));
+            case 'graded':
+                 return initialAssignments.filter(a => a.submissions.length > 0 && a.submissions.every(s => s.grade));
+            case 'all':
+            default:
+                return initialAssignments;
+        }
     }
 
+    // Student filtering logic
     switch (filter) {
         case 'todo':
             return initialAssignments.filter(a => a.submissionStatus === 'Not Submitted' && (a.dueDate ? !isPast(new Date(a.dueDate)) : true));
@@ -146,16 +155,24 @@ function AssignmentsList({ currentUser, initialAssignments }: { currentUser: App
 
   return (
     <>
-      {currentUser.role === 'student' && (
-        <Tabs defaultValue="all" onValueChange={setFilter} className="mb-6">
+      <Tabs defaultValue="all" onValueChange={setFilter} className="mb-6">
           <TabsList>
-            <TabsTrigger value="all">All</TabsTrigger>
-            <TabsTrigger value="todo">To Do</TabsTrigger>
-            <TabsTrigger value="overdue">Overdue</TabsTrigger>
-            <TabsTrigger value="submitted">Submitted</TabsTrigger>
+            {currentUser.role === 'student' ? (
+                <>
+                    <TabsTrigger value="all">All</TabsTrigger>
+                    <TabsTrigger value="todo">To Do</TabsTrigger>
+                    <TabsTrigger value="overdue">Overdue</TabsTrigger>
+                    <TabsTrigger value="submitted">Submitted</TabsTrigger>
+                </>
+            ) : (
+                 <>
+                    <TabsTrigger value="all">All</TabsTrigger>
+                    <TabsTrigger value="needs-grading">Needs Grading</TabsTrigger>
+                    <TabsTrigger value="graded">Graded</TabsTrigger>
+                </>
+            )}
           </TabsList>
         </Tabs>
-      )}
 
       {filteredAssignments.length === 0 ? (
         <Card>
