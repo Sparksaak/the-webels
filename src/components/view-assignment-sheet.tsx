@@ -23,7 +23,7 @@ import { Badge } from './ui/badge';
 import { ScrollArea } from './ui/scroll-area';
 import { Separator } from './ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { submitAssignment, gradeSubmission, updateAssignment } from '@/app/assignments/actions';
+import { submitAssignment, gradeSubmission, updateAssignment, deleteSubmission } from '@/app/assignments/actions';
 import type { Assignment, AssignmentSubmission } from "@/app/assignments/actions";
 import type { AppUser } from "@/app/messages/types";
 import {
@@ -31,6 +31,17 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import { ChevronsUpDown, Pencil, Calendar as CalendarIcon } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Calendar } from './ui/calendar';
@@ -224,6 +235,18 @@ function StudentSubmissionView({ assignment, user, onSubmitted }: { assignment: 
         }
         setIsSubmitting(false);
     };
+    
+    const handleUnsubmit = async () => {
+        if (!mySubmission) return;
+
+        const result = await deleteSubmission(mySubmission.id);
+        if (result.error) {
+            toast({ title: "Error", description: result.error, variant: "destructive" });
+        } else {
+            toast({ title: "Success", description: "Your submission has been withdrawn." });
+            onSubmitted(); // Close the sheet or trigger a refresh
+        }
+    };
 
     const getSubmissionStatus = () => {
         if (!mySubmission || !assignment.dueDate) {
@@ -258,7 +281,7 @@ function StudentSubmissionView({ assignment, user, onSubmitted }: { assignment: 
                             <Badge variant={mySubmission.grade ? "default" : "secondary"}>
                                 {mySubmission.grade ? 'Graded' : 'Submitted'}
                             </Badge>
-                            {getSubmissionStatus()}
+                             <ClientOnly>{getSubmissionStatus()}</ClientOnly>
                         </div>
                         <p className="text-xs text-muted-foreground">
                             <ClientOnly>Submitted on {format(new Date(mySubmission.submitted_at), 'PPP p zzz')}</ClientOnly>
@@ -279,33 +302,54 @@ function StudentSubmissionView({ assignment, user, onSubmitted }: { assignment: 
                     )}
                 </div>
                  {!mySubmission.grade && (
-                    <Collapsible open={isResubmitting} onOpenChange={setIsResubmitting} className="mt-4">
-                        <CollapsibleTrigger asChild>
-                            <div className="flex justify-center">
-                                <Button variant="link">
-                                    <ChevronsUpDown className="h-4 w-4 mr-2" />
-                                    {isResubmitting ? 'Cancel' : 'Resubmit Assignment'}
-                                </Button>
-                            </div>
-                        </CollapsibleTrigger>
-                        <CollapsibleContent>
-                            <p className="text-xs text-center text-muted-foreground mb-4">You can edit your submission until it has been graded.</p>
-                            <form ref={formRef} onSubmit={handleSubmit}>
-                                <Textarea
-                                    name="submissionContent"
-                                    rows={8}
-                                    defaultValue={mySubmission.submission_content}
-                                    required
-                                    disabled={isSubmitting}
-                                />
-                                <div className="flex justify-end mt-4">
-                                    <Button type="submit" disabled={isSubmitting}>
-                                        {isSubmitting ? 'Resubmitting...' : 'Resubmit Assignment'}
+                     <div className="mt-4 flex flex-col items-center">
+                        <Collapsible open={isResubmitting} onOpenChange={setIsResubmitting}>
+                            <CollapsibleTrigger asChild>
+                                    <Button variant="link">
+                                        <ChevronsUpDown className="h-4 w-4 mr-2" />
+                                        {isResubmitting ? 'Cancel' : 'Resubmit Assignment'}
                                     </Button>
-                                </div>
-                            </form>
-                        </CollapsibleContent>
-                    </Collapsible>
+                            </CollapsibleTrigger>
+                            <CollapsibleContent>
+                                <p className="text-xs text-center text-muted-foreground mb-4">You can edit your submission until it has been graded.</p>
+                                <form ref={formRef} onSubmit={handleSubmit}>
+                                    <Textarea
+                                        name="submissionContent"
+                                        rows={8}
+                                        defaultValue={mySubmission.submission_content}
+                                        required
+                                        disabled={isSubmitting}
+                                    />
+                                    <div className="flex justify-end mt-4">
+                                        <Button type="submit" disabled={isSubmitting}>
+                                            {isSubmitting ? 'Resubmitting...' : 'Resubmit Assignment'}
+                                        </Button>
+                                    </div>
+                                </form>
+                            </CollapsibleContent>
+                        </Collapsible>
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="link" className="text-destructive text-xs h-auto p-0">
+                                    Unsubmit Assignment
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                <AlertDialogTitle>Are you sure you want to unsubmit?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    This action cannot be undone. Your current submission will be permanently deleted. You can submit again before the due date.
+                                </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleUnsubmit} className={buttonVariants({ variant: "destructive" })}>
+                                    Yes, Unsubmit
+                                </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    </div>
                 )}
             </div>
         );
@@ -408,7 +452,7 @@ function SubmissionCard({ submission, assignment }: { submission: AssignmentSubm
                         <ClientOnly>{format(new Date(submission.submitted_at), 'MMM d, yyyy @ h:mm a zzz')}</ClientOnly>
                     </p>
                     <div className="mt-1">
-                        {getSubmissionStatus()}
+                        <ClientOnly>{getSubmissionStatus()}</ClientOnly>
                     </div>
                 </div>
             </div>
@@ -447,8 +491,3 @@ function SubmissionCard({ submission, assignment }: { submission: AssignmentSubm
         </div>
     );
 }
-
-
-    
-
-    

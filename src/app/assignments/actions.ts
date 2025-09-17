@@ -256,6 +256,53 @@ export async function submitAssignment(formData: FormData) {
     }
 }
 
+export async function deleteSubmission(submissionId: string) {
+    const cookieStore = cookies();
+    const supabase = createClient(cookieStore);
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user || user.user_metadata.role !== 'student') {
+        return { error: 'Only students can unsubmit assignments.' };
+    }
+
+    try {
+        // First, verify the student owns the submission and it's not graded
+        const { data: submission, error: fetchError } = await supabase
+            .from('assignment_submissions')
+            .select('student_id, grade')
+            .eq('id', submissionId)
+            .single();
+
+        if (fetchError || !submission) {
+            return { error: 'Submission not found.' };
+        }
+
+        if (submission.student_id !== user.id) {
+            return { error: 'You are not authorized to delete this submission.' };
+        }
+
+        if (submission.grade) {
+            return { error: 'Cannot unsubmit a graded assignment.' };
+        }
+
+        // Proceed with deletion
+        const { error: deleteError } = await supabase
+            .from('assignment_submissions')
+            .delete()
+            .eq('id', submissionId);
+
+        if (deleteError) throw deleteError;
+
+        revalidatePath('/assignments');
+        return { success: true };
+
+    } catch (error: any) {
+        console.error('Error deleting submission:', error);
+        return { error: 'Could not unsubmit assignment. ' + error.message };
+    }
+}
+
+
 export async function gradeSubmission(formData: FormData) {
     const cookieStore = cookies();
     const supabase = createClient(cookieStore);
