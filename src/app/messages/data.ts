@@ -3,7 +3,6 @@
 
 import type { Conversation, Message, AppUser } from './types';
 import { supabaseAdmin } from '@/lib/supabase/admin';
-import { createClient } from '@/lib/supabase/server';
 
 async function getParticipantsForConversations(conversationIds: string[]): Promise<Record<string, AppUser[]>> {
     const { data: participantsData, error: participantsError } = await supabaseAdmin
@@ -59,23 +58,23 @@ async function getParticipantsForConversations(conversationIds: string[]): Promi
 async function getLastMessagesForConversations(conversationIds: string[]): Promise<Record<string, { content: string; timestamp: string }>> {
     if (conversationIds.length === 0) return {};
     
-    // Using supabaseAdmin to bypass RLS for this internal query.
     const { data, error } = await supabaseAdmin
         .rpc('get_last_messages_for_conversations', { c_ids: conversationIds });
 
-
     if (error) {
-        console.error('Error fetching last messages:', error);
+        console.error('Error fetching last messages:', JSON.stringify(error, null, 2));
         return {};
     }
 
     const lastMessages: Record<string, { content: string; timestamp: string }> = {};
-     (data || []).forEach((msg: any) => {
-        lastMessages[msg.conversation_id] = {
-            content: msg.content,
-            timestamp: msg.created_at,
-        };
-    });
+     if (data) {
+        data.forEach((msg: any) => {
+            lastMessages[msg.conversation_id] = {
+                content: msg.content,
+                timestamp: msg.created_at,
+            };
+        });
+     }
     
     return lastMessages;
 }
