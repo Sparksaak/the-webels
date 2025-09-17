@@ -100,7 +100,7 @@ function AssignmentCard({ assignment, user }: { assignment: Assignment, user: Ap
         </div>
         {dueDate && (
           <CardDescription className={cn('text-sm', isOverdue && assignment.submissionStatus !== 'Submitted' && assignment.submissionStatus !== 'Graded' ? 'text-destructive' : 'text-muted-foreground')}>
-            Due {format(dueDate, 'MMM d, yyyy @ p')}
+            Due {format(dueDate, 'MMM d, yyyy @ p zzz')}
           </CardDescription>
         )}
       </CardHeader>
