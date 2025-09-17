@@ -6,10 +6,12 @@ import { getConversations, getMessages } from './data';
 import type { AppUser } from './types';
 import { MessagingContent } from '@/components/messaging-content';
 import { redirect } from 'next/navigation';
+import { cookies } from 'next/headers';
 import { ClientOnly } from '@/components/client-only';
 
 async function MessagesPage({ searchParams }: { searchParams: { [key: string]: string | string[] | undefined } }) {
-    const supabase = createClient();
+    const cookieStore = cookies();
+    const supabase = createClient(cookieStore);
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
