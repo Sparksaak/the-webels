@@ -76,7 +76,47 @@ function AssignmentCard({ assignment, user }: { assignment: Assignment, user: Ap
   );
 }
 
-async function AssignmentsContent() {
+async function AssignmentsList({ currentUser }: { currentUser: AppUser }) {
+  const assignments = await getAssignments();
+
+  return (
+    <>
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Assignments</h1>
+          <p className="text-muted-foreground">
+            {currentUser.role === 'teacher' ? 'Create and manage assignments for your classes.' : 'View and submit your assignments.'}
+          </p>
+        </div>
+        {currentUser.role === 'teacher' && (
+          <ClientOnly>
+            <NewAssignmentDialog />
+          </ClientOnly>
+        )}
+      </div>
+
+      {assignments.length === 0 ? (
+        <Card>
+          <CardContent className="py-24">
+            <div className="text-center text-muted-foreground">
+              <FileText className="mx-auto h-12 w-12 text-gray-400" />
+              <p className="mt-4">No assignments have been posted yet.</p>
+              {currentUser.role === 'teacher' && <p className="text-sm">Click "New Assignment" to get started.</p>}
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {assignments.map(assignment => (
+            <AssignmentCard key={assignment.id} assignment={assignment} user={currentUser} />
+          ))}
+        </div>
+      )}
+    </>
+  );
+}
+
+export default async function AssignmentsPage() {
   const cookieStore = cookies();
   const supabase = createClient(cookieStore);
   const { data: { user } } = await supabase.auth.getUser();
@@ -89,56 +129,18 @@ async function AssignmentsContent() {
   const name = user.user_metadata?.full_name || user.email;
 
   const currentUser: AppUser = {
-      id: user.id,
-      name: name,
-      email: user.email!,
-      role: role,
-      avatarUrl: `https://placehold.co/100x100.png`,
+    id: user.id,
+    name: name,
+    email: user.email!,
+    role: role,
+    avatarUrl: `https://placehold.co/100x100.png`,
   };
-
-  const assignments = await getAssignments();
 
   return (
     <AppLayout user={currentUser}>
-        <div className="flex items-center justify-between mb-8">
-            <div>
-                <h1 className="text-3xl font-bold tracking-tight">Assignments</h1>
-                <p className="text-muted-foreground">
-                    {currentUser.role === 'teacher' ? 'Create and manage assignments for your classes.' : 'View and submit your assignments.'}
-                </p>
-            </div>
-            {currentUser.role === 'teacher' && (
-                <ClientOnly>
-                    <NewAssignmentDialog />
-                </ClientOnly>
-            )}
-        </div>
-        
-        {assignments.length === 0 ? (
-            <Card>
-                <CardContent className="py-24">
-                    <div className="text-center text-muted-foreground">
-                        <FileText className="mx-auto h-12 w-12 text-gray-400" />
-                        <p className="mt-4">No assignments have been posted yet.</p>
-                        {currentUser.role === 'teacher' && <p className="text-sm">Click "New Assignment" to get started.</p>}
-                    </div>
-                </CardContent>
-            </Card>
-        ) : (
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {assignments.map(assignment => (
-                    <AssignmentCard key={assignment.id} assignment={assignment} user={currentUser} />
-                ))}
-            </div>
-        )}
+      <Suspense fallback={<div className="flex min-h-[calc(100vh_-_theme(spacing.24))] bg-background items-center justify-center"><div>Loading assignments...</div></div>}>
+        <AssignmentsList currentUser={currentUser} />
+      </Suspense>
     </AppLayout>
   );
-}
-
-export default function AssignmentsPage() {
-    return (
-        <Suspense fallback={<div className="flex min-h-screen bg-background items-center justify-center"><div>Loading assignments...</div></div>}>
-            <AssignmentsContent />
-        </Suspense>
-    )
 }

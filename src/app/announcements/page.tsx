@@ -36,31 +36,12 @@ function DeleteButton({ announcementId }: { announcementId: string }) {
     );
 }
 
-async function AnnouncementsContent() {
-  const cookieStore = cookies();
-  const supabase = createClient(cookieStore);
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect('/login');
-  }
-
-  const role = user.user_metadata?.role || 'student';
-  const name = user.user_metadata?.full_name || user.email;
-
-  const currentUser: AppUser = {
-      id: user.id,
-      name: name,
-      email: user.email!,
-      role: role,
-      avatarUrl: `https://placehold.co/100x100.png`,
-  };
-
+async function AnnouncementsList({ currentUser }: { currentUser: AppUser }) {
   const announcements = await getAnnouncements();
-
+  
   return (
-    <AppLayout user={currentUser}>
-        <div className="flex items-center justify-between">
+    <>
+      <div className="flex items-center justify-between">
             <div>
                 <h1 className="text-3xl font-bold tracking-tight">Announcements</h1>
                 <p className="text-muted-foreground">
@@ -127,14 +108,35 @@ async function AnnouncementsContent() {
                 </div>
             )}
         </div>
-    </AppLayout>
-  );
+    </>
+  )
 }
 
-export default function AnnouncementsPage() {
+export default async function AnnouncementsPage() {
+    const cookieStore = cookies();
+    const supabase = createClient(cookieStore);
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+        redirect('/login');
+    }
+
+    const role = user.user_metadata?.role || 'student';
+    const name = user.user_metadata?.full_name || user.email;
+
+    const currentUser: AppUser = {
+        id: user.id,
+        name: name,
+        email: user.email!,
+        role: role,
+        avatarUrl: `https://placehold.co/100x100.png`,
+    };
+
     return (
-        <Suspense fallback={<div className="flex min-h-screen bg-background items-center justify-center"><div>Loading announcements...</div></div>}>
-            <AnnouncementsContent />
-        </Suspense>
+        <AppLayout user={currentUser}>
+            <Suspense fallback={<div className="flex min-h-[calc(100vh_-_theme(spacing.24))] bg-background items-center justify-center"><div>Loading announcements...</div></div>}>
+                <AnnouncementsList currentUser={currentUser} />
+            </Suspense>
+        </AppLayout>
     )
 }

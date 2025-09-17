@@ -9,7 +9,25 @@ import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import { ClientOnly } from '@/components/client-only';
 
-async function MessagesPage({ searchParams }: { searchParams: { [key: string]: string | string[] | undefined } }) {
+async function Messaging({ conversationId, currentUser }: { conversationId: string | null, currentUser: AppUser }) {
+    const [conversations, messages] = await Promise.all([
+      getConversations(currentUser.id),
+      conversationId ? getMessages(conversationId) : Promise.resolve([])
+    ]);
+    
+    return (
+        <ClientOnly>
+            <MessagingContent 
+                initialCurrentUser={currentUser}
+                initialConversations={conversations}
+                initialMessages={messages}
+                initialActiveConversationId={conversationId}
+            />
+        </ClientOnly>
+    );
+}
+
+export default async function MessagesPage({ searchParams }: { searchParams: { [key: string]: string | string[] | undefined } }) {
     const cookieStore = cookies();
     const supabase = createClient(cookieStore);
     const { data: { user } } = await supabase.auth.getUser();
@@ -28,29 +46,11 @@ async function MessagesPage({ searchParams }: { searchParams: { [key: string]: s
     
     const conversationIdFromUrl = typeof searchParams.conversation_id === 'string' ? searchParams.conversation_id : null;
     
-    const [conversations, messages] = await Promise.all([
-      getConversations(currentUser.id),
-      conversationIdFromUrl ? getMessages(conversationIdFromUrl) : Promise.resolve([])
-    ]);
-    
     return (
         <AppLayout user={currentUser}>
-            <ClientOnly>
-                <MessagingContent 
-                    initialCurrentUser={currentUser}
-                    initialConversations={conversations}
-                    initialMessages={messages}
-                    initialActiveConversationId={conversationIdFromUrl}
-                />
-            </ClientOnly>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen">Loading Messaging...</div>}>
+              <Messaging conversationId={conversationIdFromUrl} currentUser={currentUser} />
+            </Suspense>
         </AppLayout>
     );
-}
-
-export default function MessagesPageWrapper({ searchParams }: { searchParams: { [key: string]: string | string[] | undefined } }) {
-  return (
-    <Suspense fallback={<div className="flex items-center justify-center h-screen">Loading Messaging...</div>}>
-      <MessagesPage searchParams={searchParams} />
-    </Suspense>
-  )
 }

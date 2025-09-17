@@ -16,7 +16,15 @@ type AppUser = {
     avatarUrl: string;
 };
 
-async function DashboardPage() {
+async function DashboardContent({ currentUser }: { currentUser: AppUser }) {
+  return (
+    <ClientOnly>
+      {currentUser.role === 'teacher' ? <TeacherDashboard user={currentUser} /> : <StudentDashboard user={currentUser} />}
+    </ClientOnly>
+  );
+}
+
+export default async function DashboardPage() {
   const cookieStore = cookies();
   const supabase = createClient(cookieStore);
   const { data: { user } } = await supabase.auth.getUser();
@@ -38,17 +46,9 @@ async function DashboardPage() {
 
   return (
     <AppLayout user={currentUser}>
-      <ClientOnly>
-        {currentUser.role === 'teacher' ? <TeacherDashboard user={currentUser} /> : <StudentDashboard user={currentUser} />}
-      </ClientOnly>
+      <Suspense fallback={<div className="flex min-h-[calc(100vh_-_theme(spacing.24))] items-center justify-center"><div>Loading dashboard...</div></div>}>
+        <DashboardContent currentUser={currentUser} />
+      </Suspense>
     </AppLayout>
   );
-}
-
-export default function DashboardPageWrapper() {
-  return (
-    <Suspense fallback={<div className="flex min-h-screen bg-background items-center justify-center"><div>Loading dashboard...</div></div>}>
-      <DashboardPage />
-    </Suspense>
-  )
 }
