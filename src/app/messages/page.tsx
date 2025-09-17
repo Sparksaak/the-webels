@@ -26,7 +26,7 @@ async function MessagesPage({ searchParams }: { searchParams: { [key: string]: s
         avatarUrl: `https://placehold.co/100x100.png`
     };
 
-    const conversationIdFromUrl = typeof searchParams.conversation_id === 'string' ? searchParams.conversation_id : null;
+    const conversationIdFromUrl = searchParams.conversation_id ? String(searchParams.conversation_id) : null;
     
     const [conversations, messages] = await Promise.all([
       getConversations(currentUser.id),
