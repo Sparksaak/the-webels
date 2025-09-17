@@ -1,13 +1,13 @@
 
 'use client';
 
-import { Suspense, useState, useMemo } from 'react';
+import { Suspense, useState, useMemo, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { AppLayout } from '@/components/app-layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { FileText, Trash2 } from 'lucide-react';
-import { redirect } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { format, formatDistanceToNow, isPast } from 'date-fns';
 import { getAssignments, deleteAssignment, type Assignment } from './actions';
 import { NewAssignmentDialog } from '@/components/new-assignment-dialog';
@@ -26,9 +26,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { useActionState, useEffect } from 'react';
-import { logout } from '@/app/auth/actions';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 type AppUser = {
     id: string;
@@ -39,11 +37,6 @@ type AppUser = {
 };
 
 function DeleteAssignmentButton({ assignmentId }: { assignmentId: string }) {
-    const deleteAction = async () => {
-        'use server';
-        await deleteAssignment(assignmentId);
-    };
-
     return (
         <AlertDialog>
             <AlertDialogTrigger asChild>
@@ -60,7 +53,7 @@ function DeleteAssignmentButton({ assignmentId }: { assignmentId: string }) {
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <form action={deleteAction}>
+                    <form action={deleteAssignment.bind(null, assignmentId)}>
                         <AlertDialogAction asChild>
                            <Button type="submit" variant="destructive">Delete</Button>
                         </AlertDialogAction>
@@ -208,6 +201,7 @@ function AssignmentsPageContent({ currentUser, initialAssignments }: { currentUs
 }
 
 export default function AssignmentsPageWrapper() {
+    const router = useRouter();
     const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
     const [assignments, setAssignments] = useState<Assignment[]>([]);
     const [loading, setLoading] = useState(true);
@@ -218,7 +212,7 @@ export default function AssignmentsPageWrapper() {
             const { data: { user } } = await supabase.auth.getUser();
 
             if (!user) {
-                redirect('/login');
+                router.push('/login');
                 return;
             }
 
@@ -242,7 +236,7 @@ export default function AssignmentsPageWrapper() {
         
         fetchData();
 
-    }, [supabase]);
+    }, [supabase, router]);
 
 
     if (loading || !currentUser) {
@@ -255,5 +249,3 @@ export default function AssignmentsPageWrapper() {
 
     return <AssignmentsPageContent currentUser={currentUser} initialAssignments={assignments} />
 }
-
-    
