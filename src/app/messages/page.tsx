@@ -20,13 +20,13 @@ async function MessagesPage({ searchParams }: { searchParams: { [key: string]: s
     
     const currentUser: AppUser = {
         id: user.id,
-        name: user.user_metadata?.full_name || user.email,
+        name: user.user_metadata?.full_name || user.email!,
         email: user.email!,
         role: user.user_metadata?.role || 'student',
         avatarUrl: `https://placehold.co/100x100.png`
     };
-
-    const conversationIdFromUrl = searchParams.conversation_id ? String(searchParams.conversation_id) : null;
+    
+    const conversationIdFromUrl = typeof searchParams.conversation_id === 'string' ? searchParams.conversation_id : null;
     
     const [conversations, messages] = await Promise.all([
       getConversations(currentUser.id),
