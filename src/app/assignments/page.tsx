@@ -1,12 +1,13 @@
 
-import { Suspense } from 'react';
-import { createClient } from '@/lib/supabase/server';
+'use client';
+
+import { Suspense, useState, useMemo } from 'react';
+import { createClient } from '@/lib/supabase/client';
 import { AppLayout } from '@/components/app-layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { FileText, Trash2 } from 'lucide-react';
 import { redirect } from 'next/navigation';
-import { cookies } from 'next/headers';
 import { format, formatDistanceToNow, isPast } from 'date-fns';
 import { getAssignments, deleteAssignment, type Assignment } from './actions';
 import { NewAssignmentDialog } from '@/components/new-assignment-dialog';
@@ -25,6 +26,9 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import { useActionState, useEffect } from 'react';
+import { logout } from '@/app/auth/actions';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
 type AppUser = {
     id: string;
@@ -100,7 +104,7 @@ function AssignmentCard({ assignment, user }: { assignment: Assignment, user: Ap
         </div>
         {dueDate && (
           <CardDescription className={cn('text-sm', isOverdue && assignment.submissionStatus !== 'Submitted' && assignment.submissionStatus !== 'Graded' ? 'text-destructive' : 'text-muted-foreground')}>
-            <ClientOnly>Due {format(dueDate, 'MMM d, yyyy @ p zzz')}</ClientOnly>
+            <ClientOnly>Due {format(new Date(dueDate), 'MMM d, yyyy @ p zzz')}</ClientOnly>
           </CardDescription>
         )}
       </CardHeader>
@@ -126,24 +130,53 @@ function AssignmentCard({ assignment, user }: { assignment: Assignment, user: Ap
   );
 }
 
-async function AssignmentsList({ currentUser }: { currentUser: AppUser }) {
-  const assignments = await getAssignments();
+function AssignmentsList({ currentUser, initialAssignments }: { currentUser: AppUser, initialAssignments: Assignment[] }) {
+  const [filter, setFilter] = useState('all');
+
+  const filteredAssignments = useMemo(() => {
+    if (currentUser.role !== 'student') {
+        return initialAssignments;
+    }
+
+    switch (filter) {
+        case 'todo':
+            return initialAssignments.filter(a => a.submissionStatus === 'Not Submitted' && (a.dueDate ? !isPast(new Date(a.dueDate)) : true));
+        case 'overdue':
+            return initialAssignments.filter(a => a.submissionStatus === 'Not Submitted' && (a.dueDate ? isPast(new Date(a.dueDate)) : false));
+        case 'submitted':
+            return initialAssignments.filter(a => a.submissionStatus === 'Submitted' || a.submissionStatus === 'Graded');
+        case 'all':
+        default:
+            return initialAssignments;
+    }
+  }, [filter, initialAssignments, currentUser.role]);
 
   return (
     <>
-      {assignments.length === 0 ? (
+      {currentUser.role === 'student' && (
+        <Tabs defaultValue="all" onValueChange={setFilter} className="mb-6">
+          <TabsList>
+            <TabsTrigger value="all">All</TabsTrigger>
+            <TabsTrigger value="todo">To Do</TabsTrigger>
+            <TabsTrigger value="overdue">Overdue</TabsTrigger>
+            <TabsTrigger value="submitted">Submitted</TabsTrigger>
+          </TabsList>
+        </Tabs>
+      )}
+
+      {filteredAssignments.length === 0 ? (
         <Card>
           <CardContent className="py-24">
             <div className="text-center text-muted-foreground">
               <FileText className="mx-auto h-12 w-12 text-gray-400" />
-              <p className="mt-4">No assignments have been posted yet.</p>
-              {currentUser.role === 'teacher' && <p className="text-sm">Click "New Assignment" to get started.</p>}
+              <p className="mt-4">No assignments found for this filter.</p>
+              {currentUser.role === 'teacher' && initialAssignments.length === 0 && <p className="text-sm">Click "New Assignment" to get started.</p>}
             </div>
           </CardContent>
         </Card>
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {assignments.map(assignment => (
+          {filteredAssignments.map(assignment => (
             <AssignmentCard key={assignment.id} assignment={assignment} user={currentUser} />
           ))}
         </div>
@@ -152,26 +185,8 @@ async function AssignmentsList({ currentUser }: { currentUser: AppUser }) {
   );
 }
 
-export default async function AssignmentsPage() {
-    const cookieStore = cookies();
-    const supabase = createClient(cookieStore);
-    const { data: { user } } = await supabase.auth.getUser();
 
-    if (!user) {
-        redirect('/login');
-    }
-
-    const role = user.user_metadata?.role || 'student';
-    const name = user.user_metadata?.full_name || user.email;
-
-    const currentUser: AppUser = {
-        id: user.id,
-        name: name,
-        email: user.email!,
-        role: role,
-        avatarUrl: `https://placehold.co/100x100.png`,
-    };
-
+function AssignmentsPageContent({ currentUser, initialAssignments }: { currentUser: AppUser, initialAssignments: Assignment[] }) {
     return (
         <AppLayout user={currentUser}>
             <div className="flex items-center justify-between mb-8">
@@ -187,9 +202,58 @@ export default async function AssignmentsPage() {
                 </ClientOnly>
                 )}
             </div>
-            <Suspense fallback={<div className="text-center py-24 text-muted-foreground">Loading assignments...</div>}>
-                <AssignmentsList currentUser={currentUser} />
-            </Suspense>
+            <AssignmentsList currentUser={currentUser} initialAssignments={initialAssignments} />
         </AppLayout>
     );
 }
+
+export default function AssignmentsPageWrapper() {
+    const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
+    const [assignments, setAssignments] = useState<Assignment[]>([]);
+    const [loading, setLoading] = useState(true);
+    const supabase = createClient();
+
+    useEffect(() => {
+        const fetchData = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+
+            if (!user) {
+                redirect('/login');
+                return;
+            }
+
+            const role = user.user_metadata?.role || 'student';
+            const name = user.user_metadata?.full_name || user.email;
+
+            const appUser: AppUser = {
+                id: user.id,
+                name: name,
+                email: user.email!,
+                role: role,
+                avatarUrl: `https://placehold.co/100x100.png`,
+            };
+            
+            setCurrentUser(appUser);
+            
+            const fetchedAssignments = await getAssignments();
+            setAssignments(fetchedAssignments);
+            setLoading(false);
+        };
+        
+        fetchData();
+
+    }, [supabase]);
+
+
+    if (loading || !currentUser) {
+        return (
+            <div className="flex min-h-screen bg-background items-center justify-center">
+              <div>Loading...</div>
+            </div>
+        )
+    }
+
+    return <AssignmentsPageContent currentUser={currentUser} initialAssignments={assignments} />
+}
+
+    
