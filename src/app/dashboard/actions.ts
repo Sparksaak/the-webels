@@ -73,14 +73,19 @@ export async function getDashboardData() {
     const submittedAssignmentIds = new Set(submissionsData?.map(s => s.assignment_id) || []);
     const now = new Date();
     
-    const allAssignments: Assignment[] = assignmentsData || [];
+    const allAssignments: Assignment[] = (assignmentsData || []).map(a => ({
+        ...a,
+        createdAt: a.created_at,
+        dueDate: a.due_date,
+        submissions: [],
+    }));
 
     const overdueAssignments = allAssignments.filter(a => 
-        a.due_date && new Date(a.due_date) < now && !submittedAssignmentIds.has(a.id)
+        a.dueDate && new Date(a.dueDate) < now && !submittedAssignmentIds.has(a.id)
     );
     
     const assignmentsToComplete = allAssignments.filter(a => 
-        (!a.due_date || new Date(a.due_date) >= now) && !submittedAssignmentIds.has(a.id)
+        (!a.dueDate || new Date(a.dueDate) >= now) && !submittedAssignmentIds.has(a.id)
     );
 
     const upcomingAssignmentsCount = assignmentsToComplete.length;
