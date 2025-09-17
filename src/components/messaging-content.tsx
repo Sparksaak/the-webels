@@ -110,7 +110,8 @@ export function MessagingContent({
 
                     if (!sender) {
                         console.warn("Could not find sender for new message");
-                        fetchAndSetConversations(currentUser.id); // Refresh everything as a fallback
+                        // As a fallback, just refetch conversations which will include the new message
+                        fetchAndSetConversations(currentUser.id);
                         return;
                     }
                     
@@ -133,6 +134,8 @@ export function MessagingContent({
                         const conversationToUpdate = prevConvs.find(c => c.id === fullMessage.conversationId);
                         
                         if (!conversationToUpdate) {
+                            // If conversation is not in the list, it's a new chat for this user.
+                            // A full refetch is the simplest way to handle this edge case.
                             fetchAndSetConversations(currentUser.id);
                             return prevConvs;
                         }
@@ -189,6 +192,7 @@ export function MessagingContent({
         
         setMessages(prev => [...prev, optimisticMessage]);
         
+        formData.set('conversationId', activeConversationId);
         const result = await sendMessage(formData);
         
         if (result?.error) {
