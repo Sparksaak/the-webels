@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from 'react';
-import { format, formatDistanceToNow } from 'date-fns';
+import { format, formatDistanceToNow, isAfter, differenceInDays } from 'date-fns';
 import {
   Sheet,
   SheetContent,
@@ -297,13 +297,13 @@ function TeacherSubmissionsView({ assignment }: { assignment: Assignment }) {
         <div>
             <h3 className="text-lg font-semibold mb-4">Submissions ({assignment.submissions.length})</h3>
             <div className="space-y-6">
-                {assignment.submissions.map(sub => <SubmissionCard key={sub.id} submission={sub} />)}
+                {assignment.submissions.map(sub => <SubmissionCard key={sub.id} submission={sub} assignment={assignment} />)}
             </div>
         </div>
     );
 }
 
-function SubmissionCard({ submission }: { submission: AssignmentSubmission }) {
+function SubmissionCard({ submission, assignment }: { submission: AssignmentSubmission; assignment: Assignment }) {
     const { toast } = useToast();
     const [isGrading, setIsGrading] = useState(false);
     const formRef = useRef<HTMLFormElement>(null);
@@ -325,6 +325,23 @@ function SubmissionCard({ submission }: { submission: AssignmentSubmission }) {
         setIsGrading(false);
     }
 
+    const getSubmissionStatus = () => {
+        if (!assignment.dueDate) {
+            return <Badge variant="secondary">On Time</Badge>;
+        }
+        const dueDate = new Date(assignment.dueDate);
+        const submittedAt = new Date(submission.submitted_at);
+        const wasLate = isAfter(submittedAt, dueDate);
+        
+        if (wasLate) {
+            const daysLate = differenceInDays(submittedAt, dueDate);
+            const lateLabel = daysLate === 0 ? 'Late' : daysLate === 1 ? '1 day late' : `${daysLate} days late`;
+            return <Badge variant="destructive">{lateLabel}</Badge>;
+        } else {
+            return <Badge className="bg-green-100 text-green-800 hover:bg-green-100/80">On Time</Badge>;
+        }
+    };
+
     return (
         <div className="rounded-lg border bg-card p-4">
             <div className="flex items-center justify-between">
@@ -338,9 +355,14 @@ function SubmissionCard({ submission }: { submission: AssignmentSubmission }) {
                         <p className="text-sm text-muted-foreground">{submission.student_email}</p>
                     </div>
                 </div>
-                 <p className="text-xs text-muted-foreground">
-                    {formatDistanceToNow(new Date(submission.submitted_at), { addSuffix: true })}
-                </p>
+                 <div className="text-right">
+                    <p className="text-xs text-muted-foreground">
+                        {format(new Date(submission.submitted_at), 'MMM d, yyyy @ h:mm a')}
+                    </p>
+                    <div className="mt-1">
+                        {getSubmissionStatus()}
+                    </div>
+                </div>
             </div>
             <Separator className="my-4" />
             <p className="text-sm text-muted-foreground whitespace-pre-wrap mb-4">{submission.submission_content}</p>
@@ -377,3 +399,6 @@ function SubmissionCard({ submission }: { submission: AssignmentSubmission }) {
         </div>
     );
 }
+
+
+    
