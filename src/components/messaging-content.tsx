@@ -53,10 +53,11 @@ export function MessagingContent({
     
     useEffect(() => {
       setMessages(initialMessages);
+      scrollToBottom();
     }, [initialMessages]);
 
     const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
     };
     
     const fetchAndSetConversations = useCallback(async (userId: string) => {
@@ -83,72 +84,75 @@ export function MessagingContent({
     }, [router, activeConversationId]);
     
     useEffect(() => {
-        scrollToBottom();
-    }, [messages]);
-    
-    useEffect(() => {
-        if (!activeConversationId) {
-          return;
-        }
-    
         const channel = supabase
-          .channel(`messages:${activeConversationId}`)
+          .channel('realtime-messages')
           .on(
             'postgres_changes',
-            {
-              event: 'INSERT',
-              schema: 'public',
-              table: 'messages',
-              filter: `conversation_id=eq.${activeConversationId}`,
-            },
+            { event: 'INSERT', schema: 'public', table: 'messages' },
             async (payload) => {
-                const newMessage = payload.new as Message;
+                const newMessage = payload.new as any;
                 
-                // We need to fetch the sender's details for the new message
-                const { data: userData } = await supabase
-                    .from('users')
-                    .select('id, user_metadata')
-                    .eq('id', newMessage.sender_id)
-                    .single();
+                // If the new message is in the currently active conversation, add it to the UI
+                if (newMessage.conversation_id === activeConversationId) {
+                    const { data: userData, error: userError } = await supabase
+                        .from('users')
+                        .select('id, user_metadata')
+                        .eq('id', newMessage.sender_id)
+                        .single();
 
-                const sender: AppUser = {
-                    id: userData.id,
-                    name: userData.user_metadata.full_name || 'Unknown',
-                    email: userData.user_metadata.email,
-                    role: userData.user_metadata.role || 'student',
-                    avatarUrl: 'https://placehold.co/100x100.png'
-                }
-
-                const fullMessage: Message = { ...newMessage, sender };
-                
-                setMessages((currentMessages) => {
-                    // Avoid adding duplicates from optimistic update
-                    if (currentMessages.some(m => m.id === fullMessage.id)) {
-                        return currentMessages;
+                    if (userError) {
+                        console.error("Error fetching sender details:", userError);
+                        return;
                     }
-                    return [...currentMessages, fullMessage];
-                });
 
-                // Also refresh the conversation list to show new "last message"
+                    const sender: AppUser = {
+                        id: userData.id,
+                        name: userData.user_metadata.full_name || 'Unknown',
+                        email: userData.user_metadata.email,
+                        role: userData.user_metadata.role || 'student',
+                        avatarUrl: 'https://placehold.co/100x100.png'
+                    };
+
+                    const fullMessage: Message = { 
+                        id: newMessage.id,
+                        content: newMessage.content,
+                        createdAt: newMessage.created_at,
+                        conversationId: newMessage.conversation_id,
+                        sender: sender 
+                    };
+                    
+                    setMessages((currentMessages) => {
+                        // Avoid adding duplicates
+                        if (currentMessages.some(m => m.id === fullMessage.id)) {
+                            return currentMessages;
+                        }
+                        return [...currentMessages, fullMessage];
+                    });
+                }
+                // Refresh the conversation list to show new "last message" for any conversation
                 fetchAndSetConversations(currentUser.id);
             }
           )
           .subscribe((status, err) => {
             if (status === 'SUBSCRIBED') {
-              console.log(`Successfully subscribed to channel: messages:${activeConversationId}`);
+              console.log('Successfully subscribed to realtime channel!');
             }
             if (status === 'CHANNEL_ERROR') {
-              console.error(`Failed to subscribe to channel: messages:${activeConversationId}`, err);
+              console.error('Realtime channel error:', err);
             }
             if (err) {
-              console.error('Subscription error:', err);
+              console.error('Realtime subscription error:', err);
             }
           });
     
         return () => {
           supabase.removeChannel(channel);
         };
-      }, [activeConversationId, supabase, currentUser.id, fetchAndSetConversations]);
+      }, [supabase, activeConversationId, currentUser.id, fetchAndSetConversations]);
+    
+    useEffect(() => {
+        scrollToBottom();
+    }, [messages]);
     
 
     const handleSendMessage = async (formData: FormData) => {
@@ -167,7 +171,6 @@ export function MessagingContent({
         };
         
         setMessages(prev => [...prev, optimisticMessage]);
-        scrollToBottom();
         
         const result = await sendMessage(formData);
         
@@ -179,10 +182,10 @@ export function MessagingContent({
                 description: result.error,
                 variant: "destructive",
              });
-        } else {
+        } else if (result.message) {
              // The realtime subscription will handle receiving the final message.
-             // We can remove the optimistic one once the real one arrives.
-             setMessages(prev => prev.filter(m => m.id !== optimisticMessage.id));
+             // We can update the optimistic one with the real one.
+             setMessages(prev => prev.map(m => m.id === optimisticMessage.id ? result.message as Message : m));
         }
         
         setIsSubmitting(false);
@@ -348,3 +351,5 @@ export function MessagingContent({
             </div>
     );
 }
+
+    
