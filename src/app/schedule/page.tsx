@@ -38,8 +38,8 @@ function SchedulePageContent({ currentUser, initialSchedules }: { currentUser: A
                     <>
                         <Card>
                             <CardHeader>
-                                <CardTitle>Online Class Schedule</CardTitle>
-                                <CardDescription>Schedule for students in the online learning track.</CardDescription>
+                                <CardTitle>Online Classes Schedule</CardTitle>
+                                <CardDescription>Schedule for online classes.</CardDescription>
                             </CardHeader>
                             <CardContent>
                             <ScheduleList schedules={onlineSchedules} user={currentUser} classType="online" />
@@ -47,8 +47,8 @@ function SchedulePageContent({ currentUser, initialSchedules }: { currentUser: A
                         </Card>
                         <Card>
                             <CardHeader>
-                                <CardTitle>In-Person Class Schedule</CardTitle>
-                                <CardDescription>Schedule for students in the in-person learning track.</CardDescription>
+                                <CardTitle>In-Person Classes Schedule</CardTitle>
+                                <CardDescription>Schedule for in-person classes.</CardDescription>
                             </CardHeader>
                             <CardContent>
                                 <ScheduleList schedules={inPersonSchedules} user={currentUser} classType="in-person" />
@@ -59,7 +59,7 @@ function SchedulePageContent({ currentUser, initialSchedules }: { currentUser: A
                      <Card className="lg:col-span-2">
                         <CardHeader>
                             <CardTitle>My Schedule</CardTitle>
-                            <CardDescription>Your weekly class schedule for the {studentTrack} learning track.</CardDescription>
+                            <CardDescription>Your weekly class schedule for {studentTrack} classes.</CardDescription>
                         </CardHeader>
                         <CardContent>
                             <ScheduleList 

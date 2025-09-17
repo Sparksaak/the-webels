@@ -48,7 +48,7 @@ export function ScheduleList({ schedules, user, classType }: ScheduleListProps) 
     if (schedules.length === 0) {
         return (
              <div className="text-center text-muted-foreground py-12">
-                <p>No classes scheduled for the {classType} track.</p>
+                <p>No {classType} classes scheduled.</p>
                  {user.role === 'teacher' && <p className="text-sm mt-1">Click "New Class Schedule" to add one.</p>}
             </div>
         )

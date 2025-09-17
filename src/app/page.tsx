@@ -95,7 +95,7 @@ export default function LandingPage() {
                 </div>
                 <h3 className="text-xl font-bold">Learning Tracks</h3>
                 <p className="text-muted-foreground">
-                  Separate students into online or in-person learning tracks for tailored education.
+                  Separate students into online or in-person classes for tailored education.
                 </p>
               </div>
             </div>
