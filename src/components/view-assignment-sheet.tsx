@@ -25,6 +25,13 @@ import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { submitAssignment, gradeSubmission } from '@/app/assignments/actions';
 import type { Assignment, AssignmentSubmission } from "@/app/assignments/actions";
 import type { AppUser } from "@/app/messages/types";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible"
+import { ChevronsUpDown } from 'lucide-react';
+
 
 interface ViewAssignmentSheetProps {
   assignment: Assignment;
@@ -83,6 +90,7 @@ function StudentSubmissionView({ assignment, user, onSubmitted }: { assignment: 
     const formRef = useRef<HTMLFormElement>(null);
     const { toast } = useToast();
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isResubmitting, setIsResubmitting] = useState(false);
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -105,7 +113,7 @@ function StudentSubmissionView({ assignment, user, onSubmitted }: { assignment: 
         return (
             <div>
                 <h3 className="text-lg font-semibold mb-4">Your Submission</h3>
-                <div className="rounded-md border bg-muted p-4 space-y-4">
+                <div className="rounded-md border bg-card p-4 space-y-4">
                     <div className="flex justify-between items-center">
                          <Badge variant={mySubmission.grade ? "default" : "secondary"}>
                             {mySubmission.grade ? 'Graded' : 'Submitted'}
@@ -129,7 +137,33 @@ function StudentSubmissionView({ assignment, user, onSubmitted }: { assignment: 
                     )}
                 </div>
                  {!mySubmission.grade && (
-                    <p className="text-xs text-center text-muted-foreground mt-4">You can resubmit your work until it is graded.</p>
+                    <Collapsible open={isResubmitting} onOpenChange={setIsResubmitting} className="mt-4">
+                        <CollapsibleTrigger asChild>
+                            <div className="flex justify-center">
+                                <Button variant="link">
+                                    <ChevronsUpDown className="h-4 w-4 mr-2" />
+                                    {isResubmitting ? 'Cancel' : 'Resubmit Assignment'}
+                                </Button>
+                            </div>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                            <p className="text-xs text-center text-muted-foreground mb-4">You can edit your submission until it has been graded.</p>
+                            <form ref={formRef} onSubmit={handleSubmit}>
+                                <Textarea
+                                    name="submissionContent"
+                                    rows={8}
+                                    defaultValue={mySubmission.submission_content}
+                                    required
+                                    disabled={isSubmitting}
+                                />
+                                <div className="flex justify-end mt-4">
+                                    <Button type="submit" disabled={isSubmitting}>
+                                        {isSubmitting ? 'Resubmitting...' : 'Resubmit Assignment'}
+                                    </Button>
+                                </div>
+                            </form>
+                        </CollapsibleContent>
+                    </Collapsible>
                 )}
             </div>
         );
@@ -245,5 +279,4 @@ function SubmissionCard({ submission }: { submission: AssignmentSubmission }) {
     );
 }
 
-// Helper to add cn to globals.css
-import { cn } from '@/lib/utils';
+    
