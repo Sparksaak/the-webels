@@ -91,8 +91,8 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
-       <div className="hidden bg-muted lg:block relative">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary to-accent opacity-80"></div>
+       <div className="hidden bg-muted lg:block relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/80 via-primary/40 to-accent/70 animate-gradient-xy"></div>
         <Image
           src="https://placehold.co/1200x900.png"
           alt="Image"
@@ -104,7 +104,7 @@ export default function LoginPage() {
          <div className="absolute inset-0 flex items-center justify-center p-12">
           <div className="text-white text-center bg-black bg-opacity-30 p-8 rounded-lg backdrop-blur-sm">
             <h2 className="mt-4 text-4xl font-bold">Welcome Back</h2>
-            <p className="mt-2 text-xl">Sign in to continue to The Webels.</p>
+            <p className="mt-2 text-xl">Sign in to continue to Classroom Central.</p>
           </div>
         </div>
       </div>

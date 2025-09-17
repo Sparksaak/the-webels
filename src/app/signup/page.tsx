@@ -9,8 +9,8 @@ export default function SignupPage() {
       <div className="flex items-center justify-center py-12">
         <SignupForm />
       </div>
-       <div className="hidden bg-muted lg:block relative">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary to-accent opacity-80"></div>
+       <div className="hidden bg-muted lg:block relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/80 via-primary/40 to-accent/70 animate-gradient-xy"></div>
         <Image
           src="https://placehold.co/1200x900.png"
           alt="Image"

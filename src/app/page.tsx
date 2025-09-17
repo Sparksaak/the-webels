@@ -8,7 +8,7 @@ import Image from 'next/image';
 export default function LandingPage() {
   return (
     <div className="flex flex-col min-h-screen bg-background">
-      <header className="px-4 lg:px-6 h-14 flex items-center shadow-sm">
+      <header className="px-4 lg:px-6 h-14 flex items-center shadow-sm bg-background/80 backdrop-blur-sm sticky top-0 z-50">
         <Link href="#" className="flex items-center justify-center" prefetch={false}>
           <Logo />
           <span className="ml-2 text-xl font-bold text-foreground">Classroom Central</span>
@@ -16,7 +16,7 @@ export default function LandingPage() {
         <nav className="ml-auto flex gap-4 sm:gap-6 items-center">
           <Link
             href="/login"
-            className="text-sm font-medium hover:underline underline-offset-4 text-foreground"
+            className="text-sm font-medium hover:underline underline-offset-4 text-foreground transition-colors"
             prefetch={false}
           >
             Login
@@ -29,12 +29,13 @@ export default function LandingPage() {
         </nav>
       </header>
       <main className="flex-1">
-        <section className="w-full py-12 md:py-24 lg:py-32 xl:py-48 bg-muted/20">
-          <div className="container px-4 md:px-6">
+        <section className="w-full py-12 md:py-24 lg:py-32 xl:py-48 relative overflow-hidden">
+         <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-accent/10 animate-gradient-xy"></div>
+          <div className="container px-4 md:px-6 relative">
             <div className="grid gap-6 lg:grid-cols-[1fr_400px] lg:gap-12 xl:grid-cols-[1fr_600px]">
               <div className="flex flex-col justify-center space-y-4">
                 <div className="space-y-2">
-                  <h1 className="text-3xl font-bold tracking-tighter sm:text-5xl xl:text-6xl/none">
+                  <h1 className="text-3xl font-bold tracking-tighter sm:text-5xl xl:text-6xl/none bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent">
                     The Modern Solution for Your Classroom
                   </h1>
                   <p className="max-w-[600px] text-muted-foreground md:text-xl">
@@ -53,13 +54,13 @@ export default function LandingPage() {
                 width="600"
                 height="400"
                 alt="Hero"
-                className="mx-auto aspect-video overflow-hidden rounded-xl object-cover sm:w-full lg:order-last"
+                className="mx-auto aspect-video overflow-hidden rounded-xl object-cover sm:w-full lg:order-last shadow-2xl transition-transform hover:scale-105"
                 data-ai-hint="classroom learning"
               />
             </div>
           </div>
         </section>
-        <section id="features" className="w-full py-12 md:py-24 lg:py-32">
+        <section id="features" className="w-full py-12 md:py-24 lg:py-32 bg-background">
           <div className="container px-4 md:px-6">
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
               <div className="space-y-2">
@@ -70,8 +71,8 @@ export default function LandingPage() {
                 </p>
               </div>
             </div>
-            <div className="mx-auto grid max-w-5xl items-center gap-6 py-12 lg:grid-cols-3 lg:gap-12">
-              <div className="flex flex-col items-center text-center">
+            <div className="mx-auto grid max-w-5xl items-start gap-8 py-12 lg:grid-cols-3 lg:gap-12">
+              <div className="flex flex-col items-center text-center p-6 rounded-lg transition-all hover:bg-card hover:shadow-lg">
                 <div className="bg-primary/10 p-4 rounded-full mb-4">
                   <GraduationCap className="h-8 w-8 text-primary" />
                 </div>
@@ -80,7 +81,7 @@ export default function LandingPage() {
                   Easily manage student records, track progress, and communicate effectively.
                 </p>
               </div>
-              <div className="flex flex-col items-center text-center">
+              <div className="flex flex-col items-center text-center p-6 rounded-lg transition-all hover:bg-card hover:shadow-lg">
                 <div className="bg-primary/10 p-4 rounded-full mb-4">
                   <BookOpen className="h-8 w-8 text-primary" />
                 </div>
@@ -89,7 +90,7 @@ export default function LandingPage() {
                   Create, distribute, and grade assignments. Keep everyone informed with announcements.
                 </p>
               </div>
-              <div className="flex flex-col items-center text-center">
+              <div className="flex flex-col items-center text-center p-6 rounded-lg transition-all hover:bg-card hover:shadow-lg">
                  <div className="bg-primary/10 p-4 rounded-full mb-4">
                     <Users className="h-8 w-8 text-primary" />
                 </div>
