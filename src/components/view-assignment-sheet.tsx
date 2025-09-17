@@ -225,15 +225,41 @@ function StudentSubmissionView({ assignment, user, onSubmitted }: { assignment: 
         setIsSubmitting(false);
     };
 
+    const getSubmissionStatus = () => {
+        if (!mySubmission || !assignment.dueDate) {
+            return null;
+        }
+        const dueDate = new Date(assignment.dueDate);
+        const submittedAt = new Date(mySubmission.submitted_at);
+        const wasLate = isAfter(submittedAt, dueDate);
+        
+        if (wasLate) {
+            const hoursLate = differenceInHours(submittedAt, dueDate);
+            if (hoursLate < 24) {
+                 const lateLabel = hoursLate < 1 ? 'Late' : hoursLate === 1 ? '1 hour late' : `${hoursLate} hours late`;
+                 return <Badge variant="destructive">{lateLabel}</Badge>;
+            }
+            const daysLate = differenceInDays(submittedAt, dueDate);
+            const lateLabel = daysLate === 1 ? '1 day late' : `${daysLate} days late`;
+            return <Badge variant="destructive">{lateLabel}</Badge>;
+        } else {
+            return <Badge className="bg-green-100 text-green-800 hover:bg-green-100/80">On Time</Badge>;
+        }
+    };
+
+
     if (mySubmission) {
         return (
             <div>
                 <h3 className="text-lg font-semibold mb-4">Your Submission</h3>
                 <div className="rounded-md border bg-card p-4 space-y-4">
-                    <div className="flex justify-between items-center">
-                         <Badge variant={mySubmission.grade ? "default" : "secondary"}>
-                            {mySubmission.grade ? 'Graded' : 'Submitted'}
-                        </Badge>
+                    <div className="flex justify-between items-center flex-wrap gap-2">
+                        <div className="flex items-center gap-2">
+                            <Badge variant={mySubmission.grade ? "default" : "secondary"}>
+                                {mySubmission.grade ? 'Graded' : 'Submitted'}
+                            </Badge>
+                            {getSubmissionStatus()}
+                        </div>
                         <p className="text-xs text-muted-foreground">
                             <ClientOnly>Submitted on {format(new Date(mySubmission.submitted_at), 'PPP p zzz')}</ClientOnly>
                         </p>
