@@ -4,6 +4,7 @@
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
 import { cookies } from 'next/headers';
+import type { Assignment } from '@/app/assignments/actions';
 
 export async function getDashboardData() {
   const cookieStore = cookies();
@@ -57,23 +58,41 @@ export async function getDashboardData() {
     
     const [
         { data: assignmentsData, error: assignmentsError },
+        { data: submissionsData, error: submissionsError },
         { count: announcementCount, error: announcementsError }
     ] = await Promise.all([
-        supabaseAdmin.from('assignments').select('id, due_date').gt('due_date', new Date().toISOString()),
+        supabaseAdmin.from('assignments').select('*').order('due_date', { ascending: true }),
+        supabaseAdmin.from('assignment_submissions').select('assignment_id').eq('student_id', user.id),
         supabaseAdmin.from('announcements').select('id', { count: 'exact' }).gt('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
     ]);
 
     if (assignmentsError) console.error('Error fetching student assignments:', assignmentsError);
     if (announcementsError) console.error('Error fetching student announcements:', announcementsError);
+    if (submissionsError) console.error('Error fetching student submissions:', submissionsError);
 
-    const upcomingAssignmentsCount = assignmentsData?.length ?? 0;
+    const submittedAssignmentIds = new Set(submissionsData?.map(s => s.assignment_id) || []);
+    const now = new Date();
+    
+    const allAssignments: Assignment[] = assignmentsData || [];
+
+    const overdueAssignments = allAssignments.filter(a => 
+        a.due_date && new Date(a.due_date) < now && !submittedAssignmentIds.has(a.id)
+    );
+    
+    const assignmentsToComplete = allAssignments.filter(a => 
+        (!a.due_date || new Date(a.due_date) >= now) && !submittedAssignmentIds.has(a.id)
+    );
+
+    const upcomingAssignmentsCount = assignmentsToComplete.length;
 
     return { 
         teacher,
         stats: {
             upcomingAssignments: upcomingAssignmentsCount,
             recentAnnouncements: announcementCount ?? 0,
-        }
+        },
+        overdueAssignments,
+        assignmentsToComplete
     };
   }
 
