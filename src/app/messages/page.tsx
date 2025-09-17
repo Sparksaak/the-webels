@@ -41,7 +41,8 @@ export default async function MessagesPage({ searchParams }: { searchParams: { [
         name: user.user_metadata?.full_name || user.email!,
         email: user.email!,
         role: user.user_metadata?.role || 'student',
-        avatarUrl: `https://placehold.co/100x100.png`
+        avatarUrl: `https://placehold.co/100x100.png`,
+        learning_preference: user.user_metadata?.learning_preference,
     };
     
     const conversationIdFromUrl = typeof searchParams.conversation_id === 'string' ? searchParams.conversation_id : null;

@@ -5,6 +5,7 @@ import { supabaseAdmin } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
 import { cookies } from 'next/headers';
 import type { Assignment } from '@/app/assignments/actions';
+import type { ClassSchedule } from '@/app/schedule/actions';
 
 export async function getDashboardData() {
   const cookieStore = cookies();
@@ -87,16 +88,19 @@ export async function getDashboardData() {
     const [
         { data: assignmentsData, error: assignmentsError },
         { data: submissionsData, error: submissionsError },
-        { count: announcementCount, error: announcementsError }
+        { count: announcementCount, error: announcementsError },
+        { data: schedulesData, error: schedulesError }
     ] = await Promise.all([
         supabaseAdmin.from('assignments').select('*').order('due_date', { ascending: true }),
         supabaseAdmin.from('assignment_submissions').select('assignment_id').eq('student_id', user.id),
-        supabaseAdmin.from('announcements').select('id', { count: 'exact' }).gt('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
+        supabaseAdmin.from('announcements').select('id', { count: 'exact' }).gt('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()),
+        supabaseAdmin.from('class_schedules').select('*').eq('class_type', user.user_metadata.learning_preference).order('day_of_week').order('start_time'),
     ]);
 
     if (assignmentsError) console.error('Error fetching student assignments:', assignmentsError);
     if (announcementsError) console.error('Error fetching student announcements:', announcementsError);
     if (submissionsError) console.error('Error fetching student submissions:', submissionsError);
+    if (schedulesError) console.error('Error fetching student schedules:', schedulesError);
 
     const submittedAssignmentIds = new Set(submissionsData?.map(s => s.assignment_id) || []);
     const now = new Date();
@@ -125,7 +129,8 @@ export async function getDashboardData() {
             recentAnnouncements: announcementCount ?? 0,
         },
         overdueAssignments,
-        assignmentsToComplete
+        assignmentsToComplete,
+        schedules: schedulesData as ClassSchedule[]
     };
   }
 

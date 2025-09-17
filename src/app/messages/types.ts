@@ -5,6 +5,7 @@ export type AppUser = {
     email: string;
     role: 'teacher' | 'student';
     avatarUrl: string;
+    learning_preference?: 'online' | 'in-person';
 };
 
 export type Message = {

@@ -23,6 +23,7 @@ import { type Assignment } from '@/app/assignments/actions';
 import { Button } from './ui/button';
 import { format, formatDistanceToNow, isPast } from 'date-fns';
 import { ClientOnly } from './client-only';
+import { type ClassSchedule } from '@/app/schedule/actions';
 
 interface StudentDashboardProps {
     user: AppUser;
@@ -39,17 +40,44 @@ interface StudentStats {
     recentAnnouncements: number;
 }
 
+function formatTime(timeString: string) {
+    if (!timeString) return '';
+    const [hours, minutes] = timeString.split(':');
+    const hour = parseInt(hours, 10);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const formattedHour = hour % 12 === 0 ? 12 : hour % 12;
+    return `${formattedHour}:${minutes} ${ampm}`;
+}
+
+const weekDays = [
+    { value: 0, label: 'Sunday' },
+    { value: 1, label: 'Monday' },
+    { value: 2, label: 'Tuesday' },
+    { value: 3, label: 'Wednesday' },
+    { value: 4, label: 'Thursday' },
+    { value: 5, label: 'Friday' },
+    { value: 6, label: 'Saturday' },
+];
+
+
 export function StudentDashboard({ user }: StudentDashboardProps) {
   const [teacher, setTeacher] = useState<Teacher | null>(null);
   const [stats, setStats] = useState<StudentStats | null>(null);
   const [overdueAssignments, setOverdueAssignments] = useState<Assignment[]>([]);
   const [assignmentsToComplete, setAssignmentsToComplete] = useState<Assignment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [schedules, setSchedules] = useState<ClassSchedule[]>([]);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const { teacher: fetchedTeacher, stats: fetchedStats, overdueAssignments: fetchedOverdue, assignmentsToComplete: fetchedUpcoming } = await getDashboardData();
+        const { 
+            teacher: fetchedTeacher, 
+            stats: fetchedStats, 
+            overdueAssignments: fetchedOverdue, 
+            assignmentsToComplete: fetchedUpcoming,
+            schedules: fetchedSchedules,
+        } = await getDashboardData();
         if (fetchedTeacher) {
             setTeacher(fetchedTeacher as Teacher);
         }
@@ -61,6 +89,9 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
         }
         if (fetchedUpcoming) {
             setAssignmentsToComplete(fetchedUpcoming as Assignment[]);
+        }
+        if (fetchedSchedules) {
+            setSchedules(fetchedSchedules as ClassSchedule[]);
         }
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
@@ -158,16 +189,28 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
            <Card>
             <CardHeader>
               <CardTitle>Class Schedule</CardTitle>
-              <CardDescription>Your upcoming class time.</CardDescription>
+              <CardDescription>Your weekly class times.</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center gap-4 text-muted-foreground pt-4">
-                <Clock className="h-8 w-8" />
-                <div className="text-center ">
-                    <p className="font-semibold text-foreground">Monday, 10:00 AM</p>
-                    <p className="text-sm">Next class starts soon.</p>
-                </div>
-              </div>
+              {loading ? (
+                 <div className="text-sm text-muted-foreground pt-4">Loading schedule...</div>
+              ) : schedules.length > 0 ? (
+                 <div className="space-y-3 pt-4">
+                    {schedules.map(schedule => (
+                        <div key={schedule.id} className="flex items-center gap-4 text-muted-foreground">
+                            <Clock className="h-6 w-6 flex-shrink-0" />
+                            <div>
+                                <p className="font-semibold text-foreground">{schedule.title}</p>
+                                <p className="text-sm">
+                                    {weekDays.find(d => d.value === schedule.day_of_week)?.label} from {formatTime(schedule.start_time)} to {formatTime(schedule.end_time)}
+                                </p>
+                            </div>
+                        </div>
+                    ))}
+                 </div>
+              ) : (
+                 <div className="text-sm text-muted-foreground pt-4">No classes scheduled for your track yet.</div>
+              )}
             </CardContent>
           </Card>
         </div>

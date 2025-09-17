@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Megaphone, MessageSquare, BookOpen, FileText } from 'lucide-react';
+import { LayoutDashboard, Megaphone, MessageSquare, BookOpen, FileText, CalendarClock } from 'lucide-react';
 import {
   Sidebar,
   SidebarHeader,
@@ -37,6 +37,7 @@ function NavItems() {
         { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
         { href: '/announcements', label: 'Announcements', icon: Megaphone },
         { href: '/assignments', label: 'Assignments', icon: FileText },
+        { href: '/schedule', label: 'Schedule', icon: CalendarClock },
         { href: '/messages', label: 'Messages', icon: MessageSquare },
     ];
 
