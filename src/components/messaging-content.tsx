@@ -93,45 +93,45 @@ export function MessagingContent({
                     console.log('New message received:', payload.new);
                     const newMessage = payload.new as any;
                     
-                    if (messages.some(m => m.id === newMessage.id)) {
-                        return;
-                    }
-
-                    if (newMessage.conversation_id === activeConversationId) {
-                        const { data: userData, error: userError } = await supabase
-                            .from('users')
-                            .select('id, user_metadata')
-                            .eq('id', newMessage.sender_id)
-                            .single();
-
-                        if (userError) {
-                            console.error("Error fetching sender details:", userError);
-                            return;
+                    setMessages((currentMessages) => {
+                        if (currentMessages.some(m => m.id === newMessage.id)) {
+                          return currentMessages;
                         }
-
-                        const sender: AppUser = {
-                            id: userData.id,
-                            name: userData.user_metadata.full_name || 'Unknown',
-                            email: userData.user_metadata.email,
-                            role: userData.user_metadata.role || 'student',
-                            avatarUrl: 'https://placehold.co/100x100.png'
-                        };
-
-                        const fullMessage: Message = { 
-                            id: newMessage.id,
-                            content: newMessage.content,
-                            createdAt: newMessage.created_at,
-                            conversationId: newMessage.conversation_id,
-                            sender: sender 
-                        };
                         
-                        setMessages((currentMessages) => {
-                            if (currentMessages.some(m => m.id === fullMessage.id)) {
-                                return currentMessages;
-                            }
-                            return [...currentMessages, fullMessage];
-                        });
-                    }
+                        if (newMessage.conversation_id === activeConversationId) {
+                            // The user data should ideally be part of the payload or fetched more efficiently.
+                            // For now, fetching it directly, but this could be optimized.
+                             supabase
+                                .from('users')
+                                .select('id, user_metadata')
+                                .eq('id', newMessage.sender_id)
+                                .single()
+                                .then(({ data: userData, error: userError }) => {
+                                     if (userError) {
+                                        console.error("Error fetching sender details:", userError);
+                                        return;
+                                    }
+                                     const sender: AppUser = {
+                                        id: userData.id,
+                                        name: userData.user_metadata.full_name || 'Unknown',
+                                        email: userData.user_metadata.email,
+                                        role: userData.user_metadata.role || 'student',
+                                        avatarUrl: 'https://placehold.co/100x100.png'
+                                    };
+
+                                    const fullMessage: Message = { 
+                                        id: newMessage.id,
+                                        content: newMessage.content,
+                                        createdAt: newMessage.created_at,
+                                        conversationId: newMessage.conversation_id,
+                                        sender: sender 
+                                    };
+                                    
+                                    setMessages((prev) => [...prev, fullMessage]);
+                                });
+                        }
+                        return currentMessages;
+                    });
                     
                     fetchAndSetConversations(currentUser.id);
                 }
@@ -151,7 +151,7 @@ export function MessagingContent({
         return () => {
           supabase.removeChannel(channel);
         };
-    }, [supabase, activeConversationId, currentUser.id, fetchAndSetConversations, messages]);
+    }, [supabase, activeConversationId, currentUser.id, fetchAndSetConversations]);
     
     useEffect(() => {
         scrollToBottom();
@@ -287,7 +287,7 @@ export function MessagingContent({
                                                         <p>{msg.content}</p>
                                                         <p className="text-xs opacity-70 mt-1.5 text-right">
                                                             <ClientOnly>
-                                                                {format(parseISO(msg.createdAt), 'p')}
+                                                                {msg.createdAt ? format(parseISO(msg.createdAt), 'p') : ''}
                                                             </ClientOnly>
                                                         </p>
                                                     </div>
