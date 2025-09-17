@@ -13,8 +13,8 @@ import { Send, UserPlus, MessageSquarePlus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, formatDistanceToNow, parseISO } from 'date-fns';
 
-import { getConversations, getMessages, getUsers } from '@/app/messages/data';
-import { sendMessage } from '@/app/messages/actions';
+import { getConversations, getMessages } from '@/app/messages/data';
+import { sendMessage, getUsers } from '@/app/messages/actions';
 import type { AppUser, Conversation, Message } from '@/app/messages/types';
 import { NewConversationDialog } from '@/components/new-conversation-dialog';
 import { useToast } from '@/hooks/use-toast';
@@ -48,6 +48,12 @@ export function MessagingContent({
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
+    const fetchAndSetConversations = useCallback(async (userId: string) => {
+        const fetchedConversations = await getConversations(userId);
+        setConversations(fetchedConversations);
+        return fetchedConversations;
+    }, []);
+
     useEffect(() => {
         getUsers().then(users => {
             const transformedUsers = users.map(u => ({
@@ -74,12 +80,6 @@ export function MessagingContent({
         setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
     };
     
-    const fetchAndSetConversations = useCallback(async (userId: string) => {
-        const fetchedConversations = await getConversations(userId);
-        setConversations(fetchedConversations);
-        return fetchedConversations;
-    }, []);
-
     const handleConversationSelect = useCallback(async (conversationId: string) => {
         if (!conversationId || conversationId === activeConversationId) return;
 
@@ -113,7 +113,7 @@ export function MessagingContent({
                         fetchAndSetConversations(currentUser.id); // Refresh everything as a fallback
                         return;
                     }
-
+                    
                     const fullMessage: Message = {
                         id: newMessageData.id,
                         content: newMessageData.content,
@@ -122,19 +122,16 @@ export function MessagingContent({
                         sender: sender
                     };
 
-                    // Update the messages list if the conversation is active
                     if (fullMessage.conversationId === activeConversationId) {
                         setMessages(prev => {
                             if (prev.some(m => m.id === fullMessage.id)) return prev;
                             return [...prev, fullMessage];
                         });
                     }
-
-                    // Update the conversation list on the side
+                    
                     setConversations(prevConvs => {
                         const conversationToUpdate = prevConvs.find(c => c.id === fullMessage.conversationId);
                         
-                        // If the conversation is new and not in the list, fetch all conversations again.
                         if (!conversationToUpdate) {
                             fetchAndSetConversations(currentUser.id);
                             return prevConvs;
@@ -148,7 +145,6 @@ export function MessagingContent({
                             }
                         };
                         
-                        // Remove the old conversation and put the updated one at the top.
                         const otherConversations = prevConvs.filter(c => c.id !== fullMessage.conversationId);
                         return [updatedConversation, ...otherConversations];
                     });
@@ -204,9 +200,7 @@ export function MessagingContent({
                 variant: "destructive",
              });
         } else if (result.message) {
-             // Replace optimistic message with the real one from the server
              setMessages(prev => prev.map(m => m.id === optimisticMessage.id ? result.message : m));
-             // Also update the conversation list immediately
              setConversations(prevConvs => {
                 const conversationToUpdate = prevConvs.find(c => c.id === result.message.conversationId);
                 if (!conversationToUpdate) return prevConvs;
@@ -224,7 +218,6 @@ export function MessagingContent({
         }
         
         setIsSubmitting(false);
-        // Do not call fetchAndSetConversations here, as optimistic/realtime updates handle it.
     };
     
     const activeConversation = conversations.find(c => c.id === activeConversationId);
@@ -322,7 +315,7 @@ export function MessagingContent({
                                                         <p>{msg.content}</p>
                                                         <p className="text-xs opacity-70 mt-1.5 text-right">
                                                             <ClientOnly>
-                                                                {msg.createdAt ? format(parseISO(msg.createdAt), 'p') : ''}
+                                                                {format(parseISO(msg.createdAt), 'p')}
                                                             </ClientOnly>
                                                         </p>
                                                     </div>
@@ -387,6 +380,3 @@ export function MessagingContent({
             </div>
     );
 }
-
-
-    
