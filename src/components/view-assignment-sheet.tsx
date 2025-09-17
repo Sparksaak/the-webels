@@ -13,7 +13,7 @@ import {
   SheetFooter,
   SheetClose,
 } from "@/components/ui/sheet";
-import { Button } from "./ui/button";
+import { Button, buttonVariants } from "./ui/button";
 import { Textarea } from './ui/textarea';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
@@ -88,9 +88,7 @@ export function ViewAssignmentSheet({ assignment, user, children }: ViewAssignme
                                 <div>
                                     <SheetTitle className="text-2xl">{currentAssignment.title}</SheetTitle>
                                     <SheetDescription className="mt-2">
-                                        <ClientOnly>
-                                            Due: {currentAssignment.dueDate ? format(new Date(currentAssignment.dueDate), 'PPP p zzz') : 'No due date'}
-                                        </ClientOnly>
+                                        <ClientOnly>Due: {currentAssignment.dueDate ? format(new Date(currentAssignment.dueDate), 'PPP p zzz') : 'No due date'}</ClientOnly>
                                         <span className="mx-2">•</span>
                                         Posted by {currentAssignment.teacher.name}
                                     </SheetDescription>
