@@ -99,19 +99,17 @@ export function AppLayout({ children, user }: AppLayoutProps) {
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
-        <div className="flex flex-col w-full">
           <header className="sticky top-0 z-10 flex h-14 items-center justify-between gap-4 border-b bg-background/80 px-4 backdrop-blur-sm sm:px-6 md:justify-end">
               <div className="md:hidden">
                   <SidebarTrigger />
               </div>
               <UserNav user={user} />
           </header>
-          <main className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto">
             <div className="p-4 sm:p-6 md:p-8">
               {children}
             </div>
-          </main>
-        </div>
+          </div>
       </SidebarInset>
     </div>
   );
