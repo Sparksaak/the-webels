@@ -13,7 +13,7 @@ import { Send, UserPlus, MessageSquarePlus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, formatDistanceToNow, parseISO } from 'date-fns';
 
-import { getConversations, getMessages } from '@/app/messages/data';
+import { getConversations, getMessages, getUsers } from '@/app/messages/data';
 import { sendMessage } from '@/app/messages/actions';
 import type { AppUser, Conversation, Message } from '@/app/messages/types';
 import { NewConversationDialog } from '@/components/new-conversation-dialog';
@@ -44,8 +44,22 @@ export function MessagingContent({
     const [activeConversationId, setActiveConversationId] = useState<string | null>(initialActiveConversationId);
     const [loadingMessages, setLoadingMessages] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    
+    const [allUsers, setAllUsers] = useState<AppUser[]>([]);
+
     const messagesEndRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        getUsers().then(users => {
+            const transformedUsers = users.map(u => ({
+                id: u.id,
+                name: u.full_name || u.email || 'Unknown',
+                email: u.email || '',
+                role: u.role || 'student',
+                avatarUrl: 'https://placehold.co/100x100.png'
+            }));
+            setAllUsers([...transformedUsers, currentUser]);
+        });
+    }, [currentUser]);
     
     useEffect(() => {
         setConversations(initialConversations);
@@ -89,51 +103,55 @@ export function MessagingContent({
             .on(
                 'postgres_changes',
                 { event: 'INSERT', schema: 'public', table: 'messages' },
-                async (payload) => {
+                (payload) => {
                     console.log('New message received:', payload.new);
-                    const newMessage = payload.new as any;
-                    
-                    setMessages((currentMessages) => {
-                        if (currentMessages.some(m => m.id === newMessage.id)) {
-                          return currentMessages;
-                        }
-                        
-                        if (newMessage.conversation_id === activeConversationId) {
-                            // The user data should ideally be part of the payload or fetched more efficiently.
-                            // For now, fetching it directly, but this could be optimized.
-                             supabase
-                                .from('users')
-                                .select('id, user_metadata')
-                                .eq('id', newMessage.sender_id)
-                                .single()
-                                .then(({ data: userData, error: userError }) => {
-                                     if (userError) {
-                                        console.error("Error fetching sender details:", userError);
-                                        return;
-                                    }
-                                     const sender: AppUser = {
-                                        id: userData.id,
-                                        name: userData.user_metadata.full_name || 'Unknown',
-                                        email: userData.user_metadata.email,
-                                        role: userData.user_metadata.role || 'student',
-                                        avatarUrl: 'https://placehold.co/100x100.png'
-                                    };
+                    const newMessageData = payload.new as any;
+                    const sender = allUsers.find(u => u.id === newMessageData.sender_id);
 
-                                    const fullMessage: Message = { 
-                                        id: newMessage.id,
-                                        content: newMessage.content,
-                                        createdAt: newMessage.created_at,
-                                        conversationId: newMessage.conversation_id,
-                                        sender: sender 
-                                    };
-                                    
-                                    setMessages((prev) => [...prev, fullMessage]);
-                                });
+                    if (!sender) {
+                        console.warn("Could not find sender for new message");
+                        fetchAndSetConversations(currentUser.id); // Refresh everything as a fallback
+                        return;
+                    }
+
+                    const fullMessage: Message = {
+                        id: newMessageData.id,
+                        content: newMessageData.content,
+                        createdAt: newMessageData.created_at,
+                        conversationId: newMessageData.conversation_id,
+                        sender: sender
+                    };
+
+                    // Update the messages list if the conversation is active
+                    if (fullMessage.conversationId === activeConversationId) {
+                        setMessages(prev => {
+                            if (prev.some(m => m.id === fullMessage.id)) return prev;
+                            return [...prev, fullMessage];
+                        });
+                    }
+
+                    // Update the conversation list on the side
+                    setConversations(prevConvs => {
+                        const conversationToUpdate = prevConvs.find(c => c.id === fullMessage.conversationId);
+                        
+                        // If the conversation is new and not in the list, fetch all conversations again.
+                        if (!conversationToUpdate) {
+                            fetchAndSetConversations(currentUser.id);
+                            return prevConvs;
                         }
-                        return currentMessages;
+
+                        const updatedConversation = {
+                            ...conversationToUpdate,
+                            last_message: {
+                                content: fullMessage.content,
+                                timestamp: fullMessage.createdAt,
+                            }
+                        };
+                        
+                        // Remove the old conversation and put the updated one at the top.
+                        const otherConversations = prevConvs.filter(c => c.id !== fullMessage.conversationId);
+                        return [updatedConversation, ...otherConversations];
                     });
-                    
-                    fetchAndSetConversations(currentUser.id);
                 }
             )
             .subscribe((status, err) => {
@@ -146,12 +164,12 @@ export function MessagingContent({
                 if (err) {
                   console.error('Realtime subscription error:', err);
                 }
-              });
+            });
     
         return () => {
           supabase.removeChannel(channel);
         };
-    }, [supabase, activeConversationId, currentUser.id, fetchAndSetConversations]);
+    }, [supabase, activeConversationId, currentUser.id, fetchAndSetConversations, allUsers]);
     
     useEffect(() => {
         scrollToBottom();
@@ -186,10 +204,27 @@ export function MessagingContent({
                 variant: "destructive",
              });
         } else if (result.message) {
+             // Replace optimistic message with the real one from the server
              setMessages(prev => prev.map(m => m.id === optimisticMessage.id ? result.message : m));
+             // Also update the conversation list immediately
+             setConversations(prevConvs => {
+                const conversationToUpdate = prevConvs.find(c => c.id === result.message.conversationId);
+                if (!conversationToUpdate) return prevConvs;
+
+                const updatedConversation = {
+                    ...conversationToUpdate,
+                    last_message: {
+                        content: result.message.content,
+                        timestamp: result.message.createdAt,
+                    }
+                };
+                const otherConversations = prevConvs.filter(c => c.id !== result.message.conversationId);
+                return [updatedConversation, ...otherConversations];
+             });
         }
         
         setIsSubmitting(false);
+        // Do not call fetchAndSetConversations here, as optimistic/realtime updates handle it.
     };
     
     const activeConversation = conversations.find(c => c.id === activeConversationId);
@@ -352,3 +387,6 @@ export function MessagingContent({
             </div>
     );
 }
+
+
+    
