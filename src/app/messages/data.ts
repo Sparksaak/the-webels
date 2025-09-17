@@ -57,9 +57,12 @@ async function getParticipantsForConversations(conversationIds: string[]): Promi
 
 async function getLastMessagesForConversations(conversationIds: string[]): Promise<Record<string, { content: string; timestamp: string }>> {
     if (conversationIds.length === 0) return {};
-    
+
     const { data, error } = await supabaseAdmin
-        .rpc('get_last_messages_for_conversations', { c_ids: conversationIds });
+        .from('messages')
+        .select('conversation_id, content, created_at')
+        .in('conversation_id', conversationIds)
+        .order('created_at', { ascending: false });
 
     if (error) {
         console.error('Error fetching last messages:', JSON.stringify(error, null, 2));
@@ -67,17 +70,20 @@ async function getLastMessagesForConversations(conversationIds: string[]): Promi
     }
 
     const lastMessages: Record<string, { content: string; timestamp: string }> = {};
-     if (data) {
-        data.forEach((msg: any) => {
-            lastMessages[msg.conversation_id] = {
-                content: msg.content,
-                timestamp: msg.created_at,
-            };
-        });
-     }
+    if (data) {
+        for (const message of data) {
+            if (!lastMessages[message.conversation_id]) {
+                lastMessages[message.conversation_id] = {
+                    content: message.content,
+                    timestamp: message.created_at,
+                };
+            }
+        }
+    }
     
     return lastMessages;
 }
+
 
 // This is the main function to fetch conversations.
 export async function getConversations(userId: string): Promise<Conversation[]> {
