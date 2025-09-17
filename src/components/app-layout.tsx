@@ -106,8 +106,8 @@ export function AppLayout({ children, user }: AppLayoutProps) {
               </div>
               <UserNav user={user} />
           </header>
-          <main className="flex flex-1 flex-col overflow-auto">
-            <div className="w-full flex-1 p-4 sm:p-6 md:p-8">
+          <main className="flex-1 overflow-y-auto">
+            <div className="p-4 sm:p-6 md:p-8">
               {children}
             </div>
           </main>
