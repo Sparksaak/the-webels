@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
+import type { Message } from './types';
 
 export async function createConversation(formData: FormData) {
     const cookieStore = cookies();
@@ -79,7 +80,7 @@ export async function createConversation(formData: FormData) {
     }
 }
 
-export async function sendMessage(formData: FormData) {
+export async function sendMessage(formData: FormData): Promise<{ success: true, message: Message } | { error: string }> {
     const cookieStore = cookies();
     const supabase = createClient(cookieStore);
 
@@ -101,8 +102,8 @@ export async function sendMessage(formData: FormData) {
 
         const sender = {
             id: senderData.user.id,
-            name: senderData.user.user_metadata.full_name || senderData.user.email,
-            email: senderData.user.email,
+            name: senderData.user.user_metadata.full_name || senderData.user.email!,
+            email: senderData.user.email!,
             role: senderData.user.user_metadata.role,
             avatarUrl: 'https://placehold.co/100x100.png',
         };
@@ -124,8 +125,11 @@ export async function sendMessage(formData: FormData) {
         return { 
             success: true, 
             message: {
-                ...newMessage,
-                sender: sender
+                id: newMessage.id,
+                content: newMessage.content,
+                createdAt: newMessage.created_at,
+                conversationId: newMessage.conversation_id,
+                sender: sender,
             }
         };
 

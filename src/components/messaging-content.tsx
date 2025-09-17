@@ -93,7 +93,10 @@ export function MessagingContent({
                     console.log('New message received:', payload.new);
                     const newMessage = payload.new as any;
                     
-                    // If the new message is in the currently active conversation, add it to the UI
+                    if (messages.some(m => m.id === newMessage.id)) {
+                        return;
+                    }
+
                     if (newMessage.conversation_id === activeConversationId) {
                         const { data: userData, error: userError } = await supabase
                             .from('users')
@@ -123,14 +126,13 @@ export function MessagingContent({
                         };
                         
                         setMessages((currentMessages) => {
-                            // Avoid adding duplicates
                             if (currentMessages.some(m => m.id === fullMessage.id)) {
                                 return currentMessages;
                             }
                             return [...currentMessages, fullMessage];
                         });
                     }
-                    // Refresh the conversation list to show new "last message" for any conversation
+                    
                     fetchAndSetConversations(currentUser.id);
                 }
             )
@@ -149,7 +151,7 @@ export function MessagingContent({
         return () => {
           supabase.removeChannel(channel);
         };
-    }, [supabase, activeConversationId, currentUser.id, fetchAndSetConversations]);
+    }, [supabase, activeConversationId, currentUser.id, fetchAndSetConversations, messages]);
     
     useEffect(() => {
         scrollToBottom();
@@ -184,9 +186,7 @@ export function MessagingContent({
                 variant: "destructive",
              });
         } else if (result.message) {
-             // The realtime subscription will handle receiving the final message.
-             // We can update the optimistic one with the real one.
-             setMessages(prev => prev.map(m => m.id === optimisticMessage.id ? result.message as Message : m));
+             setMessages(prev => prev.map(m => m.id === optimisticMessage.id ? result.message : m));
         }
         
         setIsSubmitting(false);
@@ -352,11 +352,3 @@ export function MessagingContent({
             </div>
     );
 }
-
-    
-
-    
-
-
-
-    
