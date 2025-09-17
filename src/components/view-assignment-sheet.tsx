@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { format, formatDistanceToNow } from 'date-fns';
 import {
   Sheet,
@@ -34,31 +34,42 @@ interface ViewAssignmentSheetProps {
 
 export function ViewAssignmentSheet({ assignment, user, children }: ViewAssignmentSheetProps) {
     const [open, setOpen] = useState(false);
+    const [currentAssignment, setCurrentAssignment] = useState(assignment);
+
+    // This allows the sheet to reflect changes (like a new submission or grade)
+    // without having to close and reopen it.
+    useEffect(() => {
+        setCurrentAssignment(assignment);
+    }, [assignment]);
+
+    const handleSubmissionOrGradeChange = (updatedAssignment: Assignment) => {
+        setCurrentAssignment(updatedAssignment);
+    }
 
     return (
         <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>{children}</SheetTrigger>
             <SheetContent className="w-full sm:max-w-xl md:max-w-2xl lg:max-w-3xl flex flex-col">
                 <SheetHeader className="pr-12">
-                    <SheetTitle className="text-2xl">{assignment.title}</SheetTitle>
+                    <SheetTitle className="text-2xl">{currentAssignment.title}</SheetTitle>
                     <SheetDescription>
-                        Due: {assignment.dueDate ? format(new Date(assignment.dueDate), 'PPP') : 'No due date'}
+                        Due: {currentAssignment.dueDate ? format(new Date(currentAssignment.dueDate), 'PPP') : 'No due date'}
                         <span className="mx-2">•</span>
-                        Posted by {assignment.teacher.name}
+                        Posted by {currentAssignment.teacher.name}
                     </SheetDescription>
                 </SheetHeader>
                 <Separator className="my-4" />
                 <ScrollArea className="flex-1 pr-6 -mr-6">
                     <div className="prose prose-sm dark:prose-invert max-w-none">
-                        <p className="text-muted-foreground whitespace-pre-wrap">{assignment.description}</p>
+                        <p className="text-muted-foreground whitespace-pre-wrap">{currentAssignment.description}</p>
                     </div>
 
                     <Separator className="my-6" />
 
                     {user.role === 'student' ? (
-                        <StudentSubmissionView assignment={assignment} user={user} onSubmitted={() => setOpen(false)} />
+                        <StudentSubmissionView assignment={currentAssignment} user={user} onSubmitted={() => setOpen(false)} />
                     ) : (
-                        <TeacherSubmissionsView submissions={assignment.submissions} />
+                        <TeacherSubmissionsView assignment={currentAssignment} />
                     )}
                 </ScrollArea>
             </SheetContent>
@@ -145,15 +156,15 @@ function StudentSubmissionView({ assignment, user, onSubmitted }: { assignment: 
     );
 }
 
-function TeacherSubmissionsView({ submissions }: { submissions: AssignmentSubmission[] }) {
-    if (submissions.length === 0) {
+function TeacherSubmissionsView({ assignment }: { assignment: Assignment }) {
+    if (assignment.submissions.length === 0) {
         return <div className="text-center py-12 text-muted-foreground">No submissions yet.</div>;
     }
     return (
         <div>
-            <h3 className="text-lg font-semibold mb-4">Submissions ({submissions.length})</h3>
+            <h3 className="text-lg font-semibold mb-4">Submissions ({assignment.submissions.length})</h3>
             <div className="space-y-6">
-                {submissions.map(sub => <SubmissionCard key={sub.id} submission={sub} />)}
+                {assignment.submissions.map(sub => <SubmissionCard key={sub.id} submission={sub} />)}
             </div>
         </div>
     );
@@ -163,6 +174,7 @@ function SubmissionCard({ submission }: { submission: AssignmentSubmission }) {
     const { toast } = useToast();
     const [isGrading, setIsGrading] = useState(false);
     const formRef = useRef<HTMLFormElement>(null);
+    const [currentGrade, setCurrentGrade] = useState(submission.grade);
 
     const handleGradeSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -175,6 +187,7 @@ function SubmissionCard({ submission }: { submission: AssignmentSubmission }) {
             toast({ title: "Error", description: result.error, variant: "destructive" });
         } else {
             toast({ title: "Success", description: "Grade saved." });
+            setCurrentGrade(formData.get('grade') as string);
         }
         setIsGrading(false);
     }
@@ -224,7 +237,7 @@ function SubmissionCard({ submission }: { submission: AssignmentSubmission }) {
                 </div>
                 <div className="flex justify-end">
                     <Button type="submit" disabled={isGrading}>
-                        {isGrading ? 'Saving...' : 'Save Grade'}
+                        {isGrading ? 'Saving...' : (currentGrade ? 'Update Grade' : 'Save Grade')}
                     </Button>
                 </div>
             </form>

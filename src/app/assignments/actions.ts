@@ -232,10 +232,39 @@ export async function gradeSubmission(formData: FormData) {
         if (error) throw error;
         
         revalidatePath('/assignments');
+        revalidatePath(`/assignments/${submissionId}`);
         return { success: true };
 
     } catch (error: any) {
         console.error('Error grading submission:', error);
         return { error: 'Could not grade submission. ' + error.message };
+    }
+}
+
+
+export async function deleteAssignment(assignmentId: string) {
+    const cookieStore = cookies();
+    const supabase = createClient(cookieStore);
+    
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user || user.user_metadata.role !== 'teacher') {
+        return { error: 'Only teachers can delete assignments.' };
+    }
+
+    try {
+        const { error } = await supabaseAdmin
+            .from('assignments')
+            .delete()
+            .eq('id', assignmentId)
+            .eq('teacher_id', user.id);
+
+        if (error) throw error;
+
+        revalidatePath('/assignments');
+        return { success: true };
+
+    } catch (error: any) {
+        console.error('Error deleting assignment:', error);
+        return { error: 'Could not delete assignment. ' + error.message };
     }
 }
