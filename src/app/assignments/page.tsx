@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Suspense, useState, useMemo, useEffect } from 'react';
@@ -145,7 +146,7 @@ function AssignmentsList({ currentUser, initialAssignments }: { currentUser: App
             return initialAssignments.filter(a => a.submissionStatus === 'Not Submitted' && (a.dueDate ? !isPast(new Date(a.dueDate)) : true));
         case 'overdue':
             return initialAssignments.filter(a => a.submissionStatus === 'Not Submitted' && (a.dueDate ? isPast(new Date(a.dueDate)) : false));
-        case 'submitted':
+        case 'completed':
             return initialAssignments.filter(a => a.submissionStatus === 'Submitted' || a.submissionStatus === 'Graded');
         case 'all':
         default:
@@ -162,7 +163,7 @@ function AssignmentsList({ currentUser, initialAssignments }: { currentUser: App
                     <TabsTrigger value="all">All</TabsTrigger>
                     <TabsTrigger value="todo">To Do</TabsTrigger>
                     <TabsTrigger value="overdue">Overdue</TabsTrigger>
-                    <TabsTrigger value="submitted">Submitted</TabsTrigger>
+                    <TabsTrigger value="completed">Completed</TabsTrigger>
                 </>
             ) : (
                  <>
