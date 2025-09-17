@@ -85,70 +85,71 @@ export function MessagingContent({
     
     useEffect(() => {
         const channel = supabase
-          .channel('realtime-messages')
-          .on(
-            'postgres_changes',
-            { event: 'INSERT', schema: 'public', table: 'messages' },
-            async (payload) => {
-                const newMessage = payload.new as any;
-                
-                // If the new message is in the currently active conversation, add it to the UI
-                if (newMessage.conversation_id === activeConversationId) {
-                    const { data: userData, error: userError } = await supabase
-                        .from('users')
-                        .select('id, user_metadata')
-                        .eq('id', newMessage.sender_id)
-                        .single();
-
-                    if (userError) {
-                        console.error("Error fetching sender details:", userError);
-                        return;
-                    }
-
-                    const sender: AppUser = {
-                        id: userData.id,
-                        name: userData.user_metadata.full_name || 'Unknown',
-                        email: userData.user_metadata.email,
-                        role: userData.user_metadata.role || 'student',
-                        avatarUrl: 'https://placehold.co/100x100.png'
-                    };
-
-                    const fullMessage: Message = { 
-                        id: newMessage.id,
-                        content: newMessage.content,
-                        createdAt: newMessage.created_at,
-                        conversationId: newMessage.conversation_id,
-                        sender: sender 
-                    };
+            .channel('public:messages')
+            .on(
+                'postgres_changes',
+                { event: 'INSERT', schema: 'public', table: 'messages' },
+                async (payload) => {
+                    console.log('New message received:', payload.new);
+                    const newMessage = payload.new as any;
                     
-                    setMessages((currentMessages) => {
-                        // Avoid adding duplicates
-                        if (currentMessages.some(m => m.id === fullMessage.id)) {
-                            return currentMessages;
+                    // If the new message is in the currently active conversation, add it to the UI
+                    if (newMessage.conversation_id === activeConversationId) {
+                        const { data: userData, error: userError } = await supabase
+                            .from('users')
+                            .select('id, user_metadata')
+                            .eq('id', newMessage.sender_id)
+                            .single();
+
+                        if (userError) {
+                            console.error("Error fetching sender details:", userError);
+                            return;
                         }
-                        return [...currentMessages, fullMessage];
-                    });
+
+                        const sender: AppUser = {
+                            id: userData.id,
+                            name: userData.user_metadata.full_name || 'Unknown',
+                            email: userData.user_metadata.email,
+                            role: userData.user_metadata.role || 'student',
+                            avatarUrl: 'https://placehold.co/100x100.png'
+                        };
+
+                        const fullMessage: Message = { 
+                            id: newMessage.id,
+                            content: newMessage.content,
+                            createdAt: newMessage.created_at,
+                            conversationId: newMessage.conversation_id,
+                            sender: sender 
+                        };
+                        
+                        setMessages((currentMessages) => {
+                            // Avoid adding duplicates
+                            if (currentMessages.some(m => m.id === fullMessage.id)) {
+                                return currentMessages;
+                            }
+                            return [...currentMessages, fullMessage];
+                        });
+                    }
+                    // Refresh the conversation list to show new "last message" for any conversation
+                    fetchAndSetConversations(currentUser.id);
                 }
-                // Refresh the conversation list to show new "last message" for any conversation
-                fetchAndSetConversations(currentUser.id);
-            }
-          )
-          .subscribe((status, err) => {
-            if (status === 'SUBSCRIBED') {
-              console.log('Successfully subscribed to realtime channel!');
-            }
-            if (status === 'CHANNEL_ERROR') {
-              console.error('Realtime channel error:', err);
-            }
-            if (err) {
-              console.error('Realtime subscription error:', err);
-            }
-          });
+            )
+            .subscribe((status, err) => {
+                if (status === 'SUBSCRIBED') {
+                  console.log('Successfully subscribed to realtime channel!');
+                }
+                if (status === 'CHANNEL_ERROR') {
+                  console.error('Realtime channel error:', err);
+                }
+                if (err) {
+                  console.error('Realtime subscription error:', err);
+                }
+              });
     
         return () => {
           supabase.removeChannel(channel);
         };
-      }, [supabase, activeConversationId, currentUser.id, fetchAndSetConversations]);
+    }, [supabase, activeConversationId, currentUser.id, fetchAndSetConversations]);
     
     useEffect(() => {
         scrollToBottom();
@@ -351,5 +352,7 @@ export function MessagingContent({
             </div>
     );
 }
+
+    
 
     
