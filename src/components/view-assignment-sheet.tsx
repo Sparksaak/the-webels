@@ -22,7 +22,7 @@ import { Badge } from './ui/badge';
 import { ScrollArea } from './ui/scroll-area';
 import { Separator } from './ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { submitAssignment, gradeSubmission } from '@/app/assignments/actions';
+import { submitAssignment, gradeSubmission, updateAssignment } from '@/app/assignments/actions';
 import type { Assignment, AssignmentSubmission } from "@/app/assignments/actions";
 import type { AppUser } from "@/app/messages/types";
 import {
@@ -30,7 +30,10 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible"
-import { ChevronsUpDown } from 'lucide-react';
+import { ChevronsUpDown, Pencil, Calendar as CalendarIcon } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
+import { Calendar } from './ui/calendar';
+import { cn } from '@/lib/utils';
 
 
 interface ViewAssignmentSheetProps {
@@ -42,48 +45,144 @@ interface ViewAssignmentSheetProps {
 export function ViewAssignmentSheet({ assignment, user, children }: ViewAssignmentSheetProps) {
     const [open, setOpen] = useState(false);
     const [currentAssignment, setCurrentAssignment] = useState(assignment);
+    const [isEditing, setIsEditing] = useState(false);
 
-    // This allows the sheet to reflect changes (like a new submission or grade)
-    // without having to close and reopen it.
     useEffect(() => {
         setCurrentAssignment(assignment);
     }, [assignment]);
 
-    const handleSubmissionOrGradeChange = (updatedAssignment: Assignment) => {
-        setCurrentAssignment(updatedAssignment);
-    }
+    const isTeacherOwner = user.role === 'teacher' && user.id === currentAssignment.teacher.id;
 
     return (
-        <Sheet open={open} onOpenChange={setOpen}>
+        <Sheet open={open} onOpenChange={(isOpen) => {
+            setOpen(isOpen);
+            if (!isOpen) setIsEditing(false); // Reset edit state on close
+        }}>
             <SheetTrigger asChild>{children}</SheetTrigger>
             <SheetContent className="w-full sm:max-w-xl md:max-w-2xl lg:max-w-3xl flex flex-col">
-                <SheetHeader className="pr-12">
-                    <SheetTitle className="text-2xl">{currentAssignment.title}</SheetTitle>
-                    <SheetDescription>
-                        Due: {currentAssignment.dueDate ? format(new Date(currentAssignment.dueDate), 'PPP') : 'No due date'}
-                        <span className="mx-2">•</span>
-                        Posted by {currentAssignment.teacher.name}
-                    </SheetDescription>
-                </SheetHeader>
-                <Separator className="my-4" />
-                <ScrollArea className="flex-1 pr-6 -mr-6">
-                    <div className="prose prose-sm dark:prose-invert max-w-none">
-                        <p className="text-muted-foreground whitespace-pre-wrap">{currentAssignment.description}</p>
-                    </div>
+                {isEditing && isTeacherOwner ? (
+                    <EditAssignmentForm 
+                        assignment={currentAssignment} 
+                        onCancel={() => setIsEditing(false)}
+                        onSaved={() => {
+                            setIsEditing(false);
+                            // We don't need to manually refetch, revalidation will handle it
+                        }}
+                    />
+                ) : (
+                    <>
+                        <SheetHeader className="pr-12">
+                            <div className="flex justify-between items-start">
+                                <div>
+                                    <SheetTitle className="text-2xl">{currentAssignment.title}</SheetTitle>
+                                    <SheetDescription className="mt-2">
+                                        Due: {currentAssignment.dueDate ? format(new Date(currentAssignment.dueDate), 'PPP') : 'No due date'}
+                                        <span className="mx-2">•</span>
+                                        Posted by {currentAssignment.teacher.name}
+                                    </SheetDescription>
+                                </div>
+                                {isTeacherOwner && (
+                                    <Button variant="ghost" size="icon" onClick={() => setIsEditing(true)}>
+                                        <Pencil className="h-4 w-4" />
+                                    </Button>
+                                )}
+                            </div>
+                        </SheetHeader>
+                        <Separator className="my-4" />
+                        <ScrollArea className="flex-1 pr-6 -mr-6">
+                            <p className="text-muted-foreground whitespace-pre-wrap">{currentAssignment.description || 'No description provided.'}</p>
+                            
+                            <Separator className="my-6" />
 
-                    <Separator className="my-6" />
-
-                    {user.role === 'student' ? (
-                        <StudentSubmissionView assignment={currentAssignment} user={user} onSubmitted={() => setOpen(false)} />
-                    ) : (
-                        <TeacherSubmissionsView assignment={currentAssignment} />
-                    )}
-                </ScrollArea>
+                            {user.role === 'student' ? (
+                                <StudentSubmissionView assignment={currentAssignment} user={user} onSubmitted={() => setOpen(false)} />
+                            ) : (
+                                <TeacherSubmissionsView assignment={currentAssignment} />
+                            )}
+                        </ScrollArea>
+                    </>
+                )}
             </SheetContent>
         </Sheet>
     );
 }
 
+function EditAssignmentForm({ assignment, onCancel, onSaved }: { assignment: Assignment, onCancel: () => void, onSaved: () => void }) {
+    const { toast } = useToast();
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [dueDate, setDueDate] = useState<Date | undefined>(
+        assignment.dueDate ? new Date(assignment.dueDate) : undefined
+    );
+
+    const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        setIsSubmitting(true);
+        const formData = new FormData(event.currentTarget);
+        formData.append('assignmentId', assignment.id);
+        if (dueDate) {
+            formData.append('dueDate', dueDate.toISOString());
+        }
+
+        const result = await updateAssignment(formData);
+        if (result.error) {
+            toast({ title: "Error", description: result.error, variant: "destructive" });
+        } else {
+            toast({ title: "Success", description: "Assignment updated successfully." });
+            onSaved();
+        }
+        setIsSubmitting(false);
+    };
+
+    return (
+        <form onSubmit={handleSubmit} className="flex flex-col h-full">
+            <SheetHeader>
+                <SheetTitle>Edit Assignment</SheetTitle>
+                <SheetDescription>Update the assignment details below.</SheetDescription>
+            </SheetHeader>
+            <div className="py-4 space-y-4 flex-1 overflow-y-auto">
+                <div>
+                    <Label htmlFor="title">Title</Label>
+                    <Input id="title" name="title" defaultValue={assignment.title} required />
+                </div>
+                <div>
+                    <Label htmlFor="description">Description</Label>
+                    <Textarea id="description" name="description" defaultValue={assignment.description || ''} rows={8} />
+                </div>
+                <div>
+                    <Label htmlFor="dueDate">Due Date</Label>
+                     <Popover>
+                        <PopoverTrigger asChild>
+                            <Button
+                                variant={"outline"}
+                                className={cn(
+                                    "w-full justify-start text-left font-normal",
+                                    !dueDate && "text-muted-foreground"
+                                )}
+                            >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {dueDate ? format(dueDate, "PPP") : <span>Pick a date</span>}
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0">
+                            <Calendar
+                                mode="single"
+                                selected={dueDate}
+                                onSelect={setDueDate}
+                                initialFocus
+                            />
+                        </PopoverContent>
+                    </Popover>
+                </div>
+            </div>
+            <SheetFooter>
+                <Button variant="ghost" onClick={onCancel} type="button">Cancel</Button>
+                <Button type="submit" disabled={isSubmitting}>
+                    {isSubmitting ? 'Saving...' : 'Save Changes'}
+                </Button>
+            </SheetFooter>
+        </form>
+    );
+}
 
 function StudentSubmissionView({ assignment, user, onSubmitted }: { assignment: Assignment, user: AppUser, onSubmitted: () => void }) {
     const mySubmission = assignment.submissions.find(s => s.student_id === user.id);
@@ -278,5 +377,3 @@ function SubmissionCard({ submission }: { submission: AssignmentSubmission }) {
         </div>
     );
 }
-
-    

@@ -67,6 +67,59 @@ export async function createAssignment(formData: FormData) {
     }
 }
 
+export async function updateAssignment(formData: FormData) {
+    const cookieStore = cookies();
+    const supabase = createClient(cookieStore);
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user || user.user_metadata.role !== 'teacher') {
+        return { error: 'Only teachers can edit assignments.' };
+    }
+
+    const assignmentId = formData.get('assignmentId') as string;
+    const title = formData.get('title') as string;
+    const description = formData.get('description') as string;
+    const dueDate = formData.get('dueDate') as string;
+
+    if (!assignmentId || !title) {
+        return { error: 'Assignment ID and Title are required.' };
+    }
+    
+    try {
+        const { data: assignment, error: fetchError } = await supabaseAdmin
+            .from('assignments')
+            .select('teacher_id')
+            .eq('id', assignmentId)
+            .single();
+
+        if (fetchError || !assignment) {
+            return { error: 'Assignment not found.' };
+        }
+
+        if (assignment.teacher_id !== user.id) {
+            return { error: 'You are not authorized to edit this assignment.' };
+        }
+        
+        const { error: updateError } = await supabaseAdmin
+            .from('assignments')
+            .update({
+                title,
+                description,
+                due_date: dueDate || null,
+            })
+            .eq('id', assignmentId);
+        
+        if (updateError) throw updateError;
+        
+        revalidatePath('/assignments');
+        return { success: true };
+
+    } catch (error: any) {
+        console.error('Error updating assignment:', error);
+        return { error: 'Could not update assignment. ' + error.message };
+    }
+}
+
 export async function getAssignments(): Promise<Assignment[]> {
     const cookieStore = cookies();
     const supabase = createClient(cookieStore);
