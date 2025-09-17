@@ -96,7 +96,7 @@ function AssignmentCard({ assignment, user }: { assignment: Assignment, user: Ap
             </div>
         </div>
         {dueDate && (
-          <CardDescription className={cn('text-sm', isOverdue && assignment.submissionStatus !== 'Submitted' && assignment.submissionStatus !== 'Graded' ? 'text-destructive' : 'text-muted-foreground')}>
+          <CardDescription className={cn('text-sm', isOverdue && user.role === 'student' && assignment.submissionStatus !== 'Submitted' && assignment.submissionStatus !== 'Graded' ? 'text-destructive' : 'text-muted-foreground')}>
             <ClientOnly>Due {format(new Date(dueDate), 'MMM d, yyyy @ p zzz')}</ClientOnly>
           </CardDescription>
         )}
