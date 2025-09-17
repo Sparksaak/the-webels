@@ -17,6 +17,8 @@ function SchedulePageContent({ currentUser, initialSchedules }: { currentUser: A
     const onlineSchedules = initialSchedules.filter(s => s.class_type === 'online');
     const inPersonSchedules = initialSchedules.filter(s => s.class_type === 'in-person');
 
+    const studentTrack = currentUser.learning_preference;
+
     return (
         <AppLayout user={currentUser}>
             <div className="flex items-center justify-between mb-8">
@@ -32,24 +34,42 @@ function SchedulePageContent({ currentUser, initialSchedules }: { currentUser: A
             </div>
 
             <div className="grid gap-8 lg:grid-cols-2">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Online Class Schedule</CardTitle>
-                         <CardDescription>Schedule for students in the online learning track.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                       <ScheduleList schedules={onlineSchedules} user={currentUser} classType="online" />
-                    </CardContent>
-                </Card>
-                 <Card>
-                    <CardHeader>
-                        <CardTitle>In-Person Class Schedule</CardTitle>
-                        <CardDescription>Schedule for students in the in-person learning track.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <ScheduleList schedules={inPersonSchedules} user={currentUser} classType="in-person" />
-                    </CardContent>
-                </Card>
+                {currentUser.role === 'teacher' ? (
+                    <>
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Online Class Schedule</CardTitle>
+                                <CardDescription>Schedule for students in the online learning track.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                            <ScheduleList schedules={onlineSchedules} user={currentUser} classType="online" />
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>In-Person Class Schedule</CardTitle>
+                                <CardDescription>Schedule for students in the in-person learning track.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <ScheduleList schedules={inPersonSchedules} user={currentUser} classType="in-person" />
+                            </CardContent>
+                        </Card>
+                    </>
+                ) : (
+                     <Card className="lg:col-span-2">
+                        <CardHeader>
+                            <CardTitle>{studentTrack === 'online' ? 'Online' : 'In-Person'} Class Schedule</CardTitle>
+                            <CardDescription>Your weekly class schedule for the {studentTrack} learning track.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <ScheduleList 
+                                schedules={studentTrack === 'online' ? onlineSchedules : inPersonSchedules} 
+                                user={currentUser} 
+                                classType={studentTrack!} 
+                            />
+                        </CardContent>
+                    </Card>
+                )}
             </div>
 
         </AppLayout>
