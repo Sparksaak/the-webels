@@ -23,26 +23,25 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
     if (material.content) {
       const parser = new DOMParser();
       const doc = parser.parseFromString(material.content, 'text/html');
-      const contentNode = doc.body.children.length === 1 && (doc.body.children[0].tagName === 'HEADER' || doc.body.children[0].tagName === 'SECTION' || doc.body.children[0].tagName === 'MAIN')
-        ? doc.body
-        : doc.body;
-
-      const slideElements = Array.from(contentNode.querySelectorAll('header, section'));
-      const htmlSlides = slideElements.map(el => el.outerHTML);
+      const slideElements = Array.from(doc.body.querySelectorAll('header, section'));
       
-      setSlides(htmlSlides.length > 0 ? htmlSlides : [material.content]);
+      const htmlSlides = slideElements.length > 0 
+        ? slideElements.map(el => el.outerHTML) 
+        : [doc.body.innerHTML];
+
+      setSlides(htmlSlides);
       setCurrentSlide(0);
       setAnimationState('entering');
+      // Allow time for the initial fade-in of the component itself
       setTimeout(() => setAnimationState('idle'), 500);
     }
   }, [material]);
 
   React.useEffect(() => {
-    if (slideContainerRef.current && animationState !== 'idle') {
+    if (slideContainerRef.current) {
+        // Add a class to all elements within the slide for animation targeting
         slideContainerRef.current.querySelectorAll('*').forEach(el => {
-            if (!el.classList.contains('slide-element')) {
-                 el.classList.add('slide-element');
-            }
+            el.classList.add('slide-element');
         });
     }
   }, [currentSlide, animationState]);
@@ -60,8 +59,8 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
       setAnimationState('entering');
       setTimeout(() => {
         setAnimationState('idle');
-      }, 500); 
-    }, 500); 
+      }, 750); // Duration of the enter animation
+    }, 500); // Duration of the exit animation
   };
 
   React.useEffect(() => {
@@ -109,16 +108,17 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
                 padding-bottom: 0.5rem;
                 margin-bottom: 1rem;
             }
-            .material-content header {
-                background-color: transparent;
-                padding: 2rem;
+            .material-content header, .material-content section {
+                padding: 2.5rem;
+                background: transparent;
                 border-radius: var(--radius);
+                height: 100%;
                 display: flex;
                 flex-direction: column;
                 justify-content: center;
-                align-items: center;
+            }
+            .material-content header {
                 text-align: center;
-                height: 100%;
             }
             .material-content header h1 {
                 font-size: 3.5rem;
@@ -144,15 +144,6 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
                 border-left: 3px solid var(--slide-accent);
                 font-size: 1.1rem;
             }
-            .material-content section {
-                padding: 2.5rem;
-                background: transparent;
-                border-radius: var(--radius);
-                height: 100%;
-                display: flex;
-                flex-direction: column;
-                justify-content: center;
-            }
             .material-content pre {
                 background-color: hsl(var(--sidebar-background));
                 color: hsl(var(--sidebar-foreground));
@@ -171,8 +162,14 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
             }
             
             /* Animations */
-            @keyframes slideUpIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-            @keyframes slideUpOut { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(-20px); } }
+            @keyframes slideUpIn { 
+              from { opacity: 0; transform: translateY(20px); } 
+              to { opacity: 1; transform: translateY(0); } 
+            }
+            @keyframes slideDownOut { 
+              from { opacity: 1; transform: translateY(0); } 
+              to { opacity: 0; transform: translateY(20px); } 
+            }
             
             .slide-container {
                 width: 100%;
@@ -184,17 +181,13 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
                 opacity: 0;
             }
 
-            .slide-container.idle .slide-element {
-                opacity: 1;
-            }
-
             .slide-container.entering .slide-element {
                 animation-name: slideUpIn;
-                animation-duration: 0.5s;
-                animation-timing-function: cubic-bezier(0.23, 1, 0.32, 1);
+                animation-duration: 0.75s;
+                animation-timing-function: ease-out;
             }
              .slide-container.exiting .slide-element {
-                animation-name: slideUpOut;
+                animation-name: slideDownOut;
                 animation-duration: 0.5s;
                 animation-timing-function: ease-in;
             }
@@ -204,10 +197,20 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
             .slide-container.entering p { animation-delay: 0.2s; }
             .slide-container.entering pre, .slide-container.entering ul, .slide-container.entering footer { animation-delay: 0.3s; }
             .slide-container.entering li:nth-child(1) { animation-delay: 0.4s; }
-            .slide-container.entering li:nth-child(2) { animation-delay: 0.5s; }
-            .slide-container.entering li:nth-child(3) { animation-delay: 0.6s; }
-            .slide-container.entering li:nth-child(4) { animation-delay: 0.7s; }
-            .slide-container.entering li:nth-child(5) { animation-delay: 0.8s; }
+            .slide-container.entering li:nth-child(2) { animation-delay: 0.6s; }
+            .slide-container.entering li:nth-child(3) { animation-delay: 0.8s; }
+            .slide-container.entering li:nth-child(4) { animation-delay: 1.0s; }
+            .slide-container.entering li:nth-child(5) { animation-delay: 1.2s; }
+            /* Add more if needed */
+            .slide-container.entering li:nth-child(n+6) { animation-delay: 1.4s; }
+
+
+            /* Staggered Delays for Exiting */
+             .slide-container.exiting li { animation-delay: 0s !important; }
+             .slide-container.exiting h1, .slide-container.exiting h2, .slide-container.exiting h3, .slide-container.exiting p, .slide-container.exiting pre, .slide-container.exiting ul, .slide-container.exiting footer {
+                animation-delay: 0.1s !important;
+            }
+
             `}
         </style>
         
@@ -247,7 +250,3 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
     </div>
   );
 }
-
-    
-
-    
