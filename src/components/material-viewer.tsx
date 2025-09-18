@@ -178,13 +178,13 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
             
             .slide-element {
                 animation-fill-mode: forwards;
-                opacity: 0;
             }
 
             .slide-container.entering .slide-element {
                 animation-name: slideUpIn;
                 animation-duration: 0.75s;
                 animation-timing-function: ease-out;
+                opacity: 0; /* Set initial state for entering animation */
             }
              .slide-container.exiting .slide-element {
                 animation-name: slideDownOut;
