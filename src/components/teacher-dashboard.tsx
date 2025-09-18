@@ -22,12 +22,14 @@ import type { AppUser } from '@/app/messages/types';
 import { getDashboardData } from '@/app/dashboard/actions';
 import type { Assignment } from '@/app/assignments/actions';
 import { Button } from './ui/button';
+import { generateAvatarUrl, getInitials } from '@/lib/utils';
 
 interface Student {
     id: string;
     full_name: string;
     email: string;
     learning_preference: 'online' | 'in-person';
+    avatarUrl: string;
 }
 
 interface TeacherStats {
@@ -51,7 +53,11 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
       try {
         const data = await getDashboardData();
         if (data.students) {
-          setStudents(data.students as Student[]);
+          const studentsWithAvatars = (data.students as Omit<Student, 'avatarUrl'>[]).map(s => ({
+            ...s,
+            avatarUrl: generateAvatarUrl(s.full_name)
+          }));
+          setStudents(studentsWithAvatars);
         }
         if (data.stats) {
             setStats(data.stats as TeacherStats);
@@ -172,8 +178,8 @@ function StudentList({ students, loading }: { students: Student[], loading: bool
                 {students.map(student => (
                     <div key={student.id} className="flex items-center gap-4 p-2 rounded-md hover:bg-muted/50">
                         <Avatar className="h-10 w-10" data-ai-hint="person portrait">
-                            <AvatarImage src={`https://placehold.co/100x100.png`} alt={student.full_name} />
-                            <AvatarFallback>{student.full_name?.charAt(0)}</AvatarFallback>
+                            <AvatarImage src={student.avatarUrl} alt={student.full_name} />
+                            <AvatarFallback>{getInitials(student.full_name)}</AvatarFallback>
                         </Avatar>
                         <div>
                             <p className="font-medium">{student.full_name}</p>

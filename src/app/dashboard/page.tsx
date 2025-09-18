@@ -7,6 +7,7 @@ import { StudentDashboard } from '@/components/student-dashboard';
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import { ClientOnly } from '@/components/client-only';
+import { generateAvatarUrl } from '@/lib/utils';
 
 type AppUser = {
     id: string;
@@ -41,7 +42,7 @@ export default async function DashboardPage() {
       name: name,
       email: user.email!,
       role: role,
-      avatarUrl: `https://placehold.co/100x100.png`,
+      avatarUrl: generateAvatarUrl(name),
   };
 
   return (

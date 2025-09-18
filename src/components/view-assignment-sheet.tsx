@@ -45,7 +45,7 @@ import {
 import { ChevronsUpDown, Pencil, Calendar as CalendarIcon } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Calendar } from './ui/calendar';
-import { cn } from '@/lib/utils';
+import { cn, getInitials, generateAvatarUrl } from '@/lib/utils';
 import { ClientOnly } from './client-only';
 
 
@@ -443,8 +443,8 @@ function SubmissionCard({ submission, assignment }: { submission: AssignmentSubm
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                     <Avatar className="h-9 w-9" data-ai-hint="person portrait">
-                         <AvatarImage src={`https://placehold.co/100x100.png`} alt={submission.student_name} />
-                         <AvatarFallback>{submission.student_name.charAt(0)}</AvatarFallback>
+                         <AvatarImage src={generateAvatarUrl(submission.student_name)} alt={submission.student_name} />
+                         <AvatarFallback>{getInitials(submission.student_name)}</AvatarFallback>
                     </Avatar>
                     <div>
                         <p className="font-semibold">{submission.student_name}</p>

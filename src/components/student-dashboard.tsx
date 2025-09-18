@@ -24,6 +24,7 @@ import { Button } from './ui/button';
 import { format, formatDistanceToNow, isPast } from 'date-fns';
 import { ClientOnly } from './client-only';
 import { type ClassSchedule } from '@/app/schedule/actions';
+import { getInitials } from '@/lib/utils';
 
 interface StudentDashboardProps {
     user: AppUser;
@@ -33,6 +34,7 @@ interface Teacher {
   id: string;
   full_name: string;
   email: string;
+  avatarUrl: string;
 }
 
 interface StudentStats {
@@ -171,8 +173,8 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
                 ) : teacher ? (
                   <div className="flex items-center gap-4 pt-4">
                     <Avatar className="h-12 w-12" data-ai-hint="person portrait">
-                        <AvatarImage src={`https://placehold.co/100x100.png`} alt={teacher.full_name} />
-                        <AvatarFallback>{teacher.full_name?.charAt(0)}</AvatarFallback>
+                        <AvatarImage src={teacher.avatarUrl} alt={teacher.full_name} />
+                        <AvatarFallback>{getInitials(teacher.full_name)}</AvatarFallback>
                     </Avatar>
                     <div>
                         <p className="font-semibold text-lg">{teacher.full_name}</p>
@@ -188,7 +190,7 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
           </Card>
            <Card>
             <CardHeader>
-              <CardTitle>Class Schedule</CardTitle>
+              <CardTitle>My Schedule</CardTitle>
               <CardDescription>Your weekly class times.</CardDescription>
             </CardHeader>
             <CardContent>

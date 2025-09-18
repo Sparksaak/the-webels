@@ -8,6 +8,7 @@ import { MessagingContent } from '@/components/messaging-content';
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import { ClientOnly } from '@/components/client-only';
+import { generateAvatarUrl } from '@/lib/utils';
 
 async function Messaging({ conversationId, currentUser }: { conversationId: string | null, currentUser: AppUser }) {
     const [conversations, messages] = await Promise.all([
@@ -36,12 +37,13 @@ export default async function MessagesPage({ searchParams }: { searchParams: { [
         redirect('/login');
     }
     
+    const name = user.user_metadata?.full_name || user.email!;
     const currentUser: AppUser = {
         id: user.id,
-        name: user.user_metadata?.full_name || user.email!,
+        name: name,
         email: user.email!,
         role: user.user_metadata?.role || 'student',
-        avatarUrl: `https://placehold.co/100x100.png`,
+        avatarUrl: generateAvatarUrl(name),
         learning_preference: user.user_metadata?.learning_preference,
     };
     

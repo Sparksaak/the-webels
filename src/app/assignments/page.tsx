@@ -15,7 +15,7 @@ import { NewAssignmentDialog } from '@/components/new-assignment-dialog';
 import { ClientOnly } from '@/components/client-only';
 import { Badge } from '@/components/ui/badge';
 import { ViewAssignmentSheet } from '@/components/view-assignment-sheet';
-import { cn } from '@/lib/utils';
+import { cn, generateAvatarUrl } from '@/lib/utils';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -242,7 +242,7 @@ export default function AssignmentsPageWrapper() {
                 name: name,
                 email: user.email!,
                 role: role,
-                avatarUrl: `https://placehold.co/100x100.png`,
+                avatarUrl: generateAvatarUrl(name),
             };
             
             setCurrentUser(appUser);

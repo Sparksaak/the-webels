@@ -12,6 +12,7 @@ import { NewAnnouncementDialog } from '@/components/new-announcement-dialog';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { ClientOnly } from '@/components/client-only';
+import { generateAvatarUrl } from '@/lib/utils';
 
 type AppUser = {
     id: string;
@@ -129,7 +130,7 @@ export default async function AnnouncementsPage() {
         name: name,
         email: user.email!,
         role: role,
-        avatarUrl: `https://placehold.co/100x100.png`,
+        avatarUrl: generateAvatarUrl(name),
     };
 
     return (

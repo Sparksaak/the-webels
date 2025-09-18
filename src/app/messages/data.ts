@@ -3,6 +3,7 @@
 
 import type { Conversation, Message, AppUser } from './types';
 import { supabaseAdmin } from '@/lib/supabase/admin';
+import { generateAvatarUrl } from '@/lib/utils';
 
 async function getParticipantsForConversations(conversationIds: string[]): Promise<Record<string, AppUser[]>> {
     const { data: participantsData, error: participantsError } = await supabaseAdmin
@@ -31,12 +32,13 @@ async function getParticipantsForConversations(conversationIds: string[]): Promi
     const usersById = users
       .filter(u => userIds.includes(u.id))
       .reduce((acc, user) => {
+        const fullName = user.user_metadata.full_name || user.email;
         acc[user.id] = {
             id: user.id,
-            name: user.user_metadata.full_name || user.email,
+            name: fullName,
             email: user.email!,
             role: user.user_metadata.role || 'student',
-            avatarUrl: `https://placehold.co/100x100.png`
+            avatarUrl: generateAvatarUrl(fullName)
         };
         return acc;
     }, {} as Record<string, AppUser>);
@@ -184,12 +186,13 @@ export async function getMessages(conversationId: string): Promise<Message[]> {
     const usersById = users
     .filter(user => senderIds.includes(user.id))
     .reduce((acc, user) => {
+        const fullName = user.user_metadata.full_name || user.email;
         acc[user.id] = {
             id: user.id,
-            name: user.user_metadata.full_name || user.email,
+            name: fullName,
             email: user.email!,
             role: user.user_metadata.role || 'student',
-            avatarUrl: `https://placehold.co/100x100.png`
+            avatarUrl: generateAvatarUrl(fullName)
         };
         return acc;
     }, {} as Record<string, AppUser>);
@@ -204,7 +207,7 @@ export async function getMessages(conversationId: string): Promise<Message[]> {
             name: 'Unknown User',
             email: '',
             role: 'student',
-            avatarUrl: `https://placehold.co/100x100.png`
+            avatarUrl: generateAvatarUrl('Unknown User')
         }
     }));
 }

@@ -6,6 +6,7 @@ import { supabaseAdmin } from '@/lib/supabase/admin';
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 import type { Message } from './types';
+import { generateAvatarUrl } from '@/lib/utils';
 
 export async function createConversation(formData: FormData) {
     const cookieStore = cookies();
@@ -100,12 +101,13 @@ export async function sendMessage(formData: FormData): Promise<{ success: true, 
         const { data: senderData, error: userError } = await supabaseAdmin.auth.admin.getUserById(user.id);
         if (userError) throw userError;
 
+        const senderName = senderData.user.user_metadata.full_name || senderData.user.email!;
         const sender = {
             id: senderData.user.id,
-            name: senderData.user.user_metadata.full_name || senderData.user.email!,
+            name: senderName,
             email: senderData.user.email!,
             role: senderData.user.user_metadata.role,
-            avatarUrl: 'https://placehold.co/100x100.png',
+            avatarUrl: generateAvatarUrl(senderName),
         };
 
         const { data: newMessage, error } = await supabaseAdmin

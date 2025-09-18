@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardHeader } from '@/components/ui/card';
 import { Send, UserPlus, MessageSquarePlus } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, generateAvatarUrl, getInitials } from '@/lib/utils';
 import { format, formatDistanceToNow, parseISO } from 'date-fns';
 
 import { getConversations, getMessages } from '@/app/messages/data';
@@ -221,8 +221,8 @@ export function MessagingContent({
                                     onClick={() => handleConversationSelect(conv.id)}
                                 >
                                     <Avatar className="h-10 w-10 mr-3" data-ai-hint="person portrait">
-                                        <AvatarImage src={conv.type === 'direct' ? conv.participants.find(p=>p.id !== currentUser.id)?.avatarUrl : 'https://placehold.co/100x100.png'} />
-                                        <AvatarFallback>{conv.name?.charAt(0).toUpperCase()}</AvatarFallback>
+                                        <AvatarImage src={conv.type === 'direct' ? conv.participants.find(p=>p.id !== currentUser.id)?.avatarUrl : generateAvatarUrl(conv.name)} />
+                                        <AvatarFallback>{getInitials(conv.name)}</AvatarFallback>
                                     </Avatar>
                                     <div className="flex flex-col items-start w-full truncate">
                                         <div className="font-semibold">{conv.name}</div>
@@ -250,8 +250,8 @@ export function MessagingContent({
                         <>
                             <header className="flex items-center gap-4 border-b bg-background px-6 h-16">
                                 <Avatar data-ai-hint="person portrait">
-                                     <AvatarImage src={activeConversation.type === 'direct' ? activeConversation.participants.find(p=>p.id !== currentUser.id)?.avatarUrl : 'https://placehold.co/100x100.png'} />
-                                    <AvatarFallback>{activeConversation.name?.charAt(0).toUpperCase()}</AvatarFallback>
+                                     <AvatarImage src={activeConversation.type === 'direct' ? activeConversation.participants.find(p=>p.id !== currentUser.id)?.avatarUrl : generateAvatarUrl(activeConversation.name)} />
+                                    <AvatarFallback>{getInitials(activeConversation.name)}</AvatarFallback>
                                 </Avatar>
                                 <div>
                                     <h3 className="text-lg font-semibold">{activeConversation.name}</h3>
@@ -281,7 +281,7 @@ export function MessagingContent({
                                                     {msg.sender.id !== currentUser.id && (
                                                         <Avatar className="h-8 w-8" data-ai-hint="person portrait">
                                                             <AvatarImage src={msg.sender.avatarUrl} />
-                                                            <AvatarFallback>{msg.sender.name?.charAt(0).toUpperCase()}</AvatarFallback>
+                                                            <AvatarFallback>{getInitials(msg.sender.name)}</AvatarFallback>
                                                         </Avatar>
                                                     )}
                                                     <div className={cn('max-w-xs md:max-w-md lg:max-w-lg rounded-lg p-3 text-sm', msg.sender.id === currentUser.id ? 'bg-primary text-primary-foreground' : 'bg-card')}>

@@ -6,6 +6,7 @@ import { supabaseAdmin } from '@/lib/supabase/admin';
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 import type { AppUser } from '@/app/messages/types';
+import { generateAvatarUrl } from '@/lib/utils';
 
 export type AssignmentSubmission = {
     id: string;
@@ -154,12 +155,13 @@ export async function getAssignments(): Promise<Assignment[]> {
     }
 
     const usersById = allUsers.reduce((acc, u) => {
+        const fullName = u.user_metadata.full_name || u.email;
         acc[u.id] = {
             id: u.id,
-            name: u.user_metadata.full_name || u.email,
+            name: fullName,
             email: u.email!,
             role: u.user_metadata.role || 'student',
-            avatarUrl: `https://placehold.co/100x100.png`
+            avatarUrl: generateAvatarUrl(fullName)
         };
         return acc;
     }, {} as Record<string, AppUser>);

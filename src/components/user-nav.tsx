@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { logout } from "@/app/auth/actions"
 import type { AppUser } from "@/app/messages/types";
+import { getInitials } from "@/lib/utils"
 
 export function UserNav({ user }: { user: AppUser | null }) {
   if (!user) {
@@ -32,7 +33,7 @@ export function UserNav({ user }: { user: AppUser | null }) {
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
           <Avatar className="h-9 w-9" data-ai-hint="person portrait">
             <AvatarImage src={user.avatarUrl} alt={user.name} />
-            <AvatarFallback>{user.name?.charAt(0) || user.email?.charAt(0)}</AvatarFallback>
+            <AvatarFallback>{getInitials(user.name) || getInitials(user.email)}</AvatarFallback>
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
