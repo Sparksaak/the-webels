@@ -1,14 +1,11 @@
 
 'use client';
 
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+import * as React from 'react';
 import { type ClassMaterial } from "@/app/materials/actions";
-import { ScrollArea } from "./ui/scroll-area";
+import { Button } from './ui/button';
+import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface MaterialViewerProps {
   material: ClassMaterial;
@@ -17,13 +14,55 @@ interface MaterialViewerProps {
 }
 
 export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerProps) {
+  const [slides, setSlides] = React.useState<string[]>([]);
+  const [currentSlide, setCurrentSlide] = React.useState(0);
+
+  React.useEffect(() => {
+    if (material.content) {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(material.content, 'text/html');
+      const slideElements = Array.from(doc.querySelectorAll('header, section'));
+      const htmlSlides = slideElements.map(el => el.outerHTML);
+      setSlides(htmlSlides);
+      setCurrentSlide(0);
+    }
+  }, [material]);
+
+  const goToNextSlide = () => {
+    setCurrentSlide(prev => Math.min(prev + 1, slides.length - 1));
+  };
+
+  const goToPrevSlide = () => {
+    setCurrentSlide(prev => Math.max(prev - 1, 0));
+  };
   
+  React.useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (!open) return;
+      if (event.key === 'ArrowRight') {
+        goToNextSlide();
+      } else if (event.key === 'ArrowLeft') {
+        goToPrevSlide();
+      } else if (event.key === 'Escape') {
+        onOpenChange(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [open, slides.length]);
+
+
+  if (!open) {
+    return null;
+  }
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl h-[90vh] flex flex-col p-0">
-        <DialogHeader className="p-6 pb-0">
-          <DialogTitle className="text-2xl">{material.title}</DialogTitle>
-        </DialogHeader>
+    <div 
+        className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm flex flex-col animate-in fade-in-0"
+    >
         <style>
             {`
             .material-content {
@@ -48,22 +87,32 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
                 animation-delay: 0.2s;
             }
             .material-content header {
-                background-color: hsl(var(--muted) / 0.5);
+                background-color: transparent;
                 padding: 2rem;
                 border-radius: var(--radius);
                 margin-bottom: 2rem;
                 animation-delay: 0.1s;
+                 display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                text-align: center;
+                height: 100%;
             }
             .material-content header h1 {
-                font-size: 2.5rem;
+                font-size: 3.5rem;
                 border: none;
                 margin: 0;
             }
+            .material-content header p {
+                font-size: 1.25rem;
+            }
             .material-content p {
-                line-height: 1.6;
+                line-height: 1.7;
                 color: var(--slide-muted-foreground);
                 margin-bottom: 1rem;
                 animation-delay: 0.3s;
+                font-size: 1.1rem;
             }
             .material-content strong { color: var(--slide-primary); }
             .material-content em { color: var(--slide-accent); }
@@ -74,24 +123,29 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
                 animation-delay: 0.4s;
             }
             .material-content ul li {
-                margin-bottom: 0.5rem;
+                margin-bottom: 0.75rem;
                 padding-left: 0.5rem;
-                border-left: 2px solid var(--slide-accent);
+                border-left: 3px solid var(--slide-accent);
+                font-size: 1.1rem;
             }
             .material-content section {
                 margin-bottom: 2.5rem;
-                padding: 1.5rem;
-                background: var(--slide-bg);
+                padding: 2.5rem;
+                background: transparent;
                 border-radius: var(--radius);
-                box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+                height: 100%;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
             }
             .material-content pre {
                 background-color: hsl(var(--sidebar-background));
                 color: hsl(var(--sidebar-foreground));
-                padding: 1rem;
+                padding: 1.5rem;
                 border-radius: var(--radius);
                 overflow-x: auto;
                 animation-delay: 0.5s;
+                 font-size: 0.95rem;
             }
             .material-content footer {
                 margin-top: 2rem;
@@ -108,15 +162,64 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
                     transform: translateY(0);
                 }
             }
+            @keyframes slide-in-from-right {
+                from { opacity: 0; transform: translateX(50px); }
+                to { opacity: 1; transform: translateX(0); }
+            }
+            @keyframes slide-in-from-left {
+                from { opacity: 0; transform: translateX(-50px); }
+                to { opacity: 1; transform: translateX(0); }
+            }
+            .slide-animation-enter {
+                animation: slide-in-from-right 0.4s ease-out forwards;
+            }
+            .slide-animation-exit {
+                 animation: slide-in-from-left 0.4s ease-out forwards;
+            }
             `}
         </style>
-        <ScrollArea className="flex-1">
-          <div
-            className="material-content p-6"
-            dangerouslySetInnerHTML={{ __html: material.content || '' }}
-          />
-        </ScrollArea>
-      </DialogContent>
-    </Dialog>
+        
+        <header className="flex items-center justify-between p-4 text-foreground">
+            <h2 className="text-lg font-semibold truncate">{material.title}</h2>
+            <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)}>
+                <X className="h-5 w-5" />
+                <span className="sr-only">Close presentation</span>
+            </Button>
+        </header>
+
+        <main className="flex-1 flex items-center justify-center p-4 md:p-8 relative">
+            {slides.map((slide, index) => (
+                 <div 
+                    key={index}
+                    className={cn(
+                        'material-content w-full h-full max-w-6xl absolute transition-opacity duration-300 ease-in-out',
+                        index === currentSlide ? 'opacity-100' : 'opacity-0 pointer-events-none'
+                    )}
+                 >
+                    <div
+                        className={cn(
+                          'w-full h-full',
+                          index === currentSlide && 'slide-animation-enter'
+                        )}
+                        dangerouslySetInnerHTML={{ __html: slide || '' }}
+                    />
+                 </div>
+            ))}
+        </main>
+
+        <footer className="flex items-center justify-between p-4 text-foreground">
+            <Button variant="outline" onClick={goToPrevSlide} disabled={currentSlide === 0}>
+                <ChevronLeft className="mr-2 h-4 w-4"/>
+                Prev
+            </Button>
+            <div className="text-sm font-medium">
+                {currentSlide + 1} / {slides.length}
+            </div>
+            <Button variant="outline" onClick={goToNextSlide} disabled={currentSlide === slides.length - 1}>
+                Next
+                <ChevronRight className="ml-2 h-4 w-4"/>
+            </Button>
+        </footer>
+    </div>
   );
 }
