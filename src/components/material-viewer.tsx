@@ -191,7 +191,7 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
             .slide-container.entering .slide-element {
                 animation-name: slideUpIn;
                 animation-duration: 0.5s;
-                animation-timing-function: ease-out;
+                animation-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
             }
              .slide-container.exiting .slide-element {
                 animation-name: slideUpOut;
@@ -247,3 +247,5 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
     </div>
   );
 }
+
+    
