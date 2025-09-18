@@ -48,7 +48,6 @@ function helloWorld() {
   console.log("Hello, world!");
 }
     </code></pre>
-    <p>And here is one more paragraph following the code block.</p>
   </section>
 </main>
 <footer>
