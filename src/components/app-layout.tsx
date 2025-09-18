@@ -100,12 +100,9 @@ export function AppLayout({ children, user }: AppLayoutProps) {
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
-          <header className="sticky top-0 z-10 flex h-14 items-center justify-between gap-4 border-b bg-background/80 px-4 backdrop-blur-sm sm:px-6 md:justify-start">
+          <header className="sticky top-0 z-10 flex h-14 items-center justify-start gap-4 border-b bg-background/80 px-4 backdrop-blur-sm sm:px-6">
               <div className="md:hidden">
                   <SidebarTrigger />
-              </div>
-              <div className="hidden md:block">
-                  <UserNav user={user} />
               </div>
           </header>
           <div className="flex-1 w-full overflow-y-auto">
