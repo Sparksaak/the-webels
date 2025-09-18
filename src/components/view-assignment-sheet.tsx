@@ -46,7 +46,6 @@ import { ChevronsUpDown, Pencil, Calendar as CalendarIcon } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Calendar } from './ui/calendar';
 import { cn, getInitials, generateAvatarUrl } from '@/lib/utils';
-import { ClientOnly } from './client-only';
 
 
 interface ViewAssignmentSheetProps {
@@ -89,7 +88,7 @@ export function ViewAssignmentSheet({ assignment, user, children }: ViewAssignme
                                 <div>
                                     <SheetTitle className="text-2xl">{currentAssignment.title}</SheetTitle>
                                     <SheetDescription className="mt-2">
-                                        <ClientOnly>Due: {currentAssignment.dueDate ? format(new Date(currentAssignment.dueDate), 'PPP p zzz') : 'No due date'}</ClientOnly>
+                                        Due: {currentAssignment.dueDate ? format(new Date(currentAssignment.dueDate), 'PPP p zzz') : 'No due date'}
                                         <span className="mx-2">•</span>
                                         Posted by {currentAssignment.teacher.name}
                                     </SheetDescription>
@@ -282,10 +281,10 @@ function StudentSubmissionView({ assignment, user, onSubmitted }: { assignment: 
                             <Badge variant={mySubmission.grade ? "default" : "secondary"}>
                                 {mySubmission.grade ? 'Graded' : 'Submitted'}
                             </Badge>
-                             <ClientOnly>{getSubmissionStatus()}</ClientOnly>
+                             {getSubmissionStatus()}
                         </div>
                         <p className="text-xs text-muted-foreground">
-                            <ClientOnly>Submitted on {format(new Date(mySubmission.submitted_at), 'PPP p zzz')}</ClientOnly>
+                            Submitted on {format(new Date(mySubmission.submitted_at), 'PPP p zzz')}
                         </p>
                     </div>
                     <p className="text-sm whitespace-pre-wrap">{mySubmission.submission_content}</p>
@@ -453,10 +452,10 @@ function SubmissionCard({ submission, assignment }: { submission: AssignmentSubm
                 </div>
                  <div className="text-right">
                     <p className="text-xs text-muted-foreground">
-                        <ClientOnly>{format(new Date(submission.submitted_at), 'MMM d, yyyy @ h:mm a zzz')}</ClientOnly>
+                        {format(new Date(submission.submitted_at), 'MMM d, yyyy @ h:mm a zzz')}
                     </p>
                     <div className="mt-1">
-                        <ClientOnly>{getSubmissionStatus()}</ClientOnly>
+                        {getSubmissionStatus()}
                     </div>
                 </div>
             </div>

@@ -18,7 +18,6 @@ import { sendMessage, deleteMessage } from '@/app/messages/actions';
 import type { AppUser, Conversation, Message } from '@/app/messages/types';
 import { NewConversationDialog } from '@/components/new-conversation-dialog';
 import { useToast } from '@/hooks/use-toast';
-import { ClientOnly } from './client-only';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -282,9 +281,7 @@ export function MessagingContent({
                                     </div>
                                      {conv.last_message && (
                                         <div className="text-xs text-muted-foreground ml-auto whitespace-nowrap self-start">
-                                            <ClientOnly>
-                                                {formatDistanceToNow(parseISO(conv.last_message.timestamp), { addSuffix: true })}
-                                            </ClientOnly>
+                                            {formatDistanceToNow(parseISO(conv.last_message.timestamp), { addSuffix: true })}
                                         </div>
                                     )}
                                 </Button>
@@ -360,9 +357,7 @@ export function MessagingContent({
                                                         <p>{msg.is_deleted ? 'This message was deleted.' : msg.content}</p>
                                                         {!msg.is_deleted && (
                                                             <p className="text-xs opacity-70 mt-1.5 text-right">
-                                                                <ClientOnly>
-                                                                    {format(parseISO(msg.createdAt), 'p')}
-                                                                </ClientOnly>
+                                                                {format(parseISO(msg.createdAt), 'p')}
                                                             </p>
                                                         )}
                                                     </div>

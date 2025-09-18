@@ -12,7 +12,6 @@ import { useRouter } from 'next/navigation';
 import { format, formatDistanceToNow, isPast } from 'date-fns';
 import { getAssignments, deleteAssignment, type Assignment } from './actions';
 import { NewAssignmentDialog } from '@/components/new-assignment-dialog';
-import { ClientOnly } from '@/components/client-only';
 import { Badge } from '@/components/ui/badge';
 import { ViewAssignmentSheet } from '@/components/view-assignment-sheet';
 import { cn, generateAvatarUrl } from '@/lib/utils';
@@ -98,7 +97,7 @@ function AssignmentCard({ assignment, user }: { assignment: Assignment, user: Ap
         </div>
         {dueDate && (
           <CardDescription className={cn('text-sm', isOverdue && user.role === 'student' && assignment.submissionStatus !== 'Submitted' && assignment.submissionStatus !== 'Graded' ? 'text-destructive' : 'text-muted-foreground')}>
-            <ClientOnly>Due {format(new Date(dueDate), 'MMM d, yyyy @ p zzz')}</ClientOnly>
+            Due {format(new Date(dueDate), 'MMM d, yyyy @ p zzz')}
           </CardDescription>
         )}
       </CardHeader>
@@ -107,11 +106,9 @@ function AssignmentCard({ assignment, user }: { assignment: Assignment, user: Ap
       </CardContent>
       <CardFooter className="flex justify-between items-center">
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <ClientOnly>Posted {formatDistanceToNow(new Date(assignment.createdAt), { addSuffix: true })} by {assignment.teacher.name}</ClientOnly>
+            Posted {formatDistanceToNow(new Date(assignment.createdAt), { addSuffix: true })} by {assignment.teacher.name}
              {user.role === 'teacher' && user.id === assignment.teacher.id && (
-                <ClientOnly>
-                    <DeleteAssignmentButton assignmentId={assignment.id} />
-                </ClientOnly>
+                <DeleteAssignmentButton assignmentId={assignment.id} />
             )}
         </div>
         <ViewAssignmentSheet assignment={assignment} user={user}>
@@ -208,9 +205,7 @@ function AssignmentsPageContent({ currentUser, initialAssignments }: { currentUs
                 </p>
                 </div>
                 {currentUser.role === 'teacher' && (
-                <ClientOnly>
                     <NewAssignmentDialog />
-                </ClientOnly>
                 )}
             </div>
             <AssignmentsList currentUser={currentUser} initialAssignments={initialAssignments} />

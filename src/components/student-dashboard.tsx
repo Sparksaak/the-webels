@@ -21,8 +21,7 @@ import type { AppUser } from '@/app/messages/types';
 import { getDashboardData } from '@/app/dashboard/actions';
 import { type Assignment } from '@/app/assignments/actions';
 import { Button } from './ui/button';
-import { format, formatDistanceToNow, isPast } from 'date-fns';
-import { ClientOnly } from './client-only';
+import { format, formatDistanceToNow } from 'date-fns';
 import { type ClassSchedule } from '@/app/schedule/actions';
 import { getInitials } from '@/lib/utils';
 
@@ -239,9 +238,9 @@ function AssignmentList({ assignments, loading, emptyMessage }: { assignments: A
                         </Link>
                         <p className="text-xs text-muted-foreground">
                             {assignment.dueDate ? (
-                                <ClientOnly>
+                                <>
                                     Due {formatDistanceToNow(new Date(assignment.dueDate), { addSuffix: true })}
-                                </ClientOnly>
+                                </>
                             ) : (
                                 'No due date'
                             )}

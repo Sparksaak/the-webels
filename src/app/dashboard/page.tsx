@@ -1,12 +1,12 @@
 
-import { Suspense } from 'react';
-import { createClient } from '@/lib/supabase/server';
+'use client';
+
+import { Suspense, useState, useEffect } from 'react';
+import { createClient } from '@/lib/supabase/client';
 import { AppLayout } from '@/components/app-layout';
 import { TeacherDashboard } from '@/components/teacher-dashboard';
 import { StudentDashboard } from '@/components/student-dashboard';
-import { redirect } from 'next/navigation';
-import { cookies } from 'next/headers';
-import { ClientOnly } from '@/components/client-only';
+import { useRouter } from 'next/navigation';
 import { generateAvatarUrl } from '@/lib/utils';
 
 type AppUser = {
@@ -17,33 +17,53 @@ type AppUser = {
     avatarUrl: string;
 };
 
-async function DashboardContent({ currentUser }: { currentUser: AppUser }) {
+
+function DashboardContent({ currentUser }: { currentUser: AppUser }) {
   return (
-    <ClientOnly>
-      {currentUser.role === 'teacher' ? <TeacherDashboard user={currentUser} /> : <StudentDashboard user={currentUser} />}
-    </ClientOnly>
+      <>
+        {currentUser.role === 'teacher' ? <TeacherDashboard user={currentUser} /> : <StudentDashboard user={currentUser} />}
+      </>
   );
 }
 
-export default async function DashboardPage() {
-  const cookieStore = cookies();
-  const supabase = createClient(cookieStore);
-  const { data: { user } } = await supabase.auth.getUser();
+export default function DashboardPage() {
+  const router = useRouter();
+  const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
+  const [loading, setLoading] = useState(true);
+  const supabase = createClient();
 
-  if (!user) {
-    redirect('/login');
+  useEffect(() => {
+      const fetchUser = async () => {
+          const { data: { user } } = await supabase.auth.getUser();
+
+          if (!user) {
+              router.push('/login');
+              return;
+          }
+
+          const role = user.user_metadata?.role || 'student';
+          const name = user.user_metadata?.full_name || user.email;
+
+          const appUser: AppUser = {
+              id: user.id,
+              name: name,
+              email: user.email!,
+              role: role,
+              avatarUrl: generateAvatarUrl(name),
+          };
+          setCurrentUser(appUser);
+          setLoading(false);
+      }
+      fetchUser();
+  }, [router, supabase]);
+
+  if (loading || !currentUser) {
+      return (
+          <div className="flex min-h-screen bg-background items-center justify-center">
+            <div>Loading dashboard...</div>
+          </div>
+      )
   }
-
-  const role = user.user_metadata?.role || 'student';
-  const name = user.user_metadata?.full_name || user.email;
-
-  const currentUser: AppUser = {
-      id: user.id,
-      name: name,
-      email: user.email!,
-      role: role,
-      avatarUrl: generateAvatarUrl(name),
-  };
 
   return (
     <AppLayout user={currentUser}>

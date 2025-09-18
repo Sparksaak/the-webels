@@ -1,17 +1,17 @@
 
-import { Suspense } from 'react';
-import { createClient } from '@/lib/supabase/server';
+'use client';
+
+import { Suspense, useState, useEffect } from 'react';
+import { createClient } from '@/lib/supabase/client';
 import { AppLayout } from '@/components/app-layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Megaphone, Trash2 } from 'lucide-react';
-import { redirect } from 'next/navigation';
-import { cookies } from 'next/headers';
+import { useRouter } from 'next/navigation';
 import { getAnnouncements, deleteAnnouncement, type Announcement } from './actions';
 import { NewAnnouncementDialog } from '@/components/new-announcement-dialog';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
-import { ClientOnly } from '@/components/client-only';
 import { generateAvatarUrl } from '@/lib/utils';
 
 type AppUser = {
@@ -24,7 +24,6 @@ type AppUser = {
 
 function DeleteButton({ announcementId }: { announcementId: string }) {
     const deleteAction = async () => {
-        'use server';
         await deleteAnnouncement(announcementId);
     };
 
@@ -37,8 +36,22 @@ function DeleteButton({ announcementId }: { announcementId: string }) {
     );
 }
 
-async function AnnouncementsList({ currentUser }: { currentUser: AppUser }) {
-  const announcements = await getAnnouncements();
+function AnnouncementsList({ currentUser }: { currentUser: AppUser }) {
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAnnouncements = async () => {
+        const data = await getAnnouncements();
+        setAnnouncements(data);
+        setLoading(false);
+    }
+    fetchAnnouncements();
+  }, []);
+
+  if (loading) {
+      return <div className="flex min-h-[calc(100vh_-_theme(spacing.24))] bg-background items-center justify-center"><div>Loading announcements...</div></div>;
+  }
   
   return (
     <>
@@ -50,9 +63,7 @@ async function AnnouncementsList({ currentUser }: { currentUser: AppUser }) {
                 </p>
             </div>
             {currentUser.role === 'teacher' && (
-                <ClientOnly>
-                    <NewAnnouncementDialog />
-                </ClientOnly>
+                <NewAnnouncementDialog />
             )}
         </div>
         
@@ -81,13 +92,11 @@ async function AnnouncementsList({ currentUser }: { currentUser: AppUser }) {
                                     <div>
                                         <CardTitle>{announcement.title}</CardTitle>
                                         <CardDescription className="mt-2">
-                                            Posted on <ClientOnly>{format(new Date(announcement.createdAt), 'MMMM d, yyyy')}</ClientOnly>
+                                            Posted on {format(new Date(announcement.createdAt), 'MMMM d, yyyy')}
                                         </CardDescription>
                                     </div>
                                     {currentUser.role === 'teacher' && currentUser.id === announcement.author.id && (
-                                        <ClientOnly>
-                                            <DeleteButton announcementId={announcement.id} />
-                                        </ClientOnly>
+                                        <DeleteButton announcementId={announcement.id} />
                                     )}
                                 </div>
                             </CardHeader>
@@ -113,25 +122,42 @@ async function AnnouncementsList({ currentUser }: { currentUser: AppUser }) {
   )
 }
 
-export default async function AnnouncementsPage() {
-    const cookieStore = cookies();
-    const supabase = createClient(cookieStore);
-    const { data: { user } } = await supabase.auth.getUser();
+export default function AnnouncementsPage() {
+    const router = useRouter();
+    const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
+    const [loading, setLoading] = useState(true);
+    const supabase = createClient();
 
-    if (!user) {
-        redirect('/login');
+    useEffect(() => {
+        const fetchUser = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+
+            if (!user) {
+                router.push('/login');
+                return;
+            }
+
+            const role = user.user_metadata?.role || 'student';
+            const name = user.user_metadata?.full_name || user.email;
+
+            const appUser: AppUser = {
+                id: user.id,
+                name: name,
+                email: user.email!,
+                role: role,
+                avatarUrl: generateAvatarUrl(name),
+            };
+            
+            setCurrentUser(appUser);
+            setLoading(false);
+        };
+        
+        fetchUser();
+    }, [supabase, router]);
+
+    if (loading || !currentUser) {
+        return <div className="flex min-h-screen bg-background items-center justify-center"><div>Loading...</div></div>;
     }
-
-    const role = user.user_metadata?.role || 'student';
-    const name = user.user_metadata?.full_name || user.email;
-
-    const currentUser: AppUser = {
-        id: user.id,
-        name: name,
-        email: user.email!,
-        role: role,
-        avatarUrl: generateAvatarUrl(name),
-    };
 
     return (
         <AppLayout user={currentUser}>
