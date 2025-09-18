@@ -16,6 +16,7 @@ interface MaterialViewerProps {
 export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerProps) {
   const [slides, setSlides] = React.useState<string[]>([]);
   const [currentSlide, setCurrentSlide] = React.useState(0);
+  const [direction, setDirection] = React.useState<'next' | 'prev'>('next');
 
   React.useEffect(() => {
     if (material.content) {
@@ -29,10 +30,12 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
   }, [material]);
 
   const goToNextSlide = () => {
+    setDirection('next');
     setCurrentSlide(prev => Math.min(prev + 1, slides.length - 1));
   };
 
   const goToPrevSlide = () => {
+    setDirection('prev');
     setCurrentSlide(prev => Math.max(prev - 1, 0));
   };
   
@@ -52,6 +55,7 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, slides.length]);
 
 
@@ -74,16 +78,18 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
                 --slide-border: hsl(var(--border));
                 --slide-muted-foreground: hsl(var(--muted-foreground));
             }
-            .material-content > *:not(style) {
+            .slide-content-animation-wrapper > * {
               opacity: 0;
               transform: translateY(20px);
-              animation: slide-up 0.6s ease-out forwards;
+              animation: content-slide-up 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
             }
             .material-content h1, .material-content h2, .material-content h3 {
                 color: var(--slide-primary);
                 border-bottom: 2px solid var(--slide-border);
                 padding-bottom: 0.5rem;
                 margin-bottom: 1rem;
+            }
+             .slide-content-animation-wrapper h1, .slide-content-animation-wrapper h2, .slide-content-animation-wrapper h3 {
                 animation-delay: 0.2s;
             }
             .material-content header {
@@ -91,8 +97,7 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
                 padding: 2rem;
                 border-radius: var(--radius);
                 margin-bottom: 2rem;
-                animation-delay: 0.1s;
-                 display: flex;
+                display: flex;
                 flex-direction: column;
                 justify-content: center;
                 align-items: center;
@@ -111,8 +116,10 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
                 line-height: 1.7;
                 color: var(--slide-muted-foreground);
                 margin-bottom: 1rem;
-                animation-delay: 0.3s;
                 font-size: 1.1rem;
+            }
+             .slide-content-animation-wrapper p {
+                animation-delay: 0.3s;
             }
             .material-content strong { color: var(--slide-primary); }
             .material-content em { color: var(--slide-accent); }
@@ -120,6 +127,8 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
                 list-style-position: inside;
                 padding-left: 1rem;
                 margin-bottom: 1.5rem;
+            }
+             .slide-content-animation-wrapper ul {
                 animation-delay: 0.4s;
             }
             .material-content ul li {
@@ -128,6 +137,17 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
                 border-left: 3px solid var(--slide-accent);
                 font-size: 1.1rem;
             }
+             .slide-content-animation-wrapper ul li {
+                opacity: 0;
+                transform: translateX(-20px);
+                animation: list-item-in 0.5s ease-out forwards;
+            }
+            .slide-content-animation-wrapper ul li:nth-child(1) { animation-delay: 0.5s; }
+            .slide-content-animation-wrapper ul li:nth-child(2) { animation-delay: 0.6s; }
+            .slide-content-animation-wrapper ul li:nth-child(3) { animation-delay: 0.7s; }
+            .slide-content-animation-wrapper ul li:nth-child(4) { animation-delay: 0.8s; }
+            .slide-content-animation-wrapper ul li:nth-child(5) { animation-delay: 0.9s; }
+            
             .material-content section {
                 margin-bottom: 2.5rem;
                 padding: 2.5rem;
@@ -144,8 +164,10 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
                 padding: 1.5rem;
                 border-radius: var(--radius);
                 overflow-x: auto;
-                animation-delay: 0.5s;
                  font-size: 0.95rem;
+            }
+             .slide-content-animation-wrapper pre {
+                 animation-delay: 0.5s;
             }
             .material-content footer {
                 margin-top: 2rem;
@@ -154,27 +176,35 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
                 font-size: 0.9rem;
                 color: var(--slide-muted-foreground);
                 text-align: center;
-                animation-delay: 0.6s;
             }
-            @keyframes slide-up {
+            .slide-content-animation-wrapper footer {
+                 animation-delay: 0.6s;
+            }
+            @keyframes content-slide-up {
                 to {
                     opacity: 1;
                     transform: translateY(0);
                 }
             }
-            @keyframes slide-in-from-right {
-                from { opacity: 0; transform: translateX(50px); }
-                to { opacity: 1; transform: translateX(0); }
+            @keyframes list-item-in {
+                to {
+                    opacity: 1;
+                    transform: translateX(0);
+                }
             }
-            @keyframes slide-in-from-left {
-                from { opacity: 0; transform: translateX(-50px); }
-                to { opacity: 1; transform: translateX(0); }
+            @keyframes slide-zoom-in {
+                from { opacity: 0; transform: scale(0.9); }
+                to { opacity: 1; transform: scale(1); }
             }
-            .slide-animation-enter {
-                animation: slide-in-from-right 0.4s ease-out forwards;
+            @keyframes slide-zoom-out {
+                from { opacity: 1; transform: scale(1); }
+                to { opacity: 0; transform: scale(0.9); }
             }
-            .slide-animation-exit {
-                 animation: slide-in-from-left 0.4s ease-out forwards;
+            .slide-enter-active {
+                animation: slide-zoom-in 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+            }
+            .slide-exit-active {
+                animation: slide-zoom-out 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
             }
             `}
         </style>
@@ -187,19 +217,21 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
             </Button>
         </header>
 
-        <main className="flex-1 flex items-center justify-center p-4 md:p-8 relative">
+        <main className="flex-1 flex items-center justify-center p-4 md:p-8 relative overflow-hidden">
             {slides.map((slide, index) => (
                  <div 
                     key={index}
                     className={cn(
-                        'material-content w-full h-full max-w-6xl absolute transition-opacity duration-300 ease-in-out',
-                        index === currentSlide ? 'opacity-100' : 'opacity-0 pointer-events-none'
+                        'material-content w-full h-full max-w-6xl absolute',
+                        index === currentSlide ? 'z-10 slide-enter-active' : 'z-0',
+                        index < currentSlide && direction === 'next' && 'slide-exit-active',
+                        index > currentSlide && direction === 'prev' && 'slide-exit-active'
                     )}
                  >
                     <div
                         className={cn(
                           'w-full h-full',
-                          index === currentSlide && 'slide-animation-enter'
+                          index === currentSlide && 'slide-content-animation-wrapper'
                         )}
                         dangerouslySetInnerHTML={{ __html: slide || '' }}
                     />
