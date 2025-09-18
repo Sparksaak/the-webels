@@ -16,7 +16,7 @@ interface MaterialViewerProps {
 export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerProps) {
   const [slides, setSlides] = React.useState<string[]>([]);
   const [currentSlide, setCurrentSlide] = React.useState(0);
-  const [animationState, setAnimationState] = React.useState<'idle' | 'entering' | 'exiting'>('idle');
+  const [animationState, setAnimationState] = React.useState<'idle' | 'entering' | 'exiting'>('entering');
   const slideContainerRef = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
@@ -33,12 +33,14 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
       
       setSlides(htmlSlides.length > 0 ? htmlSlides : [material.content]);
       setCurrentSlide(0);
+      setAnimationState('entering');
+      setTimeout(() => setAnimationState('idle'), 800);
     }
   }, [material]);
 
   // This effect correctly applies the animation classes to the slide elements
   React.useEffect(() => {
-    if (slideContainerRef.current) {
+    if (slideContainerRef.current && animationState !== 'idle') {
         slideContainerRef.current.querySelectorAll('*').forEach(el => {
             if (!el.classList.contains('slide-element')) {
                  el.classList.add('slide-element');
@@ -171,25 +173,25 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
             }
             
             /* Animations */
-            @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-            @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
             @keyframes slideUpIn { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
             @keyframes slideUpOut { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(-30px); } }
             @keyframes slideLeftIn { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: translateX(0); } }
             @keyframes slideLeftOut { from { opacity: 1; transform: translateX(0); } to { opacity: 0; transform: translateX(-30px); } }
 
             .slide-container {
-                animation: fadeIn 0.5s ease-out forwards;
                 width: 100%;
                 height: 100%;
             }
-            .slide-container.exiting {
-                animation: fadeOut 0.5s ease-in forwards;
-            }
+            
             .slide-element {
-                opacity: 0;
                 animation-fill-mode: forwards;
+                opacity: 0;
             }
+
+            .slide-container.idle .slide-element {
+                opacity: 1;
+            }
+
             .slide-container.entering .slide-element {
                 animation-name: slideUpIn;
                 animation-duration: 0.5s;
@@ -239,9 +241,7 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
                 key={currentSlide}
                 className={cn(
                     'material-content w-full h-full max-w-6xl',
-                    animationState !== 'idle' ? 'slide-container' : '',
-                    animationState === 'entering' && 'entering',
-                    animationState === 'exiting' && 'exiting'
+                    `slide-container ${animationState}`
                 )}
                 dangerouslySetInnerHTML={{ __html: slides[currentSlide] || '' }}
              />
@@ -253,9 +253,9 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
                 Prev
             </Button>
             <div className="text-sm font-medium">
-                {currentSlide + 1} / {slides.length}
+                {slides.length > 0 ? `${currentSlide + 1} / ${slides.length}` : '0 / 0'}
             </div>
-            <Button variant="outline" onClick={() => changeSlide('next')} disabled={currentSlide === slides.length - 1 || animationState !== 'idle'}>
+            <Button variant="outline" onClick={() => changeSlide('next')} disabled={slides.length === 0 || currentSlide === slides.length - 1 || animationState !== 'idle'}>
                 Next
                 <ChevronRight className="ml-2 h-4 w-4"/>
             </Button>
@@ -263,5 +263,3 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
     </div>
   );
 }
-
-    
