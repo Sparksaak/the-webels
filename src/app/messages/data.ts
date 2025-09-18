@@ -62,7 +62,7 @@ async function getLastMessagesForConversations(conversationIds: string[]): Promi
 
     const { data, error } = await supabaseAdmin
         .from('messages')
-        .select('conversation_id, content, created_at')
+        .select('conversation_id, content, created_at, is_deleted')
         .in('conversation_id', conversationIds)
         .order('created_at', { ascending: false });
 
@@ -76,7 +76,7 @@ async function getLastMessagesForConversations(conversationIds: string[]): Promi
         for (const message of data) {
             if (!lastMessages[message.conversation_id]) {
                 lastMessages[message.conversation_id] = {
-                    content: message.content,
+                    content: message.is_deleted ? 'This message was deleted.' : message.content,
                     timestamp: message.created_at,
                 };
             }
