@@ -34,7 +34,7 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
       setSlides(htmlSlides.length > 0 ? htmlSlides : [material.content]);
       setCurrentSlide(0);
       setAnimationState('entering');
-      setTimeout(() => setAnimationState('idle'), 800);
+      setTimeout(() => setAnimationState('idle'), 500);
     }
   }, [material]);
 
@@ -62,8 +62,8 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
       setAnimationState('entering');
       setTimeout(() => {
         setAnimationState('idle');
-      }, 800); 
-    }, 500); 
+      }, 500); 
+    }, 400); 
   };
 
   React.useEffect(() => {
@@ -173,11 +173,10 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
             }
             
             /* Animations */
-            @keyframes slideUpIn { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
-            @keyframes slideUpOut { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(-30px); } }
-            @keyframes slideLeftIn { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: translateX(0); } }
-            @keyframes slideLeftOut { from { opacity: 1; transform: translateX(0); } to { opacity: 0; transform: translateX(-30px); } }
-
+            @keyframes slideUpIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+            @keyframes slideUpOut { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(-20px); } }
+            @keyframes slideLeftIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+            
             .slide-container {
                 width: 100%;
                 height: 100%;
@@ -197,14 +196,13 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
                 animation-duration: 0.5s;
                 animation-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
             }
-            .slide-container.exiting .slide-element {
+             .slide-container.exiting .slide-element {
                 animation-name: slideUpOut;
-                animation-duration: 0.4s;
-                animation-timing-function: ease-in;
+                animation-duration: 0.3s;
+                animation-timing-function: ease-out;
             }
             .slide-container.entering ul .slide-element { animation-name: slideLeftIn; }
-            .slide-container.exiting ul .slide-element { animation-name: slideLeftOut; }
-
+           
             /* Staggered Delays for Entering */
             .slide-container.entering h1, .slide-container.entering h2, .slide-container.entering h3 { animation-delay: 0.1s; }
             .slide-container.entering p { animation-delay: 0.2s; }
@@ -214,16 +212,6 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
             .slide-container.entering li:nth-child(3) { animation-delay: 0.6s; }
             .slide-container.entering li:nth-child(4) { animation-delay: 0.7s; }
             .slide-container.entering li:nth-child(5) { animation-delay: 0.8s; }
-            
-            /* Reverse delays for Exiting */
-            .slide-container.exiting li:nth-child(5) { animation-delay: 0.0s; }
-            .slide-container.exiting li:nth-child(4) { animation-delay: 0.05s; }
-            .slide-container.exiting li:nth-child(3) { animation-delay: 0.1s; }
-            .slide-container.exiting li:nth-child(2) { animation-delay: 0.15s; }
-            .slide-container.exiting li:nth-child(1) { animation-delay: 0.2s; }
-            .slide-container.exiting pre, .slide-container.exiting ul, .slide-container.exiting footer { animation-delay: 0.25s; }
-            .slide-container.exiting p { animation-delay: 0.3s; }
-            .slide-container.exiting h1, .slide-container.exiting h2, .slide-container.exiting h3 { animation-delay: 0.35s; }
             `}
         </style>
         
@@ -263,5 +251,3 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
     </div>
   );
 }
-
-    
