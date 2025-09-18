@@ -61,7 +61,7 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
       setTimeout(() => {
         setAnimationState('idle');
       }, 500); 
-    }, 300); 
+    }, 500); 
   };
 
   React.useEffect(() => {
@@ -173,7 +173,6 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
             /* Animations */
             @keyframes slideUpIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
             @keyframes slideUpOut { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(-20px); } }
-            @keyframes slideLeftIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
             
             .slide-container {
                 width: 100%;
@@ -192,14 +191,13 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
             .slide-container.entering .slide-element {
                 animation-name: slideUpIn;
                 animation-duration: 0.5s;
-                animation-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+                animation-timing-function: ease-out;
             }
              .slide-container.exiting .slide-element {
                 animation-name: slideUpOut;
-                animation-duration: 0.3s;
-                animation-timing-function: ease-out;
+                animation-duration: 0.5s;
+                animation-timing-function: ease-in;
             }
-            .slide-container.entering ul .slide-element { animation-name: slideLeftIn; }
            
             /* Staggered Delays for Entering */
             .slide-container.entering h1, .slide-container.entering h2, .slide-container.entering h3 { animation-delay: 0.1s; }
