@@ -37,6 +37,7 @@ function NavItems({ role }: { role: 'teacher' | 'student' }) {
         { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
         { href: '/announcements', label: 'Announcements', icon: Megaphone },
         { href: '/assignments', label: 'Assignments', icon: FileText },
+        { href: '/materials', label: 'Materials', icon: BookOpen },
         ...(role === 'teacher' ? [{ href: '/schedule', label: 'Schedule', icon: CalendarClock }] : []),
         { href: '/messages', label: 'Messages', icon: MessageSquare },
     ];
