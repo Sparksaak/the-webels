@@ -34,6 +34,7 @@ const defaultContent = `
   <section>
     <h2>Key Point 1</h2>
     <p>Explanation about the first key point. You can use <strong>strong</strong> or <em>emphasized</em> text.</p>
+    <p>This is another paragraph to demonstrate how multiple paragraphs can be used in a section.</p>
     <ul>
       <li>Bullet point 1.1</li>
       <li>Bullet point 1.2</li>
@@ -47,6 +48,7 @@ function helloWorld() {
   console.log("Hello, world!");
 }
     </code></pre>
+    <p>And here is one more paragraph following the code block.</p>
   </section>
 </main>
 <footer>
