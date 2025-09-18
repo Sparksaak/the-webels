@@ -1,10 +1,10 @@
 
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useTransition } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FileText, Trash2 } from 'lucide-react';
+import { FileText, Trash2, Loader2 } from 'lucide-react';
 import { format, formatDistanceToNow, isPast } from 'date-fns';
 import { deleteAssignment, type Assignment } from '@/app/assignments/actions';
 import { NewAssignmentDialog } from '@/components/new-assignment-dialog';
@@ -34,19 +34,19 @@ type AppUser = {
 };
 
 function DeleteAssignmentButton({ assignmentId }: { assignmentId: string }) {
-    const [isDeleting, setIsDeleting] = useState(false);
+    const [isPending, startTransition] = useTransition();
     
-    const handleDelete = async () => {
-        setIsDeleting(true);
-        await deleteAssignment(assignmentId);
-        // Revalidation will refresh the page
+    const handleDelete = () => {
+        startTransition(async () => {
+            await deleteAssignment(assignmentId);
+        });
     };
     
     return (
         <AlertDialog>
             <AlertDialogTrigger asChild>
-                 <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive h-8 w-8">
-                    <Trash2 className="h-4 w-4" />
+                 <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive h-8 w-8" disabled={isPending}>
+                    {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
                 </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
@@ -59,8 +59,8 @@ function DeleteAssignmentButton({ assignmentId }: { assignmentId: string }) {
                 <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
                     <AlertDialogAction asChild>
-                       <Button onClick={handleDelete} variant="destructive" disabled={isDeleting}>
-                            {isDeleting ? 'Deleting...' : 'Delete'}
+                       <Button onClick={handleDelete} variant="destructive" disabled={isPending}>
+                            {isPending ? 'Deleting...' : 'Delete'}
                        </Button>
                     </AlertDialogAction>
                 </AlertDialogFooter>
@@ -147,11 +147,12 @@ function AssignmentCardSkeleton() {
 
 function AssignmentsList({ currentUser, initialAssignments }: { currentUser: AppUser, initialAssignments: Assignment[] }) {
   const [filter, setFilter] = useState('all');
-  const [isLoading, setIsLoading] = useState(false);
+  const [isPending, startTransition] = useTransition();
 
   const handleTabChange = (value: string) => {
-    setIsLoading(true);
-    setFilter(value);
+    startTransition(() => {
+        setFilter(value);
+    });
   }
 
   const filteredAssignments = useMemo(() => {
@@ -181,67 +182,60 @@ function AssignmentsList({ currentUser, initialAssignments }: { currentUser: App
     }
   }, [filter, initialAssignments, currentUser.role]);
 
-  useEffect(() => {
-    if(isLoading) {
-        // Simulate loading time to show skeleton
-        const timer = setTimeout(() => {
-            setIsLoading(false);
-        }, 300);
-        return () => clearTimeout(timer);
-    }
-  }, [isLoading, filter])
-  
-  const assignmentsContent = (
-      <>
-          {isLoading ? (
-             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                <AssignmentCardSkeleton />
-                <AssignmentCardSkeleton />
-                <AssignmentCardSkeleton />
-             </div>
-          ) : filteredAssignments.length === 0 ? (
-            <Card>
-              <CardContent className="py-24">
-                <div className="text-center text-muted-foreground">
-                  <FileText className="mx-auto h-12 w-12 text-gray-400" />
-                  <p className="mt-4">No assignments found for this filter.</p>
-                  {currentUser.role === 'teacher' && initialAssignments.length === 0 && <p className="text-sm">Click "New Assignment" to get started.</p>}
-                </div>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {filteredAssignments.map(assignment => (
-                <AssignmentCard key={assignment.id} assignment={assignment} user={currentUser} />
-              ))}
-            </div>
-          )}
-      </>
-  );
+  const TABS_CONFIG = {
+      teacher: [
+          { value: 'all', label: 'All' },
+          { value: 'needs-grading', label: 'Needs Grading' },
+          { value: 'graded', label: 'Graded' },
+      ],
+      student: [
+          { value: 'all', label: 'All' },
+          { value: 'todo', label: 'To Do' },
+          { value: 'overdue', label: 'Overdue' },
+          { value: 'completed', label: 'Completed' },
+      ],
+  }
+  const currentTabs = TABS_CONFIG[currentUser.role];
 
   return (
     <>
         <Tabs defaultValue="all" onValueChange={handleTabChange} className="mb-6">
             <div className='flex justify-between items-center'>
-                 {currentUser.role === 'teacher' ? (
-                    <TabsList>
-                        <TabsTrigger value="all">All</TabsTrigger>
-                        <TabsTrigger value="needs-grading">Needs Grading</TabsTrigger>
-                        <TabsTrigger value="graded">Graded</TabsTrigger>
-                    </TabsList>
-                 ) : (
-                    <TabsList>
-                            <TabsTrigger value="all">All</TabsTrigger>
-                            <TabsTrigger value="todo">To Do</TabsTrigger>
-                            <TabsTrigger value="overdue">Overdue</TabsTrigger>
-                            <TabsTrigger value="completed">Completed</TabsTrigger>
-                    </TabsList>
-                 )}
+                 <TabsList>
+                    {currentTabs.map(tab => (
+                        <TabsTrigger key={tab.value} value={tab.value} disabled={isPending}>{tab.label}</TabsTrigger>
+                    ))}
+                 </TabsList>
                  {currentUser.role === 'teacher' && <NewAssignmentDialog />}
             </div>
-            <TabsContent value={filter} className="mt-6">
-              {assignmentsContent}
-            </TabsContent>
+
+            {currentTabs.map(tab => (
+                 <TabsContent key={tab.value} value={tab.value} className="mt-6">
+                    {isPending ? (
+                        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                            <AssignmentCardSkeleton />
+                            <AssignmentCardSkeleton />
+                            <AssignmentCardSkeleton />
+                        </div>
+                    ) : filteredAssignments.length === 0 ? (
+                        <Card>
+                        <CardContent className="py-24">
+                            <div className="text-center text-muted-foreground">
+                            <FileText className="mx-auto h-12 w-12 text-gray-400" />
+                            <p className="mt-4">No assignments found for this filter.</p>
+                            {currentUser.role === 'teacher' && initialAssignments.length === 0 && <p className="text-sm">Click "New Assignment" to get started.</p>}
+                            </div>
+                        </CardContent>
+                        </Card>
+                    ) : (
+                        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                        {filteredAssignments.map(assignment => (
+                            <AssignmentCard key={assignment.id} assignment={assignment} user={currentUser} />
+                        ))}
+                        </div>
+                    )}
+                 </TabsContent>
+            ))}
         </Tabs>
     </>
   );

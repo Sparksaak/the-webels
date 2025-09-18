@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/logo';
 import { GraduationCap, BookOpen, Users } from 'lucide-react';
 import Image from 'next/image';
+import { LoadingLink } from '@/components/loading-link';
 
 export default function LandingPage() {
   return (
@@ -14,18 +15,16 @@ export default function LandingPage() {
           <span className="ml-2 text-xl font-bold text-foreground">The Webels</span>
         </Link>
         <nav className="ml-auto flex gap-4 sm:gap-6 items-center">
-          <Link
+          <LoadingLink
             href="/login"
             className="text-sm font-medium hover:underline underline-offset-4 text-foreground transition-colors"
             prefetch={false}
           >
             Login
-          </Link>
-          <Button asChild>
-            <Link href="/signup" prefetch={false}>
+          </LoadingLink>
+          <LoadingLink href="/signup" asButton buttonProps={{size: "sm"}} prefetch={false}>
               Sign Up
-            </Link>
-          </Button>
+          </LoadingLink>
         </nav>
       </header>
       <main className="flex-1">
@@ -44,9 +43,9 @@ export default function LandingPage() {
                   </p>
                 </div>
                 <div className="flex flex-col gap-2 min-[400px]:flex-row">
-                  <Button asChild size="lg">
-                    <Link href="/signup" prefetch={false}>Get Started</Link>
-                  </Button>
+                  <LoadingLink href="/signup" asButton buttonProps={{size: "lg"}} prefetch={false}>
+                    Get Started
+                  </LoadingLink>
                 </div>
               </div>
               <Image
@@ -106,12 +105,12 @@ export default function LandingPage() {
       <footer className="flex flex-col gap-2 sm:flex-row py-6 w-full shrink-0 items-center px-4 md:px-6 border-t">
         <p className="text-xs text-muted-foreground">&copy; 2024 The Webels. All rights reserved.</p>
         <nav className="sm:ml-auto flex gap-4 sm:gap-6">
-          <Link href="#" className="text-xs hover:underline underline-offset-4" prefetch={false}>
+          <LoadingLink href="#" className="text-xs hover:underline underline-offset-4" prefetch={false}>
             Terms of Service
-          </Link>
-          <Link href="#" className="text-xs hover:underline underline-offset-4" prefetch={false}>
+          </LoadingLink>
+          <LoadingLink href="#" className="text-xs hover:underline underline-offset-4" prefetch={false}>
             Privacy
-          </Link>
+          </LoadingLink>
         </nav>
       </footer>
     </div>
