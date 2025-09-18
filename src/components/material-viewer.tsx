@@ -16,7 +16,8 @@ interface MaterialViewerProps {
 export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerProps) {
   const [slides, setSlides] = React.useState<string[]>([]);
   const [currentSlide, setCurrentSlide] = React.useState(0);
-  const [direction, setDirection] = React.useState<'next' | 'prev'>('next');
+  const [direction, setDirection] = React.useState<'next' | 'prev' | null>(null);
+  const [isAnimating, setIsAnimating] = React.useState(false);
 
   React.useEffect(() => {
     if (material.content) {
@@ -29,14 +30,33 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
     }
   }, [material]);
 
+  const changeSlide = (newDirection: 'next' | 'prev') => {
+    if (isAnimating) return;
+    setIsAnimating(true);
+    setDirection(newDirection);
+
+    setTimeout(() => {
+        setCurrentSlide(prev => {
+            if (newDirection === 'next') {
+                return Math.min(prev + 1, slides.length - 1);
+            }
+            return Math.max(prev - 1, 0);
+        });
+        setDirection(null); // This triggers the 'enter' animation
+        setTimeout(() => setIsAnimating(false), 500); // Animation duration
+    }, 500); // Wait for exit animation to finish
+  }
+
   const goToNextSlide = () => {
-    setDirection('next');
-    setCurrentSlide(prev => Math.min(prev + 1, slides.length - 1));
+    if (currentSlide < slides.length - 1) {
+        changeSlide('next');
+    }
   };
 
   const goToPrevSlide = () => {
-    setDirection('prev');
-    setCurrentSlide(prev => Math.max(prev - 1, 0));
+    if (currentSlide > 0) {
+        changeSlide('prev');
+    }
   };
   
   React.useEffect(() => {
@@ -56,7 +76,7 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
       window.removeEventListener('keydown', handleKeyDown);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, slides.length]);
+  }, [open, slides.length, isAnimating]);
 
 
   if (!open) {
@@ -80,8 +100,8 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
             }
             .slide-content-animation-wrapper > * {
               opacity: 0;
-              transform: translateY(20px);
-              animation: content-slide-up 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+              transform: translateY(30px);
+              animation: content-slide-up 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
             }
             .material-content h1, .material-content h2, .material-content h3 {
                 color: var(--slide-primary);
@@ -108,9 +128,11 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
                 font-size: 3.5rem;
                 border: none;
                 margin: 0;
+                transform: translateY(40px);
             }
             .material-content header p {
                 font-size: 1.25rem;
+                transform: translateY(40px);
             }
             .material-content p {
                 line-height: 1.7;
@@ -119,7 +141,7 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
                 font-size: 1.1rem;
             }
              .slide-content-animation-wrapper p {
-                animation-delay: 0.3s;
+                animation-delay: 0.4s;
             }
             .material-content strong { color: var(--slide-primary); }
             .material-content em { color: var(--slide-accent); }
@@ -129,7 +151,7 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
                 margin-bottom: 1.5rem;
             }
              .slide-content-animation-wrapper ul {
-                animation-delay: 0.4s;
+                animation-delay: 0.5s;
             }
             .material-content ul li {
                 margin-bottom: 0.75rem;
@@ -139,14 +161,14 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
             }
              .slide-content-animation-wrapper ul li {
                 opacity: 0;
-                transform: translateX(-20px);
-                animation: list-item-in 0.5s ease-out forwards;
+                transform: translateX(-30px);
+                animation: list-item-in 0.6s ease-out forwards;
             }
-            .slide-content-animation-wrapper ul li:nth-child(1) { animation-delay: 0.5s; }
-            .slide-content-animation-wrapper ul li:nth-child(2) { animation-delay: 0.6s; }
-            .slide-content-animation-wrapper ul li:nth-child(3) { animation-delay: 0.7s; }
-            .slide-content-animation-wrapper ul li:nth-child(4) { animation-delay: 0.8s; }
-            .slide-content-animation-wrapper ul li:nth-child(5) { animation-delay: 0.9s; }
+            .slide-content-animation-wrapper ul li:nth-child(1) { animation-delay: 0.6s; }
+            .slide-content-animation-wrapper ul li:nth-child(2) { animation-delay: 0.7s; }
+            .slide-content-animation-wrapper ul li:nth-child(3) { animation-delay: 0.8s; }
+            .slide-content-animation-wrapper ul li:nth-child(4) { animation-delay: 0.9s; }
+            .slide-content-animation-wrapper ul li:nth-child(5) { animation-delay: 1.0s; }
             
             .material-content section {
                 margin-bottom: 2.5rem;
@@ -167,7 +189,7 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
                  font-size: 0.95rem;
             }
              .slide-content-animation-wrapper pre {
-                 animation-delay: 0.5s;
+                 animation-delay: 0.6s;
             }
             .material-content footer {
                 margin-top: 2rem;
@@ -178,7 +200,7 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
                 text-align: center;
             }
             .slide-content-animation-wrapper footer {
-                 animation-delay: 0.6s;
+                 animation-delay: 0.7s;
             }
             @keyframes content-slide-up {
                 to {
@@ -192,19 +214,53 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
                     transform: translateX(0);
                 }
             }
-            @keyframes slide-zoom-in {
-                from { opacity: 0; transform: scale(0.9); }
-                to { opacity: 1; transform: scale(1); }
+            @keyframes slide-in-next {
+                from { opacity: 0; transform: translateX(100%); }
+                to { opacity: 1; transform: translateX(0); }
             }
-            @keyframes slide-zoom-out {
-                from { opacity: 1; transform: scale(1); }
-                to { opacity: 0; transform: scale(0.9); }
+            @keyframes slide-out-next {
+                from { opacity: 1; transform: translateX(0); }
+                to { opacity: 0; transform: translateX(-100%); }
             }
+            @keyframes slide-in-prev {
+                from { opacity: 0; transform: translateX(-100%); }
+                to { opacity: 1; transform: translateX(0); }
+            }
+            @keyframes slide-out-prev {
+                from { opacity: 1; transform: translateX(0); }
+                to { opacity: 0; transform: translateX(100%); }
+            }
+
+            .slide-base {
+                position: absolute;
+                width: 100%;
+                height: 100%;
+                transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
+            }
+            
             .slide-enter-active {
-                animation: slide-zoom-in 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+                animation-duration: 0.5s;
+                animation-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+                animation-fill-mode: forwards;
             }
+
             .slide-exit-active {
-                animation: slide-zoom-out 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+                animation-duration: 0.5s;
+                animation-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+                animation-fill-mode: forwards;
+            }
+
+            .slide-enter-active-next {
+                animation-name: slide-in-next;
+            }
+            .slide-exit-active-next {
+                animation-name: slide-out-next;
+            }
+            .slide-enter-active-prev {
+                animation-name: slide-in-prev;
+            }
+            .slide-exit-active-prev {
+                animation-name: slide-out-prev;
             }
             `}
         </style>
@@ -218,36 +274,50 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
         </header>
 
         <main className="flex-1 flex items-center justify-center p-4 md:p-8 relative overflow-hidden">
-            {slides.map((slide, index) => (
-                 <div 
-                    key={index}
-                    className={cn(
-                        'material-content w-full h-full max-w-6xl absolute',
-                        index === currentSlide ? 'z-10 slide-enter-active' : 'z-0',
-                        index < currentSlide && direction === 'next' && 'slide-exit-active',
-                        index > currentSlide && direction === 'prev' && 'slide-exit-active'
-                    )}
-                 >
-                    <div
+            {slides.map((slide, index) => {
+                 const isCurrent = index === currentSlide;
+                 const isExiting = isAnimating && !isCurrent;
+                 
+                 let animationClass = '';
+                 if (isCurrent && !isAnimating && direction === null) {
+                     // Entering
+                     animationClass = direction === 'next' ? 'slide-enter-active slide-enter-active-next' : 'slide-enter-active slide-enter-active-prev';
+                 } else if (isExiting) {
+                    // Exiting
+                     animationClass = direction === 'next' ? 'slide-exit-active slide-exit-active-next' : 'slide-exit-active slide-exit-active-prev';
+                 }
+
+                 return (
+                     <div 
+                        key={index}
                         className={cn(
-                          'w-full h-full',
-                          index === currentSlide && 'slide-content-animation-wrapper'
+                            'material-content w-full h-full max-w-6xl',
+                            'slide-base',
+                            isCurrent ? 'z-10' : 'z-0 opacity-0',
+                             animationClass
                         )}
-                        dangerouslySetInnerHTML={{ __html: slide || '' }}
-                    />
-                 </div>
-            ))}
+                     >
+                        <div
+                            className={cn(
+                              'w-full h-full',
+                              isCurrent && !isAnimating && 'slide-content-animation-wrapper'
+                            )}
+                            dangerouslySetInnerHTML={{ __html: slide || '' }}
+                        />
+                     </div>
+                );
+            })}
         </main>
 
         <footer className="flex items-center justify-between p-4 text-foreground">
-            <Button variant="outline" onClick={goToPrevSlide} disabled={currentSlide === 0}>
+            <Button variant="outline" onClick={goToPrevSlide} disabled={currentSlide === 0 || isAnimating}>
                 <ChevronLeft className="mr-2 h-4 w-4"/>
                 Prev
             </Button>
             <div className="text-sm font-medium">
                 {currentSlide + 1} / {slides.length}
             </div>
-            <Button variant="outline" onClick={goToNextSlide} disabled={currentSlide === slides.length - 1}>
+            <Button variant="outline" onClick={goToNextSlide} disabled={currentSlide === slides.length - 1 || isAnimating}>
                 Next
                 <ChevronRight className="ml-2 h-4 w-4"/>
             </Button>
@@ -255,3 +325,4 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
     </div>
   );
 }
+
