@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useCallback, useEffect, useState, useRef } from 'react';
@@ -224,7 +225,7 @@ export function MessagingContent({
                                         <AvatarImage src={conv.type === 'direct' ? conv.participants.find(p=>p.id !== currentUser.id)?.avatarUrl : generateAvatarUrl(conv.name)} />
                                         <AvatarFallback>{getInitials(conv.name)}</AvatarFallback>
                                     </Avatar>
-                                    <div className="flex flex-col items-start w-full truncate">
+                                    <div className="flex flex-col items-start w-full truncate text-left">
                                         <div className="font-semibold">{conv.name}</div>
                                         {conv.last_message && (
                                             <p className="text-xs text-muted-foreground truncate w-full">
@@ -233,7 +234,7 @@ export function MessagingContent({
                                         )}
                                     </div>
                                      {conv.last_message && (
-                                        <div className="text-xs text-muted-foreground ml-auto whitespace-nowrap">
+                                        <div className="text-xs text-muted-foreground ml-auto whitespace-nowrap self-start">
                                             <ClientOnly>
                                                 {formatDistanceToNow(parseISO(conv.last_message.timestamp), { addSuffix: true })}
                                             </ClientOnly>
