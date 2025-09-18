@@ -225,11 +225,13 @@ export function MessagingContent({
                                         <AvatarImage src={conv.type === 'direct' ? conv.participants.find(p=>p.id !== currentUser.id)?.avatarUrl : generateAvatarUrl(conv.name)} />
                                         <AvatarFallback>{getInitials(conv.name)}</AvatarFallback>
                                     </Avatar>
-                                    <div className="flex flex-col items-start min-w-0 text-left">
-                                        <div className="font-semibold truncate w-full">{conv.name}</div>
+                                    <div className="flex flex-col items-start min-w-0">
+                                        <div className="font-semibold truncate w-full text-left">{conv.name}</div>
                                         {conv.last_message && (
-                                            <p className="text-xs text-muted-foreground whitespace-normal w-full">
-                                                {conv.last_message.content}
+                                            <p className="text-xs text-muted-foreground whitespace-normal w-full text-left">
+                                                {conv.last_message.content.length > 97
+                                                    ? `${conv.last_message.content.substring(0, 97)}...`
+                                                    : conv.last_message.content}
                                             </p>
                                         )}
                                     </div>
