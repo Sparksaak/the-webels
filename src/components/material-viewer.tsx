@@ -23,7 +23,6 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
     if (material.content) {
       const parser = new DOMParser();
       const doc = parser.parseFromString(material.content, 'text/html');
-      // Wrap content in a main tag if it's not already there to handle fragments
       const contentNode = doc.body.children.length === 1 && (doc.body.children[0].tagName === 'HEADER' || doc.body.children[0].tagName === 'SECTION' || doc.body.children[0].tagName === 'MAIN')
         ? doc.body
         : doc.body;
@@ -38,7 +37,6 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
     }
   }, [material]);
 
-  // This effect correctly applies the animation classes to the slide elements
   React.useEffect(() => {
     if (slideContainerRef.current && animationState !== 'idle') {
         slideContainerRef.current.querySelectorAll('*').forEach(el => {
@@ -47,7 +45,7 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
             }
         });
     }
-  }, [currentSlide, animationState]); // Re-run when slide or animation state changes
+  }, [currentSlide, animationState]);
 
   const changeSlide = (direction: 'next' | 'prev') => {
     if (animationState !== 'idle') return;
@@ -63,7 +61,7 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
       setTimeout(() => {
         setAnimationState('idle');
       }, 500); 
-    }, 400); 
+    }, 300); 
   };
 
   React.useEffect(() => {
