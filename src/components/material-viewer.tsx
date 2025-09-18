@@ -17,18 +17,35 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
   const [slides, setSlides] = React.useState<string[]>([]);
   const [currentSlide, setCurrentSlide] = React.useState(0);
   const [animationState, setAnimationState] = React.useState<'idle' | 'entering' | 'exiting'>('idle');
-  const slideRef = React.useRef<HTMLDivElement>(null);
+  const slideContainerRef = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
     if (material.content) {
       const parser = new DOMParser();
       const doc = parser.parseFromString(material.content, 'text/html');
-      const slideElements = Array.from(doc.querySelectorAll('header, section'));
+      // Wrap content in a main tag if it's not already there to handle fragments
+      const contentNode = doc.body.children.length === 1 && (doc.body.children[0].tagName === 'HEADER' || doc.body.children[0].tagName === 'SECTION' || doc.body.children[0].tagName === 'MAIN')
+        ? doc.body
+        : doc.body;
+
+      const slideElements = Array.from(contentNode.querySelectorAll('header, section'));
       const htmlSlides = slideElements.map(el => el.outerHTML);
-      setSlides(htmlSlides);
+      
+      setSlides(htmlSlides.length > 0 ? htmlSlides : [material.content]);
       setCurrentSlide(0);
     }
   }, [material]);
+
+  // This effect correctly applies the animation classes to the slide elements
+  React.useEffect(() => {
+    if (slideContainerRef.current) {
+        slideContainerRef.current.querySelectorAll('*').forEach(el => {
+            if (!el.classList.contains('slide-element')) {
+                 el.classList.add('slide-element');
+            }
+        });
+    }
+  }, [currentSlide, animationState]); // Re-run when slide or animation state changes
 
   const changeSlide = (direction: 'next' | 'prev') => {
     if (animationState !== 'idle') return;
@@ -36,18 +53,15 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
     const nextSlideIndex = direction === 'next' ? currentSlide + 1 : currentSlide - 1;
     if (nextSlideIndex < 0 || nextSlideIndex >= slides.length) return;
 
-    // Start exit animation
     setAnimationState('exiting');
     
-    // Wait for exit animation to finish, then change slide and start enter animation
     setTimeout(() => {
       setCurrentSlide(nextSlideIndex);
       setAnimationState('entering');
-      // Wait for enter animation to finish, then return to idle
       setTimeout(() => {
         setAnimationState('idle');
-      }, 800); // Corresponds to the longest enter animation delay
-    }, 800); // Corresponds to the longest exit animation duration
+      }, 800); 
+    }, 500); 
   };
 
   React.useEffect(() => {
@@ -99,7 +113,6 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
                 background-color: transparent;
                 padding: 2rem;
                 border-radius: var(--radius);
-                margin-bottom: 2rem;
                 display: flex;
                 flex-direction: column;
                 justify-content: center;
@@ -132,7 +145,6 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
                 font-size: 1.1rem;
             }
             .material-content section {
-                margin-bottom: 2.5rem;
                 padding: 2.5rem;
                 background: transparent;
                 border-radius: var(--radius);
@@ -171,16 +183,13 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
                 width: 100%;
                 height: 100%;
             }
-
             .slide-container.exiting {
                 animation: fadeOut 0.5s ease-in forwards;
             }
-
             .slide-element {
                 opacity: 0;
                 animation-fill-mode: forwards;
             }
-            
             .slide-container.entering .slide-element {
                 animation-name: slideUpIn;
                 animation-duration: 0.5s;
@@ -191,31 +200,28 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
                 animation-duration: 0.4s;
                 animation-timing-function: ease-in;
             }
+            .slide-container.entering ul .slide-element { animation-name: slideLeftIn; }
+            .slide-container.exiting ul .slide-element { animation-name: slideLeftOut; }
 
-            .slide-container.entering ul li.slide-element { animation-name: slideLeftIn; }
-            .slide-container.exiting ul li.slide-element { animation-name: slideLeftOut; }
-
-            /* Staggered Delays */
-            .slide-container.entering h1, .slide-container.entering h2 { animation-delay: 0.1s; }
+            /* Staggered Delays for Entering */
+            .slide-container.entering h1, .slide-container.entering h2, .slide-container.entering h3 { animation-delay: 0.1s; }
             .slide-container.entering p { animation-delay: 0.2s; }
-            .slide-container.entering pre, .slide-container.entering ul { animation-delay: 0.3s; }
-            .slide-container.entering footer { animation-delay: 0.4s; }
+            .slide-container.entering pre, .slide-container.entering ul, .slide-container.entering footer { animation-delay: 0.3s; }
             .slide-container.entering li:nth-child(1) { animation-delay: 0.4s; }
             .slide-container.entering li:nth-child(2) { animation-delay: 0.5s; }
             .slide-container.entering li:nth-child(3) { animation-delay: 0.6s; }
             .slide-container.entering li:nth-child(4) { animation-delay: 0.7s; }
             .slide-container.entering li:nth-child(5) { animation-delay: 0.8s; }
             
-            /* Reverse delays for exit */
-            .slide-container.exiting li:nth-child(5) { animation-delay: 0s; }
-            .slide-container.exiting li:nth-child(4) { animation-delay: 0.1s; }
-            .slide-container.exiting li:nth-child(3) { animation-delay: 0.2s; }
-            .slide-container.exiting li:nth-child(2) { animation-delay: 0.3s; }
-            .slide-container.exiting li:nth-child(1) { animation-delay: 0.4s; }
-            .slide-container.exiting footer { animation-delay: 0.5s; }
-            .slide-container.exiting pre, .slide-container.exiting ul { animation-delay: 0.6s; }
-            .slide-container.exiting p { animation-delay: 0.7s; }
-            .slide-container.exiting h1, .slide-container.exiting h2 { animation-delay: 0.8s; }
+            /* Reverse delays for Exiting */
+            .slide-container.exiting li:nth-child(5) { animation-delay: 0.0s; }
+            .slide-container.exiting li:nth-child(4) { animation-delay: 0.05s; }
+            .slide-container.exiting li:nth-child(3) { animation-delay: 0.1s; }
+            .slide-container.exiting li:nth-child(2) { animation-delay: 0.15s; }
+            .slide-container.exiting li:nth-child(1) { animation-delay: 0.2s; }
+            .slide-container.exiting pre, .slide-container.exiting ul, .slide-container.exiting footer { animation-delay: 0.25s; }
+            .slide-container.exiting p { animation-delay: 0.3s; }
+            .slide-container.exiting h1, .slide-container.exiting h2, .slide-container.exiting h3 { animation-delay: 0.35s; }
             `}
         </style>
         
@@ -229,20 +235,15 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
 
         <main className="flex-1 flex items-center justify-center p-4 md:p-8 relative overflow-hidden">
             <div
-                ref={slideRef}
+                ref={slideContainerRef}
                 key={currentSlide}
                 className={cn(
-                    'material-content w-full h-full max-w-6xl slide-container',
+                    'material-content w-full h-full max-w-6xl',
+                    animationState !== 'idle' ? 'slide-container' : '',
                     animationState === 'entering' && 'entering',
                     animationState === 'exiting' && 'exiting'
                 )}
                 dangerouslySetInnerHTML={{ __html: slides[currentSlide] || '' }}
-                // Add slide-element class to all children for animation targeting
-                onLoad={() => {
-                  if (slideRef.current) {
-                    slideRef.current.querySelectorAll('*').forEach(el => el.classList.add('slide-element'));
-                  }
-                }}
              />
         </main>
 
@@ -262,3 +263,5 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
     </div>
   );
 }
+
+    
