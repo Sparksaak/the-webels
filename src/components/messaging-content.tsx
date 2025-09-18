@@ -99,7 +99,7 @@ export function MessagingContent({
         
         channel
           .on('broadcast', { event: 'new_message' }, (payload) => {
-              const newMessage: Message = payload.payload;
+              const newMessage: Message = payload.payload.payload;
               
               if (newMessage.sender.id === currentUser.id) return;
 
@@ -120,7 +120,7 @@ export function MessagingContent({
                 const updatedConv = {
                     ...convToUpdate,
                     last_message: {
-                        content: newMessage.is_deleted ? 'Message deleted' : newMessage.content,
+                        content: newMessage.is_deleted ? 'This message was deleted.' : newMessage.content,
                         timestamp: newMessage.createdAt,
                     }
                 };
@@ -130,7 +130,7 @@ export function MessagingContent({
               });
           })
           .on('broadcast', { event: 'message_updated' }, (payload) => {
-                const { updatedMessage } = payload.payload;
+                const { updatedMessage } = payload.payload.payload;
                 if (updatedMessage && updatedMessage.conversationId === activeConversationId) {
                     setMessages(prev => prev.map(m => m.id === updatedMessage.id ? updatedMessage : m));
                 }
@@ -168,6 +168,7 @@ export function MessagingContent({
             createdAt: new Date().toISOString(),
             conversationId: activeConversationId,
             sender: currentUser,
+            is_deleted: false,
         };
         
         setMessages(prev => [...prev, optimisticMessage]);
