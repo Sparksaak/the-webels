@@ -4,6 +4,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
 
 export type Profile = {
     id: string;
@@ -44,18 +45,24 @@ export async function updateProfile(formData: FormData) {
 
     const fullName = formData.get('fullName') as string;
     const learningPreference = formData.get('learningPreference') as string;
+    const email = formData.get('email') as string;
 
-    const userData: { [key: string]: any } = {
-        full_name: fullName,
+    const userUpdates: { [key: string]: any } = {
+        data: {
+            ...user.user_metadata,
+            full_name: fullName,
+        }
     };
     
     if (user.user_metadata.role === 'student') {
-        userData.learning_preference = learningPreference;
+        userUpdates.data.learning_preference = learningPreference;
+    }
+    
+    if (email && email !== user.email) {
+        userUpdates.email = email;
     }
 
-    const { error } = await supabase.auth.updateUser({
-        data: userData,
-    });
+    const { error } = await supabase.auth.updateUser(userUpdates);
     
     if (error) {
         console.error('Error updating profile:', error);
@@ -64,5 +71,32 @@ export async function updateProfile(formData: FormData) {
 
     revalidatePath('/settings');
     revalidatePath('/dashboard'); // Revalidate dashboard to reflect name changes
+    
+    if (email && email !== user.email) {
+        return { success: true, requiresReauthentication: true };
+    }
+    
+    return { success: true };
+}
+
+
+export async function updatePassword(formData: FormData) {
+    const cookieStore = cookies();
+    const supabase = createClient(cookieStore);
+     const { data: { user } } = await supabase.auth.getUser();
+     if (!user) {
+        return { error: 'You must be logged in to update your password.' };
+    }
+    const password = formData.get('password') as string;
+    if (!password) {
+        return { error: 'Password is required' };
+    }
+    if (password.length < 6) {
+        return { error: 'Password must be at least 6 characters' };
+    }
+    const { error } = await supabase.auth.updateUser({ password });
+    if (error) {
+        return { error: 'Could not update password: ' + error.message };
+    }
     return { success: true };
 }

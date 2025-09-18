@@ -6,7 +6,9 @@ import { redirect } from 'next/navigation';
 import { generateAvatarUrl } from '@/lib/utils';
 import { getProfile, type Profile } from './actions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
 import { ProfileForm } from '@/components/profile-form';
+import { UpdatePasswordForm } from '@/components/update-password-form';
 
 type AppUser = {
     id: string;
@@ -30,6 +32,18 @@ async function SettingsContent({ user, profile }: { user: AppUser, profile: Prof
                 </CardHeader>
                 <CardContent>
                     <ProfileForm profile={profile} />
+                </CardContent>
+            </Card>
+            
+            <Separator />
+            
+            <Card>
+                <CardHeader>
+                    <CardTitle>Password</CardTitle>
+                    <CardDescription>Update your password here. It is recommended to use a strong password.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <UpdatePasswordForm />
                 </CardContent>
             </Card>
         </div>
@@ -58,7 +72,6 @@ export default async function SettingsPage() {
     const profile = await getProfile();
 
     if (!profile) {
-        // Handle case where profile is not found, maybe redirect or show an error
         return (
              <AppLayout user={currentUser}>
                 <div className="text-center text-muted-foreground">Could not load profile.</div>

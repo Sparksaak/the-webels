@@ -2,6 +2,7 @@
 "use client"
 
 import Link from "next/link"
+import { useTheme } from "next-themes";
 import {
   Avatar,
   AvatarFallback,
@@ -15,14 +16,20 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuShortcut,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuPortal,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { logout } from "@/app/auth/actions"
 import type { AppUser } from "@/app/messages/types";
 import { getInitials } from "@/lib/utils"
+import { Moon, Sun } from "lucide-react";
 
 export function UserNav({ user }: { user: AppUser | null }) {
+  const { setTheme } = useTheme();
+
   if (!user) {
     return null;
   }
@@ -53,6 +60,26 @@ export function UserNav({ user }: { user: AppUser | null }) {
                 Settings
             </Link>
           </DropdownMenuItem>
+           <DropdownMenuSub>
+            <DropdownMenuSubTrigger>
+              <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+              <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+              <span className="ml-2">Toggle theme</span>
+            </DropdownMenuSubTrigger>
+            <DropdownMenuPortal>
+              <DropdownMenuSubContent>
+                <DropdownMenuItem onClick={() => setTheme("light")}>
+                  Light
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setTheme("dark")}>
+                  Dark
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setTheme("system")}>
+                  System
+                </DropdownMenuItem>
+              </DropdownMenuSubContent>
+            </DropdownMenuPortal>
+          </DropdownMenuSub>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <form action={logout}>

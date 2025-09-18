@@ -3,6 +3,7 @@
 
 import { useRef } from 'react';
 import { useFormStatus } from 'react-dom';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,6 +17,15 @@ import {
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { updateProfile, type Profile } from '@/app/settings/actions';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 function SubmitButton() {
     const { pending } = useFormStatus();
@@ -32,6 +42,7 @@ function SubmitButton() {
 export function ProfileForm({ profile }: { profile: Profile }) {
     const formRef = useRef<HTMLFormElement>(null);
     const { toast } = useToast();
+    const router = useRouter();
 
     const handleFormSubmit = async (formData: FormData) => {
         const result = await updateProfile(formData);
@@ -42,23 +53,32 @@ export function ProfileForm({ profile }: { profile: Profile }) {
                 variant: "destructive",
             });
         } else {
+            const message = result.requiresReauthentication 
+                ? "Your profile has been updated. Please check your new email address to confirm the change."
+                : "Your profile has been updated.";
+            
             toast({
                 title: "Success",
-                description: "Your profile has been updated.",
+                description: message,
             });
+            
+            if (result.requiresReauthentication) {
+                // Optionally force a re-login
+                router.push('/login?message=email-change');
+            }
         }
     };
     
     return (
         <form ref={formRef} action={handleFormSubmit} className="space-y-6 max-w-lg">
             <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" value={profile.email} disabled />
-                 <p className="text-xs text-muted-foreground">You cannot change your email address.</p>
-            </div>
-            <div className="space-y-2">
                 <Label htmlFor="fullName">Full Name</Label>
                 <Input id="fullName" name="fullName" defaultValue={profile.full_name} required />
+            </div>
+             <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input id="email" name="email" type="email" defaultValue={profile.email} required/>
+                 <p className="text-xs text-muted-foreground">Changing your email will require re-verification.</p>
             </div>
 
             {profile.role === 'student' && (
