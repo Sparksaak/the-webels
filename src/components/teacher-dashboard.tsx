@@ -1,6 +1,7 @@
 
 "use client";
 
+import { useState, useEffect } from 'react';
 import {
   Users,
   FileText,
@@ -20,7 +21,8 @@ import { ScrollArea } from './ui/scroll-area';
 import type { AppUser } from '@/app/messages/types';
 import type { Assignment } from '@/app/assignments/actions';
 import { Button } from './ui/button';
-import { generateAvatarUrl, getInitials } from '@/lib/utils';
+import { getInitials } from '@/lib/utils';
+import { Skeleton } from './ui/skeleton';
 
 interface Student {
     id: string;
@@ -43,10 +45,32 @@ interface TeacherDashboardProps {
 
 export function TeacherDashboard({ user, initialData }: TeacherDashboardProps) {
   const { students, stats, assignmentsToGrade } = initialData || {};
-  const loading = !initialData;
+  const [loading, setLoading] = useState(!initialData);
+  const [loadingStudents, setLoadingStudents] = useState(false);
+  const [tab, setTab] = useState('online');
+
+  useEffect(() => {
+    if(initialData) {
+      setLoading(false);
+    }
+  }, [initialData])
+
+  useEffect(() => {
+    if(loadingStudents) {
+      const timer = setTimeout(() => {
+        setLoadingStudents(false);
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [loadingStudents, tab]);
 
   const onlineStudents = students?.filter((s: Student) => s.learning_preference === 'online') || [];
   const inPersonStudents = students?.filter((s: Student) => s.learning_preference === 'in-person') || [];
+
+  const handleTabChange = (value: string) => {
+    setLoadingStudents(true);
+    setTab(value);
+  }
 
   return (
     <div className="space-y-8">
@@ -62,7 +86,7 @@ export function TeacherDashboard({ user, initialData }: TeacherDashboardProps) {
                 <Users className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                <div className="text-2xl font-bold">{loading ? '...' : stats?.totalStudents ?? 0}</div>
+                <div className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-12"/> : stats?.totalStudents ?? 0}</div>
                  <p className="text-xs text-muted-foreground">in online & in-person classes</p>
                 </CardContent>
             </Card>
@@ -72,7 +96,7 @@ export function TeacherDashboard({ user, initialData }: TeacherDashboardProps) {
                 <FileText className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                <div className="text-2xl font-bold">{loading ? '...' : stats?.assignmentsCreated ?? 0}</div>
+                <div className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-12"/> : stats?.assignmentsCreated ?? 0}</div>
                 <p className="text-xs text-muted-foreground">assignments created</p>
                 </CardContent>
             </Card>
@@ -82,7 +106,7 @@ export function TeacherDashboard({ user, initialData }: TeacherDashboardProps) {
                 <Megaphone className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                <div className="text-2xl font-bold">{loading ? '...' : stats?.announcementsPosted ?? 0}</div>
+                <div className="text-2xl font-bold">{loading ? <Skeleton className="h-8 w-12"/> : stats?.announcementsPosted ?? 0}</div>
                 <p className="text-xs text-muted-foreground">announcements posted</p>
                 </CardContent>
             </Card>
@@ -95,16 +119,16 @@ export function TeacherDashboard({ user, initialData }: TeacherDashboardProps) {
                 <CardDescription>An overview of all your students, organized by class type.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <Tabs defaultValue="online">
+                    <Tabs defaultValue="online" onValueChange={handleTabChange}>
                         <TabsList className="grid w-full grid-cols-2">
                             <TabsTrigger value="online">Online Students ({onlineStudents.length})</TabsTrigger>
                             <TabsTrigger value="in-person">In-Person Students ({inPersonStudents.length})</TabsTrigger>
                         </TabsList>
                         <TabsContent value="online">
-                            <StudentList students={onlineStudents} loading={loading} />
+                            <StudentList students={onlineStudents} loading={loadingStudents} />
                         </TabsContent>
                         <TabsContent value="in-person">
-                            <StudentList students={inPersonStudents} loading={loading} />
+                            <StudentList students={inPersonStudents} loading={loadingStudents} />
                         </TabsContent>
                     </Tabs>
                 </CardContent>
@@ -128,9 +152,19 @@ export function TeacherDashboard({ user, initialData }: TeacherDashboardProps) {
 function StudentList({ students, loading }: { students: Student[], loading: boolean }) {
     if (loading) {
         return (
-            <div className="text-center text-muted-foreground py-12">
-                <p>Loading students...</p>
-            </div>
+            <ScrollArea className="h-72">
+                <div className="space-y-4 pr-4 pt-4">
+                    {[...Array(5)].map((_, i) => (
+                        <div key={i} className="flex items-center gap-4 p-2">
+                            <Skeleton className="h-10 w-10 rounded-full" />
+                            <div className="space-y-2">
+                                <Skeleton className="h-4 w-32" />
+                                <Skeleton className="h-4 w-48" />
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </ScrollArea>
         )
     }
     if (students.length === 0) {
@@ -164,7 +198,19 @@ function StudentList({ students, loading }: { students: Student[], loading: bool
 
 function AssignmentsToGradeList({ assignments, loading }: { assignments: Assignment[], loading: boolean }) {
     if (loading) {
-        return <div className="text-sm text-muted-foreground">Loading assignments...</div>;
+        return (
+             <div className="space-y-4 pt-4">
+                {[...Array(3)].map((_, i) => (
+                    <div key={i} className="flex items-center justify-between">
+                         <div className="space-y-2">
+                            <Skeleton className="h-4 w-40" />
+                            <Skeleton className="h-3 w-24" />
+                        </div>
+                        <Skeleton className="h-8 w-20" />
+                    </div>
+                ))}
+             </div>
+        )
     }
     if (assignments.length === 0) {
         return <div className="text-sm text-center py-12 text-muted-foreground">No assignments need grading. You're all caught up!</div>;

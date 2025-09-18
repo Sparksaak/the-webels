@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { FileText, Trash2 } from 'lucide-react';
@@ -23,6 +23,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Skeleton } from './ui/skeleton';
 
 type AppUser = {
     id: string;
@@ -125,8 +126,33 @@ function AssignmentCard({ assignment, user }: { assignment: Assignment, user: Ap
   );
 }
 
+function AssignmentCardSkeleton() {
+    return (
+        <Card>
+            <CardHeader>
+                <Skeleton className="h-6 w-3/4" />
+                <Skeleton className="h-4 w-1/2 mt-2" />
+            </CardHeader>
+            <CardContent>
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-5/6 mt-2" />
+            </CardContent>
+            <CardFooter className="flex justify-between items-center">
+                <Skeleton className="h-4 w-1/3" />
+                <Skeleton className="h-10 w-28" />
+            </CardFooter>
+        </Card>
+    );
+}
+
 function AssignmentsList({ currentUser, initialAssignments }: { currentUser: AppUser, initialAssignments: Assignment[] }) {
   const [filter, setFilter] = useState('all');
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleTabChange = (value: string) => {
+    setIsLoading(true);
+    setFilter(value);
+  }
 
   const filteredAssignments = useMemo(() => {
     if (currentUser.role === 'teacher') {
@@ -154,10 +180,26 @@ function AssignmentsList({ currentUser, initialAssignments }: { currentUser: App
             return initialAssignments;
     }
   }, [filter, initialAssignments, currentUser.role]);
+
+  useEffect(() => {
+    if(isLoading) {
+        // Simulate loading time to show skeleton
+        const timer = setTimeout(() => {
+            setIsLoading(false);
+        }, 300);
+        return () => clearTimeout(timer);
+    }
+  }, [isLoading, filter])
   
   const assignmentsContent = (
       <>
-          {filteredAssignments.length === 0 ? (
+          {isLoading ? (
+             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                <AssignmentCardSkeleton />
+                <AssignmentCardSkeleton />
+                <AssignmentCardSkeleton />
+             </div>
+          ) : filteredAssignments.length === 0 ? (
             <Card>
               <CardContent className="py-24">
                 <div className="text-center text-muted-foreground">
@@ -179,7 +221,7 @@ function AssignmentsList({ currentUser, initialAssignments }: { currentUser: App
 
   return (
     <>
-        <Tabs defaultValue="all" onValueChange={setFilter} className="mb-6">
+        <Tabs defaultValue="all" onValueChange={handleTabChange} className="mb-6">
             <div className='flex justify-between items-center'>
                  {currentUser.role === 'teacher' ? (
                     <TabsList>
@@ -197,12 +239,9 @@ function AssignmentsList({ currentUser, initialAssignments }: { currentUser: App
                  )}
                  {currentUser.role === 'teacher' && <NewAssignmentDialog />}
             </div>
-            <TabsContent value="all">{assignmentsContent}</TabsContent>
-            <TabsContent value="needs-grading">{assignmentsContent}</TabsContent>
-            <TabsContent value="graded">{assignmentsContent}</TabsContent>
-            <TabsContent value="todo">{assignmentsContent}</TabsContent>
-            <TabsContent value="overdue">{assignmentsContent}</TabsContent>
-            <TabsContent value="completed">{assignmentsContent}</TabsContent>
+            <TabsContent value={filter} className="mt-6">
+              {assignmentsContent}
+            </TabsContent>
         </Tabs>
     </>
   );
