@@ -41,6 +41,14 @@ export default function LoginPage() {
         variant: "destructive",
       });
     }
+
+    const message = searchParams.get('message');
+    if (message === 'account-deleted') {
+        toast({
+            title: "Account Deleted",
+            description: "Your account has been successfully deleted.",
+        });
+    }
   }, [searchParams, toast]);
 
   useEffect(() => {

@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Separator } from '@/components/ui/separator';
 import { ProfileForm } from '@/components/profile-form';
 import { UpdatePasswordForm } from '@/components/update-password-form';
+import { DeleteAccountButton } from '@/components/delete-account-button';
 
 type AppUser = {
     id: string;
@@ -44,6 +45,24 @@ async function SettingsContent({ user, profile }: { user: AppUser, profile: Prof
                 </CardHeader>
                 <CardContent>
                     <UpdatePasswordForm />
+                </CardContent>
+            </Card>
+
+            <Separator />
+
+            <Card className="border-destructive">
+                <CardHeader>
+                    <CardTitle className="text-destructive">Danger Zone</CardTitle>
+                    <CardDescription>These actions are irreversible. Please proceed with caution.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="flex items-center justify-between rounded-lg border border-destructive/50 p-4">
+                        <div>
+                            <h3 className="font-semibold">Delete Account</h3>
+                            <p className="text-sm text-muted-foreground">Permanently delete your account and all associated data.</p>
+                        </div>
+                        <DeleteAccountButton />
+                    </div>
                 </CardContent>
             </Card>
         </div>

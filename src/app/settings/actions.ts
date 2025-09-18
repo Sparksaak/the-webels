@@ -2,6 +2,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
+import { supabaseAdmin } from '@/lib/supabase/admin';
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
@@ -99,4 +100,27 @@ export async function updatePassword(formData: FormData) {
         return { error: 'Could not update password: ' + error.message };
     }
     return { success: true };
+}
+
+export async function deleteAccount() {
+    const cookieStore = cookies();
+    const supabase = createClient(cookieStore);
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+        return { error: 'You must be logged in to delete your account.' };
+    }
+
+    const { error } = await supabaseAdmin.auth.admin.deleteUser(user.id);
+
+    if (error) {
+        console.error('Error deleting account:', error);
+        return { error: 'Could not delete your account. ' + error.message };
+    }
+
+    // This will clear the session cookies
+    await supabase.auth.signOut();
+
+    // Redirect to a logged-out page
+    redirect('/login?message=account-deleted');
 }
