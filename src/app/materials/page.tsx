@@ -4,7 +4,7 @@
 import { Suspense, useState, useEffect } from 'react';
 import { AppLayout } from '@/components/app-layout';
 import type { AppUser } from '@/app/messages/types';
-import { type ClassMaterial } from './actions';
+import { type ClassMaterial, getClassMaterials } from './actions';
 import { NewMaterialDialog } from '@/components/new-material-dialog';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,10 @@ import { MaterialViewer } from '@/components/material-viewer';
 import { DeleteMaterialButton } from '@/components/delete-material-button';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
+import { createClient } from '@/lib/supabase/client';
+import { generateAvatarUrl } from '@/lib/utils';
+import { redirect } from 'next/navigation';
+
 
 function MaterialsPageContent({ currentUser, initialMaterials }: { currentUser: AppUser, initialMaterials: ClassMaterial[] }) {
     const [selectedMaterial, setSelectedMaterial] = useState<ClassMaterial | null>(null);
@@ -115,11 +119,6 @@ export default function MaterialsPage() {
 
     useEffect(() => {
         async function fetchData() {
-            const { createClient } = await import('@/lib/supabase/client');
-            const { generateAvatarUrl } = await import('@/lib/utils');
-            const { getClassMaterials } = await import('./actions');
-            const { redirect } = await import('next/navigation');
-
             const supabase = createClient();
             const { data: { user: authUser } } = await supabase.auth.getUser();
 
@@ -136,7 +135,7 @@ export default function MaterialsPage() {
                 name: name!,
                 email: authUser.email!,
                 role: role,
-                avatarUrl: generateAvatarUrl(name),
+                avatarUrl: generateAvatarUrl(name!),
             };
 
             setUser(currentUser);

@@ -27,7 +27,6 @@ async function DashboardContent({ currentUser, dashboardData }: { currentUser: A
 }
 
 export default async function DashboardPage() {
-  const cookieStore = cookies();
   const supabase = createClient();
 
   const { data: { user } } = await supabase.auth.getUser();

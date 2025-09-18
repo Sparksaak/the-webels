@@ -18,7 +18,6 @@ type AppUser = {
 
 
 export default async function AssignmentsPage() {
-    const cookieStore = cookies();
     const supabase = createClient();
     
     const { data: { user } } = await supabase.auth.getUser();

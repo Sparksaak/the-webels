@@ -107,7 +107,6 @@ function AnnouncementsList({ currentUser, announcements }: { currentUser: AppUse
 }
 
 export default async function AnnouncementsPage() {
-    const cookieStore = cookies();
     const supabase = createClient();
     
     const { data: { user } } = await supabase.auth.getUser();

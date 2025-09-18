@@ -54,7 +54,6 @@ function SchedulePageContent({ currentUser, initialSchedules }: { currentUser: A
 }
 
 export default async function SchedulePage() {
-    const cookieStore = cookies();
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
