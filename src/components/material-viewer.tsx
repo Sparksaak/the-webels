@@ -16,8 +16,8 @@ interface MaterialViewerProps {
 export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerProps) {
   const [slides, setSlides] = React.useState<string[]>([]);
   const [currentSlide, setCurrentSlide] = React.useState(0);
-  const [direction, setDirection] = React.useState<'next' | 'prev' | null>(null);
-  const [isAnimating, setIsAnimating] = React.useState(false);
+  const [animationState, setAnimationState] = React.useState<'idle' | 'entering' | 'exiting'>('idle');
+  const slideRef = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
     if (material.content) {
@@ -30,42 +30,33 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
     }
   }, [material]);
 
-  const changeSlide = (newDirection: 'next' | 'prev') => {
-    if (isAnimating) return;
-    setIsAnimating(true);
-    setDirection(newDirection);
+  const changeSlide = (direction: 'next' | 'prev') => {
+    if (animationState !== 'idle') return;
 
+    const nextSlideIndex = direction === 'next' ? currentSlide + 1 : currentSlide - 1;
+    if (nextSlideIndex < 0 || nextSlideIndex >= slides.length) return;
+
+    // Start exit animation
+    setAnimationState('exiting');
+    
+    // Wait for exit animation to finish, then change slide and start enter animation
     setTimeout(() => {
-        setCurrentSlide(prev => {
-            if (newDirection === 'next') {
-                return Math.min(prev + 1, slides.length - 1);
-            }
-            return Math.max(prev - 1, 0);
-        });
-        setDirection(null); // This triggers the 'enter' animation
-        setTimeout(() => setIsAnimating(false), 500); // Animation duration
-    }, 500); // Wait for exit animation to finish
-  }
-
-  const goToNextSlide = () => {
-    if (currentSlide < slides.length - 1) {
-        changeSlide('next');
-    }
+      setCurrentSlide(nextSlideIndex);
+      setAnimationState('entering');
+      // Wait for enter animation to finish, then return to idle
+      setTimeout(() => {
+        setAnimationState('idle');
+      }, 800); // Corresponds to the longest enter animation delay
+    }, 800); // Corresponds to the longest exit animation duration
   };
 
-  const goToPrevSlide = () => {
-    if (currentSlide > 0) {
-        changeSlide('prev');
-    }
-  };
-  
   React.useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (!open) return;
       if (event.key === 'ArrowRight') {
-        goToNextSlide();
+        changeSlide('next');
       } else if (event.key === 'ArrowLeft') {
-        goToPrevSlide();
+        changeSlide('prev');
       } else if (event.key === 'Escape') {
         onOpenChange(false);
       }
@@ -75,8 +66,8 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, slides.length, isAnimating]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, slides.length, animationState, currentSlide]);
 
 
   if (!open) {
@@ -98,19 +89,11 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
                 --slide-border: hsl(var(--border));
                 --slide-muted-foreground: hsl(var(--muted-foreground));
             }
-            .slide-content-animation-wrapper > * {
-              opacity: 0;
-              transform: translateY(30px);
-              animation: content-slide-up 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
-            }
             .material-content h1, .material-content h2, .material-content h3 {
                 color: var(--slide-primary);
                 border-bottom: 2px solid var(--slide-border);
                 padding-bottom: 0.5rem;
                 margin-bottom: 1rem;
-            }
-             .slide-content-animation-wrapper h1, .slide-content-animation-wrapper h2, .slide-content-animation-wrapper h3 {
-                animation-delay: 0.2s;
             }
             .material-content header {
                 background-color: transparent;
@@ -128,20 +111,12 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
                 font-size: 3.5rem;
                 border: none;
                 margin: 0;
-                transform: translateY(40px);
-            }
-            .material-content header p {
-                font-size: 1.25rem;
-                transform: translateY(40px);
             }
             .material-content p {
                 line-height: 1.7;
                 color: var(--slide-muted-foreground);
                 margin-bottom: 1rem;
                 font-size: 1.1rem;
-            }
-             .slide-content-animation-wrapper p {
-                animation-delay: 0.4s;
             }
             .material-content strong { color: var(--slide-primary); }
             .material-content em { color: var(--slide-accent); }
@@ -150,26 +125,12 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
                 padding-left: 1rem;
                 margin-bottom: 1.5rem;
             }
-             .slide-content-animation-wrapper ul {
-                animation-delay: 0.5s;
-            }
             .material-content ul li {
                 margin-bottom: 0.75rem;
                 padding-left: 0.5rem;
                 border-left: 3px solid var(--slide-accent);
                 font-size: 1.1rem;
             }
-             .slide-content-animation-wrapper ul li {
-                opacity: 0;
-                transform: translateX(-30px);
-                animation: list-item-in 0.6s ease-out forwards;
-            }
-            .slide-content-animation-wrapper ul li:nth-child(1) { animation-delay: 0.6s; }
-            .slide-content-animation-wrapper ul li:nth-child(2) { animation-delay: 0.7s; }
-            .slide-content-animation-wrapper ul li:nth-child(3) { animation-delay: 0.8s; }
-            .slide-content-animation-wrapper ul li:nth-child(4) { animation-delay: 0.9s; }
-            .slide-content-animation-wrapper ul li:nth-child(5) { animation-delay: 1.0s; }
-            
             .material-content section {
                 margin-bottom: 2.5rem;
                 padding: 2.5rem;
@@ -188,9 +149,6 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
                 overflow-x: auto;
                  font-size: 0.95rem;
             }
-             .slide-content-animation-wrapper pre {
-                 animation-delay: 0.6s;
-            }
             .material-content footer {
                 margin-top: 2rem;
                 padding-top: 1rem;
@@ -199,69 +157,65 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
                 color: var(--slide-muted-foreground);
                 text-align: center;
             }
-            .slide-content-animation-wrapper footer {
-                 animation-delay: 0.7s;
-            }
-            @keyframes content-slide-up {
-                to {
-                    opacity: 1;
-                    transform: translateY(0);
-                }
-            }
-            @keyframes list-item-in {
-                to {
-                    opacity: 1;
-                    transform: translateX(0);
-                }
-            }
-            @keyframes slide-in-next {
-                from { opacity: 0; transform: translateX(100%); }
-                to { opacity: 1; transform: translateX(0); }
-            }
-            @keyframes slide-out-next {
-                from { opacity: 1; transform: translateX(0); }
-                to { opacity: 0; transform: translateX(-100%); }
-            }
-            @keyframes slide-in-prev {
-                from { opacity: 0; transform: translateX(-100%); }
-                to { opacity: 1; transform: translateX(0); }
-            }
-            @keyframes slide-out-prev {
-                from { opacity: 1; transform: translateX(0); }
-                to { opacity: 0; transform: translateX(100%); }
-            }
+            
+            /* Animations */
+            @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+            @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+            @keyframes slideUpIn { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+            @keyframes slideUpOut { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(-30px); } }
+            @keyframes slideLeftIn { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: translateX(0); } }
+            @keyframes slideLeftOut { from { opacity: 1; transform: translateX(0); } to { opacity: 0; transform: translateX(-30px); } }
 
-            .slide-base {
-                position: absolute;
+            .slide-container {
+                animation: fadeIn 0.5s ease-out forwards;
                 width: 100%;
                 height: 100%;
-                transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
+            }
+
+            .slide-container.exiting {
+                animation: fadeOut 0.5s ease-in forwards;
+            }
+
+            .slide-element {
+                opacity: 0;
+                animation-fill-mode: forwards;
             }
             
-            .slide-enter-active {
+            .slide-container.entering .slide-element {
+                animation-name: slideUpIn;
                 animation-duration: 0.5s;
                 animation-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
-                animation-fill-mode: forwards;
+            }
+            .slide-container.exiting .slide-element {
+                animation-name: slideUpOut;
+                animation-duration: 0.4s;
+                animation-timing-function: ease-in;
             }
 
-            .slide-exit-active {
-                animation-duration: 0.5s;
-                animation-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
-                animation-fill-mode: forwards;
-            }
+            .slide-container.entering ul li.slide-element { animation-name: slideLeftIn; }
+            .slide-container.exiting ul li.slide-element { animation-name: slideLeftOut; }
 
-            .slide-enter-active-next {
-                animation-name: slide-in-next;
-            }
-            .slide-exit-active-next {
-                animation-name: slide-out-next;
-            }
-            .slide-enter-active-prev {
-                animation-name: slide-in-prev;
-            }
-            .slide-exit-active-prev {
-                animation-name: slide-out-prev;
-            }
+            /* Staggered Delays */
+            .slide-container.entering h1, .slide-container.entering h2 { animation-delay: 0.1s; }
+            .slide-container.entering p { animation-delay: 0.2s; }
+            .slide-container.entering pre, .slide-container.entering ul { animation-delay: 0.3s; }
+            .slide-container.entering footer { animation-delay: 0.4s; }
+            .slide-container.entering li:nth-child(1) { animation-delay: 0.4s; }
+            .slide-container.entering li:nth-child(2) { animation-delay: 0.5s; }
+            .slide-container.entering li:nth-child(3) { animation-delay: 0.6s; }
+            .slide-container.entering li:nth-child(4) { animation-delay: 0.7s; }
+            .slide-container.entering li:nth-child(5) { animation-delay: 0.8s; }
+            
+            /* Reverse delays for exit */
+            .slide-container.exiting li:nth-child(5) { animation-delay: 0s; }
+            .slide-container.exiting li:nth-child(4) { animation-delay: 0.1s; }
+            .slide-container.exiting li:nth-child(3) { animation-delay: 0.2s; }
+            .slide-container.exiting li:nth-child(2) { animation-delay: 0.3s; }
+            .slide-container.exiting li:nth-child(1) { animation-delay: 0.4s; }
+            .slide-container.exiting footer { animation-delay: 0.5s; }
+            .slide-container.exiting pre, .slide-container.exiting ul { animation-delay: 0.6s; }
+            .slide-container.exiting p { animation-delay: 0.7s; }
+            .slide-container.exiting h1, .slide-container.exiting h2 { animation-delay: 0.8s; }
             `}
         </style>
         
@@ -274,50 +228,33 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
         </header>
 
         <main className="flex-1 flex items-center justify-center p-4 md:p-8 relative overflow-hidden">
-            {slides.map((slide, index) => {
-                 const isCurrent = index === currentSlide;
-                 const isExiting = isAnimating && !isCurrent;
-                 
-                 let animationClass = '';
-                 if (isCurrent && !isAnimating && direction === null) {
-                     // Entering
-                     animationClass = direction === 'next' ? 'slide-enter-active slide-enter-active-next' : 'slide-enter-active slide-enter-active-prev';
-                 } else if (isExiting) {
-                    // Exiting
-                     animationClass = direction === 'next' ? 'slide-exit-active slide-exit-active-next' : 'slide-exit-active slide-exit-active-prev';
-                 }
-
-                 return (
-                     <div 
-                        key={index}
-                        className={cn(
-                            'material-content w-full h-full max-w-6xl',
-                            'slide-base',
-                            isCurrent ? 'z-10' : 'z-0 opacity-0',
-                             animationClass
-                        )}
-                     >
-                        <div
-                            className={cn(
-                              'w-full h-full',
-                              isCurrent && !isAnimating && 'slide-content-animation-wrapper'
-                            )}
-                            dangerouslySetInnerHTML={{ __html: slide || '' }}
-                        />
-                     </div>
-                );
-            })}
+            <div
+                ref={slideRef}
+                key={currentSlide}
+                className={cn(
+                    'material-content w-full h-full max-w-6xl slide-container',
+                    animationState === 'entering' && 'entering',
+                    animationState === 'exiting' && 'exiting'
+                )}
+                dangerouslySetInnerHTML={{ __html: slides[currentSlide] || '' }}
+                // Add slide-element class to all children for animation targeting
+                onLoad={() => {
+                  if (slideRef.current) {
+                    slideRef.current.querySelectorAll('*').forEach(el => el.classList.add('slide-element'));
+                  }
+                }}
+             />
         </main>
 
         <footer className="flex items-center justify-between p-4 text-foreground">
-            <Button variant="outline" onClick={goToPrevSlide} disabled={currentSlide === 0 || isAnimating}>
+            <Button variant="outline" onClick={() => changeSlide('prev')} disabled={currentSlide === 0 || animationState !== 'idle'}>
                 <ChevronLeft className="mr-2 h-4 w-4"/>
                 Prev
             </Button>
             <div className="text-sm font-medium">
                 {currentSlide + 1} / {slides.length}
             </div>
-            <Button variant="outline" onClick={goToNextSlide} disabled={currentSlide === slides.length - 1 || isAnimating}>
+            <Button variant="outline" onClick={() => changeSlide('next')} disabled={currentSlide === slides.length - 1 || animationState !== 'idle'}>
                 Next
                 <ChevronRight className="ml-2 h-4 w-4"/>
             </Button>
@@ -325,4 +262,3 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
     </div>
   );
 }
-
