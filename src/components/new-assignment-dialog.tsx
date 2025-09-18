@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useRef } from 'react';
+import { useFormStatus } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -17,23 +18,32 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { createAssignment } from '@/app/assignments/actions';
-import { PlusCircle, Calendar as CalendarIcon } from 'lucide-react';
+import { Loader2, PlusCircle, Calendar as CalendarIcon } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Calendar } from './ui/calendar';
 import { format, setHours, setMinutes } from 'date-fns';
 import { cn } from '@/lib/utils';
 
+function SubmitButton() {
+    const { pending } = useFormStatus();
+    return (
+        <Button type="submit" disabled={pending}>
+            {pending ? <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Creating...
+            </> : 'Create Assignment'}
+        </Button>
+    )
+}
+
 export function NewAssignmentDialog() {
     const [open, setOpen] = useState(false);
-    const [isSubmitting, setIsSubmitting] = useState(false);
     const [dueDate, setDueDate] = useState<Date | undefined>();
     const [dueTime, setDueTime] = useState('23:59');
     const formRef = useRef<HTMLFormElement>(null);
     const { toast } = useToast();
 
     const handleFormSubmit = async (formData: FormData) => {
-        setIsSubmitting(true);
-
         if (dueDate) {
             const [hours, minutes] = dueTime.split(':').map(Number);
             const combinedDate = setMinutes(setHours(dueDate, hours), minutes);
@@ -58,7 +68,6 @@ export function NewAssignmentDialog() {
             setDueDate(undefined);
             setDueTime('23:59');
         }
-        setIsSubmitting(false);
     };
 
   return (
@@ -127,9 +136,7 @@ export function NewAssignmentDialog() {
                 </div>
             </div>
             <DialogFooter>
-                <Button type="submit" disabled={isSubmitting}>
-                    {isSubmitting ? 'Creating...' : 'Create Assignment'}
-                </Button>
+                <SubmitButton />
             </DialogFooter>
         </form>
       </DialogContent>

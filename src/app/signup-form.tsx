@@ -3,6 +3,7 @@
 
 import Link from 'next/link';
 import { useActionState, useEffect } from 'react';
+import { useFormStatus } from 'react-dom';
 import { useToast } from '@/hooks/use-toast';
 import { signup } from '@/app/auth/actions';
 import { Button } from '@/components/ui/button';
@@ -16,6 +17,19 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Logo } from '@/components/logo';
+import { Loader2 } from 'lucide-react';
+
+function AuthButton() {
+    const { pending } = useFormStatus();
+    return (
+        <Button type="submit" className="w-full mt-4" disabled={pending}>
+             {pending ? <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Creating account...
+            </> : 'Create an account'}
+        </Button>
+    )
+}
 
 export function SignupForm() {
   const [state, formAction] = useActionState(signup, null);
@@ -73,9 +87,7 @@ export function SignupForm() {
             </Select>
           </div>
           
-          <Button type="submit" className="w-full mt-4">
-            Create an account
-          </Button>
+          <AuthButton />
         </form>
       </div>
       <div className="mt-4 text-center text-sm">

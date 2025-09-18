@@ -8,9 +8,23 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Logo } from '@/components/logo';
 import { useActionState, useEffect } from 'react';
+import { useFormStatus } from 'react-dom';
 import { login } from '@/app/auth/actions';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { Loader2 } from 'lucide-react';
+
+function AuthButton() {
+    const { pending } = useFormStatus();
+    return (
+        <Button type="submit" className="w-full mt-4" disabled={pending}>
+            {pending ? <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Logging in...
+            </> : 'Login'}
+        </Button>
+    )
+}
 
 export default function LoginPage() {
   const [state, formAction] = useActionState(login, null);
@@ -78,9 +92,7 @@ export default function LoginPage() {
                 </div>
                 <Input id="password" name="password" type="password" required />
               </div>
-              <Button type="submit" className="w-full mt-4">
-                Login
-              </Button>
+              <AuthButton />
             </form>
           </div>
           <div className="mt-4 text-center text-sm">

@@ -154,50 +154,56 @@ function AssignmentsList({ currentUser, initialAssignments }: { currentUser: App
             return initialAssignments;
     }
   }, [filter, initialAssignments, currentUser.role]);
+  
+  const assignmentsContent = (
+      <>
+          {filteredAssignments.length === 0 ? (
+            <Card>
+              <CardContent className="py-24">
+                <div className="text-center text-muted-foreground">
+                  <FileText className="mx-auto h-12 w-12 text-gray-400" />
+                  <p className="mt-4">No assignments found for this filter.</p>
+                  {currentUser.role === 'teacher' && initialAssignments.length === 0 && <p className="text-sm">Click "New Assignment" to get started.</p>}
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {filteredAssignments.map(assignment => (
+                <AssignmentCard key={assignment.id} assignment={assignment} user={currentUser} />
+              ))}
+            </div>
+          )}
+      </>
+  );
 
   return (
     <>
-        {currentUser.role === 'teacher' && (
+        <Tabs defaultValue="all" onValueChange={setFilter} className="mb-6">
             <div className='flex justify-between items-center'>
-                <Tabs defaultValue="all" onValueChange={setFilter} className="mb-6">
+                 {currentUser.role === 'teacher' ? (
                     <TabsList>
                         <TabsTrigger value="all">All</TabsTrigger>
                         <TabsTrigger value="needs-grading">Needs Grading</TabsTrigger>
                         <TabsTrigger value="graded">Graded</TabsTrigger>
                     </TabsList>
-                </Tabs>
-                <NewAssignmentDialog />
+                 ) : (
+                    <TabsList>
+                            <TabsTrigger value="all">All</TabsTrigger>
+                            <TabsTrigger value="todo">To Do</TabsTrigger>
+                            <TabsTrigger value="overdue">Overdue</TabsTrigger>
+                            <TabsTrigger value="completed">Completed</TabsTrigger>
+                    </TabsList>
+                 )}
+                 {currentUser.role === 'teacher' && <NewAssignmentDialog />}
             </div>
-        )}
-        {currentUser.role === 'student' && (
-             <Tabs defaultValue="all" onValueChange={setFilter} className="mb-6">
-                <TabsList>
-                        <TabsTrigger value="all">All</TabsTrigger>
-                        <TabsTrigger value="todo">To Do</TabsTrigger>
-                        <TabsTrigger value="overdue">Overdue</TabsTrigger>
-                        <TabsTrigger value="completed">Completed</TabsTrigger>
-                </TabsList>
-            </Tabs>
-        )}
-
-
-      {filteredAssignments.length === 0 ? (
-        <Card>
-          <CardContent className="py-24">
-            <div className="text-center text-muted-foreground">
-              <FileText className="mx-auto h-12 w-12 text-gray-400" />
-              <p className="mt-4">No assignments found for this filter.</p>
-              {currentUser.role === 'teacher' && initialAssignments.length === 0 && <p className="text-sm">Click "New Assignment" to get started.</p>}
-            </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {filteredAssignments.map(assignment => (
-            <AssignmentCard key={assignment.id} assignment={assignment} user={currentUser} />
-          ))}
-        </div>
-      )}
+            <TabsContent value="all">{assignmentsContent}</TabsContent>
+            <TabsContent value="needs-grading">{assignmentsContent}</TabsContent>
+            <TabsContent value="graded">{assignmentsContent}</TabsContent>
+            <TabsContent value="todo">{assignmentsContent}</TabsContent>
+            <TabsContent value="overdue">{assignmentsContent}</TabsContent>
+            <TabsContent value="completed">{assignmentsContent}</TabsContent>
+        </Tabs>
     </>
   );
 }

@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useRef } from 'react';
+import { useFormStatus } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -17,7 +18,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { createClassSchedule, updateClassSchedule } from '@/app/schedule/actions';
-import { PlusCircle } from 'lucide-react';
+import { Loader2, PlusCircle } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { type ClassSchedule } from '@/app/schedule/actions';
 
@@ -36,16 +37,27 @@ const weekDays = [
     { value: 0, label: 'Sunday' },
 ];
 
+function SubmitButton({ isEditMode }: { isEditMode: boolean }) {
+    const { pending } = useFormStatus();
+    const text = isEditMode ? 'Save Changes' : 'Create Schedule';
+    const loadingText = isEditMode ? 'Saving...' : 'Creating...';
+    return (
+        <Button type="submit" disabled={pending}>
+            {pending ? <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                {loadingText}
+            </> : text}
+        </Button>
+    )
+}
+
 export function NewScheduleDialog({ schedule, children }: NewScheduleDialogProps) {
     const [open, setOpen] = useState(false);
-    const [isSubmitting, setIsSubmitting] = useState(false);
     const formRef = useRef<HTMLFormElement>(null);
     const { toast } = useToast();
     const isEditMode = !!schedule;
 
     const handleFormSubmit = async (formData: FormData) => {
-        setIsSubmitting(true);
-        
         const action = isEditMode ? updateClassSchedule : createClassSchedule;
         if (isEditMode) {
             formData.append('id', schedule.id);
@@ -66,7 +78,6 @@ export function NewScheduleDialog({ schedule, children }: NewScheduleDialogProps
             });
             setOpen(false);
         }
-        setIsSubmitting(false);
     };
 
   return (
@@ -166,9 +177,7 @@ export function NewScheduleDialog({ schedule, children }: NewScheduleDialogProps
                 </div>
             </div>
             <DialogFooter>
-                <Button type="submit" disabled={isSubmitting}>
-                    {isSubmitting ? (isEditMode ? 'Saving...' : 'Creating...') : (isEditMode ? 'Save Changes' : 'Create Schedule')}
-                </Button>
+                <SubmitButton isEditMode={isEditMode} />
             </DialogFooter>
         </form>
       </DialogContent>

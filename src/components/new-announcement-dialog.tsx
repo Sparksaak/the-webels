@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useRef } from 'react';
+import { useFormStatus } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -17,17 +18,26 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { createAnnouncement } from '@/app/announcements/actions';
-import { PlusCircle } from 'lucide-react';
+import { Loader2, PlusCircle } from 'lucide-react';
+
+function SubmitButton() {
+    const { pending } = useFormStatus();
+    return (
+        <Button type="submit" disabled={pending}>
+            {pending ? <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Creating...
+            </> : 'Create Announcement'}
+        </Button>
+    )
+}
 
 export function NewAnnouncementDialog() {
     const [open, setOpen] = useState(false);
-    const [isSubmitting, setIsSubmitting] = useState(false);
     const formRef = useRef<HTMLFormElement>(null);
     const { toast } = useToast();
 
     const handleFormSubmit = async (formData: FormData) => {
-        setIsSubmitting(true);
-        
         const result = await createAnnouncement(formData);
 
         if (result?.error) {
@@ -44,7 +54,6 @@ export function NewAnnouncementDialog() {
             setOpen(false);
             formRef.current?.reset();
         }
-        setIsSubmitting(false);
     };
 
   return (
@@ -89,9 +98,7 @@ export function NewAnnouncementDialog() {
                 </div>
             </div>
             <DialogFooter>
-                <Button type="submit" disabled={isSubmitting}>
-                    {isSubmitting ? 'Creating...' : 'Create Announcement'}
-                </Button>
+                <SubmitButton />
             </DialogFooter>
         </form>
       </DialogContent>

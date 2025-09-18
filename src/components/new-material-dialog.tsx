@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useRef } from 'react';
+import { useFormStatus } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -17,7 +18,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { saveMaterial, type ClassMaterial } from '@/app/materials/actions';
-import { PlusCircle } from 'lucide-react';
+import { Loader2, PlusCircle } from 'lucide-react';
 import { Switch } from './ui/switch';
 
 interface NewMaterialDialogProps {
@@ -28,7 +29,6 @@ interface NewMaterialDialogProps {
 const defaultContent = `
 <header>
   <h1>Your Slide Title</h1>
-  <p>A brief description of the topic.</p>
 </header>
 <section>
   <h2>Key Point 1</h2>
@@ -46,23 +46,33 @@ function helloWorld() {
   console.log("Hello, world!");
 }
   </code></pre>
-  <p>This paragraph appears after the code snippet.</p>
 </section>
 <footer>
   <p>Summary or contact information.</p>
 </footer>
 `;
 
+function SubmitButton({ isEditMode }: { isEditMode: boolean }) {
+    const { pending } = useFormStatus();
+    const text = isEditMode ? 'Save Changes' : 'Create Material';
+    const loadingText = isEditMode ? 'Saving...' : 'Creating...';
+    return (
+        <Button type="submit" disabled={pending}>
+            {pending ? <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                {loadingText}
+            </> : text}
+        </Button>
+    )
+}
+
 export function NewMaterialDialog({ material, children }: NewMaterialDialogProps) {
     const [open, setOpen] = useState(false);
-    const [isSubmitting, setIsSubmitting] = useState(false);
     const formRef = useRef<HTMLFormElement>(null);
     const { toast } = useToast();
     const isEditMode = !!material;
 
     const handleFormSubmit = async (formData: FormData) => {
-        setIsSubmitting(true);
-        
         if (isEditMode) {
             formData.append('id', material.id);
         }
@@ -82,7 +92,6 @@ export function NewMaterialDialog({ material, children }: NewMaterialDialogProps
             });
             setOpen(false);
         }
-        setIsSubmitting(false);
     };
 
   return (
@@ -156,9 +165,7 @@ export function NewMaterialDialog({ material, children }: NewMaterialDialogProps
                 </div>
             </div>
             <DialogFooter>
-                <Button type="submit" disabled={isSubmitting}>
-                    {isSubmitting ? (isEditMode ? 'Saving...' : 'Creating...') : (isEditMode ? 'Save Changes' : 'Create Material')}
-                </Button>
+                <SubmitButton isEditMode={isEditMode} />
             </DialogFooter>
         </form>
       </DialogContent>

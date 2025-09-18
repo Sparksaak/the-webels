@@ -3,6 +3,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from 'react';
+import { useFormStatus } from 'react-dom';
 import { format, formatDistanceToNow, isAfter, differenceInDays, setHours, setMinutes, parseISO, differenceInHours } from 'date-fns';
 import {
   Sheet,
@@ -42,7 +43,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { ChevronsUpDown, Pencil, Calendar as CalendarIcon } from 'lucide-react';
+import { ChevronsUpDown, Pencil, Calendar as CalendarIcon, Loader2 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Calendar } from './ui/calendar';
 import { cn, getInitials, generateAvatarUrl } from '@/lib/utils';
@@ -52,6 +53,31 @@ interface ViewAssignmentSheetProps {
   assignment: Assignment;
   user: AppUser;
   children: React.ReactNode;
+}
+
+function EditSubmitButton() {
+    const { pending } = useFormStatus();
+    return (
+        <Button type="submit" disabled={pending}>
+            {pending ? <> <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving... </> : 'Save Changes'}
+        </Button>
+    )
+}
+function StudentSubmitButton({ isResubmitting }: { isResubmitting?: boolean }) {
+    const { pending } = useFormStatus();
+    return (
+        <Button type="submit" disabled={pending}>
+            {pending ? <> <Loader2 className="mr-2 h-4 w-4 animate-spin" /> {isResubmitting ? 'Resubmitting...' : 'Submitting...'}</> : (isResubmitting ? 'Resubmit Assignment' : 'Submit Assignment')}
+        </Button>
+    )
+}
+function TeacherGradeButton({ hasGrade }: { hasGrade: boolean }) {
+    const { pending } = useFormStatus();
+    return (
+        <Button type="submit" disabled={pending}>
+            {pending ? <> <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</> : (hasGrade ? 'Update Grade' : 'Save Grade')}
+        </Button>
+    )
 }
 
 export function ViewAssignmentSheet({ assignment, user, children }: ViewAssignmentSheetProps) {
@@ -121,7 +147,6 @@ export function ViewAssignmentSheet({ assignment, user, children }: ViewAssignme
 
 function EditAssignmentForm({ assignment, onCancel, onSaved }: { assignment: Assignment, onCancel: () => void, onSaved: () => void }) {
     const { toast } = useToast();
-    const [isSubmitting, setIsSubmitting] = useState(false);
     const [dueDate, setDueDate] = useState<Date | undefined>(
         assignment.dueDate ? new Date(assignment.dueDate) : undefined
     );
@@ -129,10 +154,7 @@ function EditAssignmentForm({ assignment, onCancel, onSaved }: { assignment: Ass
         assignment.dueDate ? format(new Date(assignment.dueDate), 'HH:mm') : '23:59'
     );
 
-    const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
-        setIsSubmitting(true);
-        const formData = new FormData(event.currentTarget);
+    const handleSubmit = async (formData: FormData) => {
         formData.append('assignmentId', assignment.id);
         if (dueDate) {
             const [hours, minutes] = dueTime.split(':').map(Number);
@@ -147,11 +169,10 @@ function EditAssignmentForm({ assignment, onCancel, onSaved }: { assignment: Ass
             toast({ title: "Success", description: "Assignment updated successfully." });
             onSaved();
         }
-        setIsSubmitting(false);
     };
 
     return (
-        <form onSubmit={handleSubmit} className="flex flex-col h-full">
+        <form action={handleSubmit} className="flex flex-col h-full">
             <SheetHeader>
                 <SheetTitle>Edit Assignment</SheetTitle>
                 <SheetDescription>Update the assignment details below.</SheetDescription>
@@ -201,9 +222,7 @@ function EditAssignmentForm({ assignment, onCancel, onSaved }: { assignment: Ass
             </div>
             <SheetFooter>
                 <Button variant="ghost" onClick={onCancel} type="button">Cancel</Button>
-                <Button type="submit" disabled={isSubmitting}>
-                    {isSubmitting ? 'Saving...' : 'Save Changes'}
-                </Button>
+                <EditSubmitButton />
             </SheetFooter>
         </form>
     );
@@ -213,13 +232,9 @@ function StudentSubmissionView({ assignment, user, onSubmitted }: { assignment: 
     const mySubmission = assignment.submissions.find(s => s.student_id === user.id);
     const formRef = useRef<HTMLFormElement>(null);
     const { toast } = useToast();
-    const [isSubmitting, setIsSubmitting] = useState(false);
     const [isResubmitting, setIsResubmitting] = useState(false);
 
-    const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
-        setIsSubmitting(true);
-        const formData = new FormData(event.currentTarget);
+    const handleSubmit = async (formData: FormData) => {
         formData.append('assignmentId', assignment.id);
         
         const result = await submitAssignment(formData);
@@ -230,7 +245,6 @@ function StudentSubmissionView({ assignment, user, onSubmitted }: { assignment: 
             toast({ title: "Success", description: "Assignment submitted successfully!" });
             onSubmitted();
         }
-        setIsSubmitting(false);
     };
     
     const handleUnsubmit = async () => {
@@ -312,18 +326,15 @@ function StudentSubmissionView({ assignment, user, onSubmitted }: { assignment: 
                             </CollapsibleTrigger>
                             <CollapsibleContent>
                                 <p className="text-xs text-center text-muted-foreground mb-4">You can edit your submission until it has been graded.</p>
-                                <form ref={formRef} onSubmit={handleSubmit}>
+                                <form ref={formRef} action={handleSubmit}>
                                     <Textarea
                                         name="submissionContent"
                                         rows={8}
                                         defaultValue={mySubmission.submission_content}
                                         required
-                                        disabled={isSubmitting}
                                     />
                                     <div className="flex justify-end mt-4">
-                                        <Button type="submit" disabled={isSubmitting}>
-                                            {isSubmitting ? 'Resubmitting...' : 'Resubmit Assignment'}
-                                        </Button>
+                                        <StudentSubmitButton isResubmitting />
                                     </div>
                                 </form>
                             </CollapsibleContent>
@@ -358,18 +369,15 @@ function StudentSubmissionView({ assignment, user, onSubmitted }: { assignment: 
     return (
         <div>
             <h3 className="text-lg font-semibold mb-2">Submit Your Work</h3>
-            <form ref={formRef} onSubmit={handleSubmit}>
+            <form ref={formRef} action={handleSubmit}>
                 <Textarea
                     name="submissionContent"
                     rows={8}
                     placeholder="Type your submission here..."
                     required
-                    disabled={isSubmitting}
                 />
                 <div className="flex justify-end mt-4">
-                    <Button type="submit" disabled={isSubmitting}>
-                        {isSubmitting ? 'Submitting...' : 'Submit Assignment'}
-                    </Button>
+                    <StudentSubmitButton />
                 </div>
             </form>
         </div>
@@ -392,14 +400,9 @@ function TeacherSubmissionsView({ assignment }: { assignment: Assignment }) {
 
 function SubmissionCard({ submission, assignment }: { submission: AssignmentSubmission; assignment: Assignment }) {
     const { toast } = useToast();
-    const [isGrading, setIsGrading] = useState(false);
-    const formRef = useRef<HTMLFormElement>(null);
     const [currentGrade, setCurrentGrade] = useState(submission.grade);
 
-    const handleGradeSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
-        setIsGrading(true);
-        const formData = new FormData(event.currentTarget);
+    const handleGradeSubmit = async (formData: FormData) => {
         formData.append('submissionId', submission.id);
 
         const result = await gradeSubmission(formData);
@@ -409,7 +412,6 @@ function SubmissionCard({ submission, assignment }: { submission: AssignmentSubm
             toast({ title: "Success", description: "Grade saved." });
             setCurrentGrade(formData.get('grade') as string);
         }
-        setIsGrading(false);
     }
 
     const getSubmissionStatus = () => {
@@ -462,7 +464,7 @@ function SubmissionCard({ submission, assignment }: { submission: AssignmentSubm
             <Separator className="my-4" />
             <p className="text-sm text-muted-foreground whitespace-pre-wrap mb-4">{submission.submission_content}</p>
 
-            <form ref={formRef} onSubmit={handleGradeSubmit} className="space-y-4">
+            <form action={handleGradeSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-start">
                     <div className="md:col-span-1">
                         <Label htmlFor={`grade-${submission.id}`}>Grade</Label>
@@ -486,9 +488,7 @@ function SubmissionCard({ submission, assignment }: { submission: AssignmentSubm
                     </div>
                 </div>
                 <div className="flex justify-end">
-                    <Button type="submit" disabled={isGrading}>
-                        {isGrading ? 'Saving...' : (currentGrade ? 'Update Grade' : 'Save Grade')}
-                    </Button>
+                    <TeacherGradeButton hasGrade={!!currentGrade} />
                 </div>
             </form>
         </div>
