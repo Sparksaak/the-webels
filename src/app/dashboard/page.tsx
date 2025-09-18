@@ -59,7 +59,7 @@ export default function DashboardPage() {
 
   if (loading || !currentUser) {
       return (
-          <div className="flex min-h-screen bg-background items-center justify-center">
+          <div className="flex min-h-screen w-full items-center justify-center">
             <div>Loading dashboard...</div>
           </div>
       )
@@ -67,7 +67,7 @@ export default function DashboardPage() {
 
   return (
     <AppLayout user={currentUser}>
-      <Suspense fallback={<div className="flex min-h-[calc(100vh_-_theme(spacing.24))] items-center justify-center"><div>Loading dashboard...</div></div>}>
+      <Suspense fallback={<div className="flex h-[calc(100vh-theme(spacing.24))] w-full items-center justify-center"><div className="text-muted-foreground">Loading dashboard...</div></div>}>
         <DashboardContent currentUser={currentUser} />
       </Suspense>
     </AppLayout>

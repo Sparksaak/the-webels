@@ -138,7 +138,7 @@ export default function MaterialsPageWrapper() {
 
     if (loading || !currentUser) {
         return (
-            <div className="flex min-h-screen bg-background items-center justify-center">
+            <div className="flex min-h-screen w-full items-center justify-center">
               <div>Loading...</div>
             </div>
         )
@@ -147,8 +147,8 @@ export default function MaterialsPageWrapper() {
     return (
         <AppLayout user={currentUser}>
             <Suspense fallback={
-                <div className="flex min-h-[calc(100vh_-_theme(spacing.24))] bg-background items-center justify-center">
-                    <div>Loading materials...</div>
+                <div className="flex h-[calc(100vh-theme(spacing.24))] w-full items-center justify-center">
+                    <div className="text-muted-foreground">Loading materials...</div>
                 </div>
             }>
                 <MaterialsPageContent currentUser={currentUser} initialMaterials={materials} />

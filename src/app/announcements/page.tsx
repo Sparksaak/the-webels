@@ -50,7 +50,7 @@ function AnnouncementsList({ currentUser }: { currentUser: AppUser }) {
   }, []);
 
   if (loading) {
-      return <div className="flex min-h-[calc(100vh_-_theme(spacing.24))] bg-background items-center justify-center"><div>Loading announcements...</div></div>;
+      return <div className="flex h-[calc(100vh-theme(spacing.24))] w-full items-center justify-center"><div className="text-muted-foreground">Loading announcements...</div></div>;
   }
   
   return (
@@ -156,12 +156,12 @@ export default function AnnouncementsPage() {
     }, [supabase, router]);
 
     if (loading || !currentUser) {
-        return <div className="flex min-h-screen bg-background items-center justify-center"><div>Loading...</div></div>;
+        return <div className="flex min-h-screen w-full items-center justify-center"><div>Loading...</div></div>;
     }
 
     return (
         <AppLayout user={currentUser}>
-            <Suspense fallback={<div className="flex min-h-[calc(100vh_-_theme(spacing.24))] bg-background items-center justify-center"><div>Loading announcements...</div></div>}>
+            <Suspense fallback={<div className="flex h-[calc(100vh-theme(spacing.24))] w-full items-center justify-center"><div className="text-muted-foreground">Loading announcements...</div></div>}>
                 <AnnouncementsList currentUser={currentUser} />
             </Suspense>
         </AppLayout>

@@ -30,7 +30,7 @@ function Messaging({ conversationId, currentUser }: { conversationId: string | n
     }, [currentUser.id, conversationId]);
     
     if (loading) {
-        return <div className="flex items-center justify-center h-full">Loading Messaging...</div>;
+        return <div className="flex items-center justify-center h-[calc(100vh-theme(spacing.14))]"><div className="text-muted-foreground">Loading Messaging...</div></div>;
     }
     
     return (
@@ -78,12 +78,12 @@ export default function MessagesPage() {
     const conversationIdFromUrl = searchParams.get('conversation_id');
     
     if (loading || !currentUser) {
-        return <div className="flex min-h-screen items-center justify-center">Loading...</div>;
+        return <div className="flex min-h-screen w-full items-center justify-center"><div>Loading...</div></div>;
     }
 
     return (
         <AppLayout user={currentUser}>
-            <Suspense fallback={<div className="flex items-center justify-center h-full">Loading Messaging...</div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-[calc(100vh-theme(spacing.14))]"><div className="text-muted-foreground">Loading Messaging...</div></div>}>
               <Messaging conversationId={conversationIdFromUrl} currentUser={currentUser} />
             </Suspense>
         </AppLayout>

@@ -10,6 +10,7 @@ import type { AppUser } from '@/app/messages/types';
 import { getClassSchedules, type ClassSchedule } from './actions';
 import { NewScheduleDialog } from '@/components/new-schedule-dialog';
 import { ScheduleList } from '@/components/schedule-list';
+import { generateAvatarUrl } from '@/lib/utils';
 
 function SchedulePageContent({ currentUser, initialSchedules }: { currentUser: AppUser, initialSchedules: ClassSchedule[] }) {
     const onlineSchedules = initialSchedules.filter(s => s.class_type === 'online');
@@ -84,7 +85,7 @@ export default function SchedulePageWrapper() {
                 name: name,
                 email: user.email!,
                 role: role,
-                avatarUrl: `https://placehold.co/100x100.png`,
+                avatarUrl: generateAvatarUrl(name!),
                 learning_preference: learningPreference,
             };
             
@@ -103,7 +104,7 @@ export default function SchedulePageWrapper() {
 
     if (loading || !currentUser) {
         return (
-            <div className="flex min-h-screen bg-background items-center justify-center">
+            <div className="flex min-h-screen w-full items-center justify-center">
               <div>Loading...</div>
             </div>
         )

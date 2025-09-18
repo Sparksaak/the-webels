@@ -254,7 +254,7 @@ export default function AssignmentsPageWrapper() {
 
     if (loading || !currentUser) {
         return (
-            <div className="flex min-h-screen bg-background items-center justify-center">
+            <div className="flex min-h-screen w-full items-center justify-center">
               <div>Loading...</div>
             </div>
         )
