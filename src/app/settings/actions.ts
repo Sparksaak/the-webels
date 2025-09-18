@@ -102,7 +102,7 @@ export async function updatePassword(formData: FormData) {
     return { success: true };
 }
 
-export async function deleteAccount() {
+export async function deleteAccount(formData: FormData) {
     const cookieStore = cookies();
     const supabase = createClient(cookieStore);
     const { data: { user } } = await supabase.auth.getUser();
@@ -111,16 +111,36 @@ export async function deleteAccount() {
         return { error: 'You must be logged in to delete your account.' };
     }
 
-    const { error } = await supabaseAdmin.auth.admin.deleteUser(user.id);
-
-    if (error) {
-        console.error('Error deleting account:', error);
-        return { error: 'Could not delete your account. ' + error.message };
+    const password = formData.get('password') as string;
+    if (!password) {
+        return { error: 'Password is required to delete your account.' };
     }
 
-    // This will clear the session cookies
+    // Verify password by trying to sign in again. This is a crucial security step.
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user.email!,
+        password: password,
+    });
+
+    if (signInError) {
+        if (signInError.message.includes("Invalid login credentials")) {
+            return { error: 'Invalid password. Account deletion cancelled.' };
+        }
+        console.error('Error verifying password for deletion:', signInError);
+        return { error: 'Could not verify your identity. Please try again.' };
+    }
+    
+    // If password is correct, proceed with deletion using the admin client.
+    const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(user.id);
+
+    if (deleteError) {
+        console.error('Error deleting account:', deleteError);
+        return { error: 'Could not delete your account. ' + deleteError.message };
+    }
+
+    // This will clear the session cookies on the server
     await supabase.auth.signOut();
 
-    // Redirect to a logged-out page
+    // Redirect to a logged-out page on the client
     redirect('/login?message=account-deleted');
 }
