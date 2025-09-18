@@ -16,11 +16,11 @@ interface MaterialViewerProps {
 export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerProps) {
   const [slides, setSlides] = React.useState<string[]>([]);
   const [currentSlide, setCurrentSlide] = React.useState(0);
-  const [animationState, setAnimationState] = React.useState<'idle' | 'entering' | 'exiting'>('entering');
+  const [animationState, setAnimationState] = React.useState<'idle' | 'entering' | 'exiting'>('idle');
   const slideContainerRef = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
-    if (material.content) {
+    if (open && material.content) {
       const parser = new DOMParser();
       const doc = parser.parseFromString(material.content, 'text/html');
       const slideElements = Array.from(doc.body.querySelectorAll('header, section'));
@@ -31,15 +31,17 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
 
       setSlides(htmlSlides);
       setCurrentSlide(0);
-      setAnimationState('entering');
-      // Allow time for the initial fade-in of the component itself
-      setTimeout(() => setAnimationState('idle'), 500);
+      
+      // Add a small delay to ensure the component is rendered before starting the animation
+      setTimeout(() => {
+        setAnimationState('entering');
+        setTimeout(() => setAnimationState('idle'), 750); // duration of enter animation
+      }, 100);
     }
-  }, [material]);
+  }, [material, open]);
 
   React.useEffect(() => {
     if (slideContainerRef.current) {
-        // Add a class to all elements within the slide for animation targeting
         slideContainerRef.current.querySelectorAll('*').forEach(el => {
             el.classList.add('slide-element');
         });
@@ -163,12 +165,12 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
             
             /* Animations */
             @keyframes slideUpIn { 
-              from { opacity: 0; transform: translateY(20px); } 
+              from { opacity: 0; transform: translateY(30px); } 
               to { opacity: 1; transform: translateY(0); } 
             }
             @keyframes slideDownOut { 
               from { opacity: 1; transform: translateY(0); } 
-              to { opacity: 0; transform: translateY(20px); } 
+              to { opacity: 0; transform: translateY(30px); } 
             }
             
             .slide-container {
