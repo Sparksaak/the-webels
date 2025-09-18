@@ -183,3 +183,50 @@ export async function getUsers() {
 
     return [];
 }
+
+
+export async function deleteMessage(messageId: string) {
+    const cookieStore = cookies();
+    const supabase = createClient(cookieStore);
+
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+        return { error: 'You must be logged in to delete a message.' };
+    }
+
+    try {
+        // First verify the user owns the message
+        const { data: message, error: fetchError } = await supabaseAdmin
+            .from('messages')
+            .select('sender_id, conversation_id')
+            .eq('id', messageId)
+            .single();
+
+        if (fetchError || !message) {
+            return { error: 'Message not found.' };
+        }
+
+        if (message.sender_id !== user.id) {
+            return { error: 'You can only delete your own messages.' };
+        }
+
+        // Delete the message
+        const { error: deleteError } = await supabaseAdmin
+            .from('messages')
+            .delete()
+            .eq('id', messageId);
+
+        if (deleteError) {
+            throw deleteError;
+        }
+
+        revalidatePath('/messages');
+
+        return { success: true, deletedMessageId: messageId, conversationId: message.conversation_id };
+
+    } catch (error: any) {
+        console.error('Error deleting message:', error);
+        return { error: 'Could not delete message: ' + error.message };
+    }
+}

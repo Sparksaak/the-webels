@@ -1,25 +1,35 @@
 
-
 'use client';
 
 import { useCallback, useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardHeader } from '@/components/ui/card';
-import { Send, UserPlus, MessageSquarePlus } from 'lucide-react';
+import { Send, UserPlus, MessageSquarePlus, Trash2 } from 'lucide-react';
 import { cn, generateAvatarUrl, getInitials } from '@/lib/utils';
 import { format, formatDistanceToNow, parseISO } from 'date-fns';
 
 import { getConversations, getMessages } from '@/app/messages/data';
-import { sendMessage, getUsers } from '@/app/messages/actions';
+import { sendMessage, deleteMessage } from '@/app/messages/actions';
 import type { AppUser, Conversation, Message } from '@/app/messages/types';
 import { NewConversationDialog } from '@/components/new-conversation-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { ClientOnly } from './client-only';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 interface MessagingContentProps {
     initialCurrentUser: AppUser;
@@ -119,6 +129,11 @@ export function MessagingContent({
                 return [updatedConv, ...newConvs];
               });
           })
+          .on('broadcast', { event: 'message_deleted' }, (payload) => {
+                const { deletedMessageId } = payload;
+                setMessages(prev => prev.filter(m => m.id !== deletedMessageId));
+                fetchAndSetConversations(currentUser.id);
+          })
           .subscribe((status, err) => {
               if (status === 'SUBSCRIBED') {
                 console.log(`Successfully subscribed to broadcast channel!`);
@@ -193,6 +208,31 @@ export function MessagingContent({
         }
         
         setIsSubmitting(false);
+    };
+
+    const handleDeleteMessage = async (messageId: string) => {
+        const result = await deleteMessage(messageId);
+        
+        if (result.error) {
+            toast({
+                title: "Error deleting message",
+                description: result.error,
+                variant: "destructive",
+            });
+        } else if (result.success) {
+            // Optimistically remove the message
+            setMessages(prev => prev.filter(m => m.id !== result.deletedMessageId));
+
+            // Broadcast the deletion to other clients
+            const channel = supabase.channel(`conversation-${result.conversationId}`);
+            channel.send({
+                type: 'broadcast',
+                event: 'message_deleted',
+                payload: { deletedMessageId: result.deletedMessageId },
+            });
+            // Refetch conversations to update last message preview
+            await fetchAndSetConversations(currentUser.id);
+        }
     };
     
     const activeConversation = conversations.find(c => c.id === activeConversationId);
@@ -280,12 +320,35 @@ export function MessagingContent({
                                             </div>
                                         ) : (
                                             messages.map((msg) => (
-                                                <div key={msg.id} className={cn('flex items-end gap-2', msg.sender.id === currentUser.id ? 'justify-end' : 'justify-start')}>
+                                                <div key={msg.id} className={cn('group flex items-end gap-2', msg.sender.id === currentUser.id ? 'justify-end' : 'justify-start')}>
                                                     {msg.sender.id !== currentUser.id && (
                                                         <Avatar className="h-8 w-8" data-ai-hint="person portrait">
                                                             <AvatarImage src={msg.sender.avatarUrl} />
                                                             <AvatarFallback>{getInitials(msg.sender.name)}</AvatarFallback>
                                                         </Avatar>
+                                                    )}
+                                                     {msg.sender.id === currentUser.id && (
+                                                        <AlertDialog>
+                                                            <AlertDialogTrigger asChild>
+                                                                <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive">
+                                                                    <Trash2 className="h-4 w-4" />
+                                                                </Button>
+                                                            </AlertDialogTrigger>
+                                                            <AlertDialogContent>
+                                                                <AlertDialogHeader>
+                                                                    <AlertDialogTitle>Delete Message?</AlertDialogTitle>
+                                                                    <AlertDialogDescription>
+                                                                        This action cannot be undone. This will permanently delete the message.
+                                                                    </AlertDialogDescription>
+                                                                </AlertDialogHeader>
+                                                                <AlertDialogFooter>
+                                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                                    <AlertDialogAction onClick={() => handleDeleteMessage(msg.id)} className={buttonVariants({ variant: 'destructive' })}>
+                                                                        Delete
+                                                                    </AlertDialogAction>
+                                                                </AlertDialogFooter>
+                                                            </AlertDialogContent>
+                                                        </AlertDialog>
                                                     )}
                                                     <div className={cn('max-w-xs md:max-w-md lg:max-w-lg rounded-lg p-3 text-sm', msg.sender.id === currentUser.id ? 'bg-primary text-primary-foreground' : 'bg-card')}>
                                                         <p className="font-bold mb-1">{msg.sender.name}</p>
