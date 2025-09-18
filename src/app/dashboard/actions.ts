@@ -6,10 +6,11 @@ import { createClient } from '@/lib/supabase/server';
 import { cookies } from 'next/headers';
 import type { Assignment } from '@/app/assignments/actions';
 import type { ClassSchedule } from '@/app/schedule/actions';
+import { generateAvatarUrl } from '@/lib/utils';
 
 export async function getDashboardData() {
   const cookieStore = cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = createClient();
 
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -25,13 +26,17 @@ export async function getDashboardData() {
     throw usersError;
   }
   
-  const allUsers = users.map(u => ({
-      id: u.id,
-      full_name: u.user_metadata.full_name || u.email,
-      email: u.email,
-      role: u.user_metadata.role as 'teacher' | 'student',
-      learning_preference: u.user_metadata.learning_preference as 'online' | 'in-person' | undefined
-  }));
+  const allUsers = users.map(u => {
+      const fullName = u.user_metadata.full_name || u.email;
+      return {
+        id: u.id,
+        full_name: fullName,
+        email: u.email,
+        role: u.user_metadata.role as 'teacher' | 'student',
+        learning_preference: u.user_metadata.learning_preference as 'online' | 'in-person' | undefined,
+        avatarUrl: generateAvatarUrl(fullName)
+      };
+  });
 
   if (user.user_metadata.role === 'teacher') {
     const students = allUsers.filter(u => u.role === 'student');

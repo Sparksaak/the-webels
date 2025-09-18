@@ -17,9 +17,7 @@ import Link from 'next/link';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { ScrollArea } from './ui/scroll-area';
-import { useEffect, useState } from 'react';
 import type { AppUser } from '@/app/messages/types';
-import { getDashboardData } from '@/app/dashboard/actions';
 import type { Assignment } from '@/app/assignments/actions';
 import { Button } from './ui/button';
 import { generateAvatarUrl, getInitials } from '@/lib/utils';
@@ -28,7 +26,7 @@ interface Student {
     id: string;
     full_name: string;
     email: string;
-    learning_preference: 'online' | 'in-person';
+    learning_preference?: 'online' | 'in-person';
     avatarUrl: string;
 }
 
@@ -40,44 +38,15 @@ interface TeacherStats {
 
 interface TeacherDashboardProps {
     user: AppUser;
+    initialData: any;
 }
 
-export function TeacherDashboard({ user }: TeacherDashboardProps) {
-  const [students, setStudents] = useState<Student[]>([]);
-  const [stats, setStats] = useState<TeacherStats | null>(null);
-  const [assignmentsToGrade, setAssignmentsToGrade] = useState<Assignment[]>([]);
-  const [loading, setLoading] = useState(true);
+export function TeacherDashboard({ user, initialData }: TeacherDashboardProps) {
+  const { students, stats, assignmentsToGrade } = initialData || {};
+  const loading = !initialData;
 
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        const data = await getDashboardData();
-        if (data.students) {
-          const studentsWithAvatars = (data.students as Omit<Student, 'avatarUrl'>[]).map(s => ({
-            ...s,
-            avatarUrl: generateAvatarUrl(s.full_name)
-          }));
-          setStudents(studentsWithAvatars);
-        }
-        if (data.stats) {
-            setStats(data.stats as TeacherStats);
-        }
-        if (data.assignmentsToGrade) {
-            setAssignmentsToGrade(data.assignmentsToGrade as Assignment[]);
-        }
-      } catch (error) {
-         console.error('Error fetching dashboard data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchDashboardData();
-  }, []);
-
-
-  const onlineStudents = students.filter(s => s.learning_preference === 'online');
-  const inPersonStudents = students.filter(s => s.learning_preference === 'in-person');
+  const onlineStudents = students?.filter((s: Student) => s.learning_preference === 'online') || [];
+  const inPersonStudents = students?.filter((s: Student) => s.learning_preference === 'in-person') || [];
 
   return (
     <div className="space-y-8">
@@ -148,7 +117,7 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <AssignmentsToGradeList assignments={assignmentsToGrade} loading={loading} />
+                    <AssignmentsToGradeList assignments={assignmentsToGrade || []} loading={loading} />
                 </CardContent>
             </Card>
         </div>

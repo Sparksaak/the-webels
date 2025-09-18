@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useRef } from 'react';
@@ -24,10 +25,8 @@ export function NewAnnouncementDialog() {
     const formRef = useRef<HTMLFormElement>(null);
     const { toast } = useToast();
 
-    const handleFormSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
+    const handleFormSubmit = async (formData: FormData) => {
         setIsSubmitting(true);
-        const formData = new FormData(event.currentTarget);
         
         const result = await createAnnouncement(formData);
 
@@ -63,7 +62,7 @@ export function NewAnnouncementDialog() {
             Compose a new announcement for your students. It will be visible to everyone.
           </DialogDescription>
         </DialogHeader>
-        <form ref={formRef} onSubmit={handleFormSubmit}>
+        <form ref={formRef} action={handleFormSubmit}>
             <div className="grid gap-4 py-4">
                 <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="title" className="text-right">

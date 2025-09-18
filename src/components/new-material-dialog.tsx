@@ -30,26 +30,24 @@ const defaultContent = `
   <h1>Your Slide Title</h1>
   <p>A brief description of the topic.</p>
 </header>
-<main>
-  <section>
-    <h2>Key Point 1</h2>
-    <p>Explanation about the first key point. You can use <strong>strong</strong> or <em>emphasized</em> text.</p>
-    <p>This is another paragraph to demonstrate how multiple paragraphs can be used in a section.</p>
-    <ul>
-      <li>Bullet point 1.1</li>
-      <li>Bullet point 1.2</li>
-    </ul>
-  </section>
-  <section>
-    <h2>Key Point 2</h2>
-    <p>Explanation about the second key point. Here's a code snippet example:</p>
-    <pre><code class="language-javascript">
+<section>
+  <h2>Key Point 1</h2>
+  <p>Explanation about the first key point. You can use <strong>strong</strong> or <em>emphasized</em> text.</p>
+  <ul>
+    <li>Bullet point 1.1</li>
+    <li>Bullet point 1.2</li>
+  </ul>
+</section>
+<section>
+  <h2>Key Point 2</h2>
+  <p>Explanation about the second key point. Here's a code snippet example:</p>
+  <pre><code class="language-javascript">
 function helloWorld() {
   console.log("Hello, world!");
 }
-    </code></pre>
-  </section>
-</main>
+  </code></pre>
+  <p>This paragraph appears after the code snippet.</p>
+</section>
 <footer>
   <p>Summary or contact information.</p>
 </footer>
@@ -62,10 +60,8 @@ export function NewMaterialDialog({ material, children }: NewMaterialDialogProps
     const { toast } = useToast();
     const isEditMode = !!material;
 
-    const handleFormSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
+    const handleFormSubmit = async (formData: FormData) => {
         setIsSubmitting(true);
-        const formData = new FormData(event.currentTarget);
         
         if (isEditMode) {
             formData.append('id', material.id);
@@ -106,7 +102,7 @@ export function NewMaterialDialog({ material, children }: NewMaterialDialogProps
             {isEditMode ? 'Update the details for this material.' : 'Create a new set of slides or class material. You can use HTML for styling.'}
           </DialogDescription>
         </DialogHeader>
-        <form ref={formRef} onSubmit={handleFormSubmit}>
+        <form ref={formRef} action={handleFormSubmit}>
             <div className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto pr-6">
                 <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="title" className="text-right">

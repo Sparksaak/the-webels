@@ -2,12 +2,9 @@
 'use client';
 
 import { Suspense, useState, useEffect } from 'react';
-import { createClient } from '@/lib/supabase/client';
 import { AppLayout } from '@/components/app-layout';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { generateAvatarUrl } from '@/lib/utils';
 import type { AppUser } from '@/app/messages/types';
-import { getClassMaterials, type ClassMaterial } from './actions';
+import { type ClassMaterial } from './actions';
 import { NewMaterialDialog } from '@/components/new-material-dialog';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -96,63 +93,50 @@ function MaterialsPageContent({ currentUser, initialMaterials }: { currentUser: 
     );
 }
 
-
 export default function MaterialsPageWrapper() {
-    const router = useRouter();
-    const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
-    const [materials, setMaterials] = useState<ClassMaterial[]>([]);
-    const [loading, setLoading] = useState(true);
-    const supabase = createClient();
-
-    useEffect(() => {
-        const fetchData = async () => {
-            const { data: { user } } = await supabase.auth.getUser();
-
-            if (!user) {
-                router.push('/login');
-                return;
-            }
-
-            const role = user.user_metadata?.role || 'student';
-            const name = user.user_metadata?.full_name || user.email;
-
-            const appUser: AppUser = {
-                id: user.id,
-                name: name,
-                email: user.email!,
-                role: role,
-                avatarUrl: generateAvatarUrl(name),
-            };
-            
-            setCurrentUser(appUser);
-            
-            const fetchedMaterials = await getClassMaterials();
-            setMaterials(fetchedMaterials);
-            setLoading(false);
-        };
-        
-        fetchData();
-
-    }, [supabase, router]);
-
-
-    if (loading || !currentUser) {
-        return (
+    return (
+        <Suspense fallback={
             <div className="flex min-h-screen w-full items-center justify-center">
-              <div>Loading...</div>
+                <div>Loading materials...</div>
             </div>
-        )
+        }>
+            <MaterialsPage />
+        </Suspense>
+    )
+}
+
+async function MaterialsPage() {
+    const { createClient } = await import('@/lib/supabase/server');
+    const { redirect } = await import('next/navigation');
+    const { cookies } = await import('next/headers');
+    const { generateAvatarUrl } = await import('@/lib/utils');
+    const { getClassMaterials } = await import('./actions');
+    const { AppLayout } = await import('@/components/app-layout');
+
+    const cookieStore = cookies();
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+        redirect('/login');
     }
+
+    const role = user.user_metadata?.role || 'student';
+    const name = user.user_metadata?.full_name || user.email;
+
+    const currentUser: AppUser = {
+        id: user.id,
+        name: name,
+        email: user.email!,
+        role: role,
+        avatarUrl: generateAvatarUrl(name),
+    };
+
+    const materials = await getClassMaterials();
 
     return (
         <AppLayout user={currentUser}>
-            <Suspense fallback={
-                <div className="flex h-[calc(100vh-theme(spacing.24))] w-full items-center justify-center">
-                    <div className="text-muted-foreground">Loading materials...</div>
-                </div>
-            }>
-                <MaterialsPageContent currentUser={currentUser} initialMaterials={materials} />
-            </Suspense>
+            <MaterialsPageContent currentUser={currentUser} initialMaterials={materials} />
         </AppLayout>
-    )
+    );
 }

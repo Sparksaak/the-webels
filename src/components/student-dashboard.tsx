@@ -16,9 +16,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { useEffect, useState } from 'react';
 import type { AppUser } from '@/app/messages/types';
-import { getDashboardData } from '@/app/dashboard/actions';
 import { type Assignment } from '@/app/assignments/actions';
 import { Button } from './ui/button';
 import { format, formatDistanceToNow } from 'date-fns';
@@ -27,6 +25,7 @@ import { getInitials } from '@/lib/utils';
 
 interface StudentDashboardProps {
     user: AppUser;
+    initialData: any;
 }
 
 interface Teacher {
@@ -40,6 +39,7 @@ interface StudentStats {
     upcomingAssignments: number;
     recentAnnouncements: number;
 }
+
 
 function formatTime(timeString: string) {
     if (!timeString) return '';
@@ -61,48 +61,16 @@ const weekDays = [
 ];
 
 
-export function StudentDashboard({ user }: StudentDashboardProps) {
-  const [teacher, setTeacher] = useState<Teacher | null>(null);
-  const [stats, setStats] = useState<StudentStats | null>(null);
-  const [overdueAssignments, setOverdueAssignments] = useState<Assignment[]>([]);
-  const [assignmentsToComplete, setAssignmentsToComplete] = useState<Assignment[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [schedules, setSchedules] = useState<ClassSchedule[]>([]);
+export function StudentDashboard({ user, initialData }: StudentDashboardProps) {
+  const { 
+      teacher, 
+      stats, 
+      overdueAssignments, 
+      assignmentsToComplete,
+      schedules,
+  } = initialData || {};
 
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        const { 
-            teacher: fetchedTeacher, 
-            stats: fetchedStats, 
-            overdueAssignments: fetchedOverdue, 
-            assignmentsToComplete: fetchedUpcoming,
-            schedules: fetchedSchedules,
-        } = await getDashboardData();
-        if (fetchedTeacher) {
-            setTeacher(fetchedTeacher as Teacher);
-        }
-        if (fetchedStats) {
-            setStats(fetchedStats as StudentStats);
-        }
-        if (fetchedOverdue) {
-            setOverdueAssignments(fetchedOverdue as Assignment[]);
-        }
-        if (fetchedUpcoming) {
-            setAssignmentsToComplete(fetchedUpcoming as Assignment[]);
-        }
-        if (fetchedSchedules) {
-            setSchedules(fetchedSchedules as ClassSchedule[]);
-        }
-      } catch (error) {
-        console.error('Error fetching dashboard data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchDashboardData();
-  }, []);
+  const loading = !initialData;
   
   return (
     <div className="space-y-8">
@@ -144,7 +112,7 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
                     <CardDescription>These assignments are past their due date. Submit them as soon as possible.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <AssignmentList assignments={overdueAssignments} loading={loading} emptyMessage="No overdue assignments. Great job!" />
+                    <AssignmentList assignments={overdueAssignments || []} loading={loading} emptyMessage="No overdue assignments. Great job!" />
                 </CardContent>
             </Card>
             <Card>
@@ -153,7 +121,7 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
                     <CardDescription>Here are your upcoming assignments.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                     <AssignmentList assignments={assignmentsToComplete} loading={loading} emptyMessage="No assignments to complete." />
+                     <AssignmentList assignments={assignmentsToComplete || []} loading={loading} emptyMessage="No assignments to complete." />
                 </CardContent>
             </Card>
         </div>
@@ -195,9 +163,9 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
             <CardContent>
               {loading ? (
                  <div className="text-sm text-muted-foreground pt-4">Loading schedule...</div>
-              ) : schedules.length > 0 ? (
+              ) : schedules && schedules.length > 0 ? (
                  <div className="space-y-3 pt-4">
-                    {schedules.map(schedule => (
+                    {schedules.map((schedule: ClassSchedule) => (
                         <div key={schedule.id} className="flex items-center gap-4 text-muted-foreground">
                             <Clock className="h-6 w-6 flex-shrink-0" />
                             <div>

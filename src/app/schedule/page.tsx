@@ -1,16 +1,12 @@
 
 'use client';
-
 import { AppLayout } from '@/components/app-layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useEffect, useState } from 'react';
-import { createClient } from '@/lib/supabase/client';
-import { useRouter } from 'next/navigation';
 import type { AppUser } from '@/app/messages/types';
-import { getClassSchedules, type ClassSchedule } from './actions';
+import type { ClassSchedule } from './actions';
 import { NewScheduleDialog } from '@/components/new-schedule-dialog';
 import { ScheduleList } from '@/components/schedule-list';
-import { generateAvatarUrl } from '@/lib/utils';
+import { Suspense } from 'react';
 
 function SchedulePageContent({ currentUser, initialSchedules }: { currentUser: AppUser, initialSchedules: ClassSchedule[] }) {
     const onlineSchedules = initialSchedules.filter(s => s.class_type === 'online');
@@ -55,60 +51,50 @@ function SchedulePageContent({ currentUser, initialSchedules }: { currentUser: A
 
 
 export default function SchedulePageWrapper() {
-    const router = useRouter();
-    const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
-    const [schedules, setSchedules] = useState<ClassSchedule[]>([]);
-    const [loading, setLoading] = useState(true);
-    const supabase = createClient();
-
-    useEffect(() => {
-        const fetchData = async () => {
-            const { data: { user } } = await supabase.auth.getUser();
-
-            if (!user) {
-                router.push('/login');
-                return;
-            }
-            
-            const role = user.user_metadata?.role || 'student';
-
-            if (role === 'student') {
-                router.push('/dashboard');
-                return;
-            }
-
-            const name = user.user_metadata?.full_name || user.email;
-            const learningPreference = user.user_metadata?.learning_preference;
-
-            const appUser: AppUser = {
-                id: user.id,
-                name: name,
-                email: user.email!,
-                role: role,
-                avatarUrl: generateAvatarUrl(name!),
-                learning_preference: learningPreference,
-            };
-            
-            setCurrentUser(appUser);
-            
-            const fetchedSchedules = await getClassSchedules();
-            setSchedules(fetchedSchedules);
-
-            setLoading(false);
-        };
-        
-        fetchData();
-
-    }, [supabase, router]);
-
-
-    if (loading || !currentUser) {
-        return (
+    return (
+        <Suspense fallback={
             <div className="flex min-h-screen w-full items-center justify-center">
               <div>Loading...</div>
             </div>
-        )
+        }>
+            <SchedulePage />
+        </Suspense>
+    );
+}
+
+async function SchedulePage() {
+    const { createClient } = await import('@/lib/supabase/server');
+    const { redirect } = await import('next/navigation');
+    const { cookies } = await import('next/headers');
+    const { generateAvatarUrl } = await import('@/lib/utils');
+    const { getClassSchedules } = await import('./actions');
+
+    const cookieStore = cookies();
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+        redirect('/login');
     }
+
+    const role = user.user_metadata?.role || 'student';
+    if (role === 'student') {
+        redirect('/dashboard');
+    }
+
+    const name = user.user_metadata?.full_name || user.email;
+    const learningPreference = user.user_metadata?.learning_preference;
+
+    const currentUser: AppUser = {
+        id: user.id,
+        name: name,
+        email: user.email!,
+        role: role,
+        avatarUrl: generateAvatarUrl(name!),
+        learning_preference: learningPreference,
+    };
+
+    const schedules = await getClassSchedules();
 
     return <SchedulePageContent currentUser={currentUser} initialSchedules={schedules} />
 }

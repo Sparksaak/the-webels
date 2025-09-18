@@ -31,10 +31,9 @@ export function NewAssignmentDialog() {
     const formRef = useRef<HTMLFormElement>(null);
     const { toast } = useToast();
 
-    const handleFormSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
+    const handleFormSubmit = async (formData: FormData) => {
         setIsSubmitting(true);
-        const formData = new FormData(event.currentTarget);
+
         if (dueDate) {
             const [hours, minutes] = dueTime.split(':').map(Number);
             const combinedDate = setMinutes(setHours(dueDate, hours), minutes);
@@ -77,7 +76,7 @@ export function NewAssignmentDialog() {
             Fill out the details below to create a new assignment for your students.
           </DialogDescription>
         </DialogHeader>
-        <form ref={formRef} onSubmit={handleFormSubmit}>
+        <form ref={formRef} action={handleFormSubmit}>
             <div className="grid gap-4 py-4">
                 <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="title" className="text-right">

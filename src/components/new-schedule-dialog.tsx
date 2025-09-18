@@ -43,10 +43,8 @@ export function NewScheduleDialog({ schedule, children }: NewScheduleDialogProps
     const { toast } = useToast();
     const isEditMode = !!schedule;
 
-    const handleFormSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
+    const handleFormSubmit = async (formData: FormData) => {
         setIsSubmitting(true);
-        const formData = new FormData(event.currentTarget);
         
         const action = isEditMode ? updateClassSchedule : createClassSchedule;
         if (isEditMode) {
@@ -88,7 +86,7 @@ export function NewScheduleDialog({ schedule, children }: NewScheduleDialogProps
             {isEditMode ? 'Update the details for this class session.' : 'Set up a new recurring class session.'}
           </DialogDescription>
         </DialogHeader>
-        <form ref={formRef} onSubmit={handleFormSubmit}>
+        <form ref={formRef} action={handleFormSubmit}>
             <div className="grid gap-4 py-4">
                 <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="title" className="text-right">

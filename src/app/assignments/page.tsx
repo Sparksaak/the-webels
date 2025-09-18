@@ -2,19 +2,17 @@
 
 'use client';
 
-import { Suspense, useState, useMemo, useEffect } from 'react';
-import { createClient } from '@/lib/supabase/client';
+import { Suspense, useState, useMemo } from 'react';
 import { AppLayout } from '@/components/app-layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { FileText, Trash2 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 import { format, formatDistanceToNow, isPast } from 'date-fns';
-import { getAssignments, deleteAssignment, type Assignment } from './actions';
+import { deleteAssignment, type Assignment } from './actions';
 import { NewAssignmentDialog } from '@/components/new-assignment-dialog';
 import { Badge } from '@/components/ui/badge';
 import { ViewAssignmentSheet } from '@/components/view-assignment-sheet';
-import { cn, generateAvatarUrl } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -37,6 +35,14 @@ type AppUser = {
 };
 
 function DeleteAssignmentButton({ assignmentId }: { assignmentId: string }) {
+    const [isDeleting, setIsDeleting] = useState(false);
+    
+    const handleDelete = async () => {
+        setIsDeleting(true);
+        await deleteAssignment(assignmentId);
+        // Revalidation will refresh the page
+    };
+    
     return (
         <AlertDialog>
             <AlertDialogTrigger asChild>
@@ -53,11 +59,11 @@ function DeleteAssignmentButton({ assignmentId }: { assignmentId: string }) {
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <form action={deleteAssignment.bind(null, assignmentId)}>
-                        <AlertDialogAction asChild>
-                           <Button type="submit" variant="destructive">Delete</Button>
-                        </AlertDialogAction>
-                    </form>
+                    <AlertDialogAction asChild>
+                       <Button onClick={handleDelete} variant="destructive" disabled={isDeleting}>
+                            {isDeleting ? 'Deleting...' : 'Delete'}
+                       </Button>
+                    </AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
@@ -194,7 +200,7 @@ function AssignmentsList({ currentUser, initialAssignments }: { currentUser: App
 }
 
 
-function AssignmentsPageContent({ currentUser, initialAssignments }: { currentUser: AppUser, initialAssignments: Assignment[] }) {
+export default function AssignmentsPageContent({ currentUser, initialAssignments }: { currentUser: AppUser, initialAssignments: Assignment[] }) {
     return (
         <AppLayout user={currentUser}>
             <div className="flex items-center justify-between mb-8">
@@ -208,57 +214,9 @@ function AssignmentsPageContent({ currentUser, initialAssignments }: { currentUs
                     <NewAssignmentDialog />
                 )}
             </div>
-            <AssignmentsList currentUser={currentUser} initialAssignments={initialAssignments} />
+            <Suspense fallback={<div className="flex h-full w-full items-center justify-center"><div className="text-muted-foreground">Loading assignments...</div></div>}>
+                <AssignmentsList currentUser={currentUser} initialAssignments={initialAssignments} />
+            </Suspense>
         </AppLayout>
     );
-}
-
-export default function AssignmentsPageWrapper() {
-    const router = useRouter();
-    const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
-    const [assignments, setAssignments] = useState<Assignment[]>([]);
-    const [loading, setLoading] = useState(true);
-    const supabase = createClient();
-
-    useEffect(() => {
-        const fetchData = async () => {
-            const { data: { user } } = await supabase.auth.getUser();
-
-            if (!user) {
-                router.push('/login');
-                return;
-            }
-
-            const role = user.user_metadata?.role || 'student';
-            const name = user.user_metadata?.full_name || user.email;
-
-            const appUser: AppUser = {
-                id: user.id,
-                name: name,
-                email: user.email!,
-                role: role,
-                avatarUrl: generateAvatarUrl(name),
-            };
-            
-            setCurrentUser(appUser);
-            
-            const fetchedAssignments = await getAssignments();
-            setAssignments(fetchedAssignments);
-            setLoading(false);
-        };
-        
-        fetchData();
-
-    }, [supabase, router]);
-
-
-    if (loading || !currentUser) {
-        return (
-            <div className="flex min-h-screen w-full items-center justify-center">
-              <div>Loading...</div>
-            </div>
-        )
-    }
-
-    return <AssignmentsPageContent currentUser={currentUser} initialAssignments={assignments} />
 }

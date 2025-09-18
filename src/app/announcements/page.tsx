@@ -1,18 +1,17 @@
 
-'use client';
-
-import { Suspense, useState, useEffect } from 'react';
-import { createClient } from '@/lib/supabase/client';
+import { Suspense } from 'react';
+import { createClient } from '@/lib/supabase/server';
 import { AppLayout } from '@/components/app-layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Megaphone, Trash2 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { redirect } from 'next/navigation';
 import { getAnnouncements, deleteAnnouncement, type Announcement } from './actions';
 import { NewAnnouncementDialog } from '@/components/new-announcement-dialog';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { generateAvatarUrl } from '@/lib/utils';
+import { cookies } from 'next/headers';
 
 type AppUser = {
     id: string;
@@ -24,6 +23,7 @@ type AppUser = {
 
 function DeleteButton({ announcementId }: { announcementId: string }) {
     const deleteAction = async () => {
+        'use server';
         await deleteAnnouncement(announcementId);
     };
 
@@ -36,23 +36,7 @@ function DeleteButton({ announcementId }: { announcementId: string }) {
     );
 }
 
-function AnnouncementsList({ currentUser }: { currentUser: AppUser }) {
-  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchAnnouncements = async () => {
-        const data = await getAnnouncements();
-        setAnnouncements(data);
-        setLoading(false);
-    }
-    fetchAnnouncements();
-  }, []);
-
-  if (loading) {
-      return <div className="flex h-[calc(100vh-theme(spacing.24))] w-full items-center justify-center"><div className="text-muted-foreground">Loading announcements...</div></div>;
-  }
-  
+function AnnouncementsList({ currentUser, announcements }: { currentUser: AppUser, announcements: Announcement[] }) {
   return (
     <>
       <div className="flex items-center justify-between">
@@ -122,47 +106,32 @@ function AnnouncementsList({ currentUser }: { currentUser: AppUser }) {
   )
 }
 
-export default function AnnouncementsPage() {
-    const router = useRouter();
-    const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
-    const [loading, setLoading] = useState(true);
+export default async function AnnouncementsPage() {
+    const cookieStore = cookies();
     const supabase = createClient();
-
-    useEffect(() => {
-        const fetchUser = async () => {
-            const { data: { user } } = await supabase.auth.getUser();
-
-            if (!user) {
-                router.push('/login');
-                return;
-            }
-
-            const role = user.user_metadata?.role || 'student';
-            const name = user.user_metadata?.full_name || user.email;
-
-            const appUser: AppUser = {
-                id: user.id,
-                name: name,
-                email: user.email!,
-                role: role,
-                avatarUrl: generateAvatarUrl(name),
-            };
-            
-            setCurrentUser(appUser);
-            setLoading(false);
-        };
-        
-        fetchUser();
-    }, [supabase, router]);
-
-    if (loading || !currentUser) {
-        return <div className="flex min-h-screen w-full items-center justify-center"><div>Loading...</div></div>;
+    
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+        redirect('/login');
     }
+
+    const role = user.user_metadata?.role || 'student';
+    const name = user.user_metadata?.full_name || user.email;
+
+    const currentUser: AppUser = {
+        id: user.id,
+        name: name,
+        email: user.email!,
+        role: role,
+        avatarUrl: generateAvatarUrl(name),
+    };
+    
+    const announcements = await getAnnouncements();
 
     return (
         <AppLayout user={currentUser}>
-            <Suspense fallback={<div className="flex h-[calc(100vh-theme(spacing.24))] w-full items-center justify-center"><div className="text-muted-foreground">Loading announcements...</div></div>}>
-                <AnnouncementsList currentUser={currentUser} />
+            <Suspense fallback={<div className="flex h-full w-full items-center justify-center"><div className="text-muted-foreground">Loading announcements...</div></div>}>
+                <AnnouncementsList currentUser={currentUser} announcements={announcements} />
             </Suspense>
         </AppLayout>
     )
