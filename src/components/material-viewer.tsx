@@ -35,7 +35,7 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
       // Add a small delay to ensure the component is rendered before starting the animation
       setTimeout(() => {
         setAnimationState('entering');
-        setTimeout(() => setAnimationState('idle'), 750); // duration of enter animation
+        setTimeout(() => setAnimationState('idle'), 800); // duration of enter animation
       }, 100);
     }
   }, [material, open]);
@@ -61,7 +61,7 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
       setAnimationState('entering');
       setTimeout(() => {
         setAnimationState('idle');
-      }, 750); // Duration of the enter animation
+      }, 800); // Duration of the enter animation
     }, 500); // Duration of the exit animation
   };
 
@@ -184,9 +184,9 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
 
             .slide-container.entering .slide-element {
                 animation-name: slideUpIn;
-                animation-duration: 0.75s;
-                animation-timing-function: ease-out;
-                opacity: 0; /* Set initial state for entering animation */
+                animation-duration: 0.8s;
+                animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+                opacity: 0;
             }
              .slide-container.exiting .slide-element {
                 animation-name: slideDownOut;
@@ -203,7 +203,6 @@ export function MaterialViewer({ material, open, onOpenChange }: MaterialViewerP
             .slide-container.entering li:nth-child(3) { animation-delay: 0.8s; }
             .slide-container.entering li:nth-child(4) { animation-delay: 1.0s; }
             .slide-container.entering li:nth-child(5) { animation-delay: 1.2s; }
-            /* Add more if needed */
             .slide-container.entering li:nth-child(n+6) { animation-delay: 1.4s; }
 
 
