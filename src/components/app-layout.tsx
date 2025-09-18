@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Megaphone, MessageSquare, BookOpen, FileText, CalendarClock } from 'lucide-react';
+import { LayoutDashboard, Megaphone, MessageSquare, BookOpen, FileText, CalendarClock, Settings } from 'lucide-react';
 import {
   Sidebar,
   SidebarHeader,
@@ -40,6 +40,7 @@ function NavItems({ role }: { role: 'teacher' | 'student' }) {
         { href: '/materials', label: 'Materials', icon: BookOpen },
         ...(role === 'teacher' ? [{ href: '/schedule', label: 'Schedule', icon: CalendarClock }] : []),
         { href: '/messages', label: 'Messages', icon: MessageSquare },
+        { href: '/settings', label: 'Settings', icon: Settings },
     ];
 
     const isActive = (href: string) => {
@@ -57,6 +58,7 @@ function NavItems({ role }: { role: 'teacher' | 'student' }) {
                   <SidebarMenuButton 
                     isActive={isActive(item.href)}
                     tooltip={{children: item.label, side: "right"}}
+                    size="lg"
                   >
                     <item.icon />
                     <span>{item.label}</span>
@@ -86,10 +88,10 @@ export function AppLayout({ children, user }: AppLayoutProps) {
               <span className="font-bold text-lg">The Webels</span>
           </div>
         </SidebarHeader>
-        <SidebarContent>
+        <SidebarContent className="p-2">
             <NavItems role={user.role} />
         </SidebarContent>
-        <SidebarFooter>
+        <SidebarFooter className="p-2">
             <div className="flex items-center gap-2 w-full p-2">
                 <UserNav user={user} />
                 <div className="flex flex-col text-sm">
