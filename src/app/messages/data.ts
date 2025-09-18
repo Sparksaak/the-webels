@@ -208,6 +208,7 @@ export async function getMessages(conversationId: string): Promise<Message[]> {
             email: '',
             role: 'student',
             avatarUrl: generateAvatarUrl('Unknown User')
-        }
+        },
+        is_deleted: msg.is_deleted,
     }));
 }

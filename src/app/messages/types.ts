@@ -14,6 +14,7 @@ export type Message = {
     createdAt: string;
     conversationId: string;
     sender: AppUser;
+    is_deleted?: boolean;
 };
 
 export type Conversation = {

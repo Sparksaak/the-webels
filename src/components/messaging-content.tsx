@@ -120,7 +120,7 @@ export function MessagingContent({
                 const updatedConv = {
                     ...convToUpdate,
                     last_message: {
-                        content: newMessage.content,
+                        content: newMessage.is_deleted ? 'Message deleted' : newMessage.content,
                         timestamp: newMessage.createdAt,
                     }
                 };
@@ -129,9 +129,11 @@ export function MessagingContent({
                 return [updatedConv, ...newConvs];
               });
           })
-          .on('broadcast', { event: 'message_deleted' }, (payload) => {
-                const { deletedMessageId } = payload;
-                setMessages(prev => prev.filter(m => m.id !== deletedMessageId));
+          .on('broadcast', { event: 'message_updated' }, (payload) => {
+                const { updatedMessage } = payload;
+                if (updatedMessage.conversationId === activeConversationId) {
+                    setMessages(prev => prev.map(m => m.id === updatedMessage.id ? updatedMessage : m));
+                }
                 fetchAndSetConversations(currentUser.id);
           })
           .subscribe((status, err) => {
@@ -211,24 +213,27 @@ export function MessagingContent({
     };
 
     const handleDeleteMessage = async (messageId: string) => {
+        const originalMessages = [...messages];
+        // Optimistically update the message
+        setMessages(prev => prev.map(m => m.id === messageId ? { ...m, is_deleted: true } : m));
+
         const result = await deleteMessage(messageId);
         
         if (result.error) {
+            // Revert on error
+            setMessages(originalMessages);
             toast({
                 title: "Error deleting message",
                 description: result.error,
                 variant: "destructive",
             });
         } else if (result.success) {
-            // Optimistically remove the message
-            setMessages(prev => prev.filter(m => m.id !== result.deletedMessageId));
-
-            // Broadcast the deletion to other clients
-            const channel = supabase.channel(`conversation-${result.conversationId}`);
+             // Broadcast the update to other clients
+            const channel = supabase.channel(`conversation-${result.updatedMessage.conversationId}`);
             channel.send({
                 type: 'broadcast',
-                event: 'message_deleted',
-                payload: { deletedMessageId: result.deletedMessageId },
+                event: 'message_updated',
+                payload: { updatedMessage: result.updatedMessage },
             });
             // Refetch conversations to update last message preview
             await fetchAndSetConversations(currentUser.id);
@@ -327,7 +332,7 @@ export function MessagingContent({
                                                             <AvatarFallback>{getInitials(msg.sender.name)}</AvatarFallback>
                                                         </Avatar>
                                                     )}
-                                                     {msg.sender.id === currentUser.id && (
+                                                     {msg.sender.id === currentUser.id && !msg.is_deleted && (
                                                         <AlertDialog>
                                                             <AlertDialogTrigger asChild>
                                                                 <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive">
@@ -338,7 +343,7 @@ export function MessagingContent({
                                                                 <AlertDialogHeader>
                                                                     <AlertDialogTitle>Delete Message?</AlertDialogTitle>
                                                                     <AlertDialogDescription>
-                                                                        This action cannot be undone. This will permanently delete the message.
+                                                                        This will mark the message as deleted. This action cannot be undone.
                                                                     </AlertDialogDescription>
                                                                 </AlertDialogHeader>
                                                                 <AlertDialogFooter>
@@ -350,14 +355,16 @@ export function MessagingContent({
                                                             </AlertDialogContent>
                                                         </AlertDialog>
                                                     )}
-                                                    <div className={cn('max-w-xs md:max-w-md lg:max-w-lg rounded-lg p-3 text-sm', msg.sender.id === currentUser.id ? 'bg-primary text-primary-foreground' : 'bg-card')}>
-                                                        <p className="font-bold mb-1">{msg.sender.name}</p>
-                                                        <p>{msg.content}</p>
-                                                        <p className="text-xs opacity-70 mt-1.5 text-right">
-                                                            <ClientOnly>
-                                                                {format(parseISO(msg.createdAt), 'p')}
-                                                            </ClientOnly>
-                                                        </p>
+                                                    <div className={cn('max-w-xs md:max-w-md lg:max-w-lg rounded-lg p-3 text-sm', msg.sender.id === currentUser.id ? 'bg-primary text-primary-foreground' : 'bg-card', msg.is_deleted && 'bg-transparent text-muted-foreground italic border border-dashed')}>
+                                                        {!msg.is_deleted && <p className="font-bold mb-1">{msg.sender.name}</p>}
+                                                        <p>{msg.is_deleted ? 'This message was deleted.' : msg.content}</p>
+                                                        {!msg.is_deleted && (
+                                                            <p className="text-xs opacity-70 mt-1.5 text-right">
+                                                                <ClientOnly>
+                                                                    {format(parseISO(msg.createdAt), 'p')}
+                                                                </ClientOnly>
+                                                            </p>
+                                                        )}
                                                     </div>
                                                 </div>
                                             ))

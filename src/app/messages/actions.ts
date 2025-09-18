@@ -132,6 +132,7 @@ export async function sendMessage(formData: FormData): Promise<{ success: true, 
                 createdAt: newMessage.created_at,
                 conversationId: newMessage.conversation_id,
                 sender: sender,
+                is_deleted: newMessage.is_deleted,
             }
         };
 
@@ -185,7 +186,7 @@ export async function getUsers() {
 }
 
 
-export async function deleteMessage(messageId: string) {
+export async function deleteMessage(messageId: string): Promise<{ success: true, updatedMessage: Message } | { error: string }> {
     const cookieStore = cookies();
     const supabase = createClient(cookieStore);
 
@@ -199,7 +200,7 @@ export async function deleteMessage(messageId: string) {
         // First verify the user owns the message
         const { data: message, error: fetchError } = await supabaseAdmin
             .from('messages')
-            .select('sender_id, conversation_id')
+            .select('sender_id, conversation_id, is_deleted')
             .eq('id', messageId)
             .single();
 
@@ -211,19 +212,50 @@ export async function deleteMessage(messageId: string) {
             return { error: 'You can only delete your own messages.' };
         }
 
-        // Delete the message
-        const { error: deleteError } = await supabaseAdmin
-            .from('messages')
-            .delete()
-            .eq('id', messageId);
+        if (message.is_deleted) {
+            return { error: 'This message has already been deleted.' };
+        }
 
-        if (deleteError) {
-            throw deleteError;
+        // Update the message to mark it as deleted
+        const { data: updatedMessageData, error: updateError } = await supabaseAdmin
+            .from('messages')
+            .update({ 
+                is_deleted: true,
+             })
+            .eq('id', messageId)
+            .select()
+            .single();
+
+        if (updateError) {
+            throw updateError;
         }
 
         revalidatePath('/messages');
 
-        return { success: true, deletedMessageId: messageId, conversationId: message.conversation_id };
+        const { data: senderData, error: userError } = await supabaseAdmin.auth.admin.getUserById(user.id);
+        if (userError) throw userError;
+        
+        const senderName = senderData.user.user_metadata.full_name || senderData.user.email!;
+        
+        const sender = {
+            id: senderData.user.id,
+            name: senderName,
+            email: senderData.user.email!,
+            role: senderData.user.user_metadata.role,
+            avatarUrl: generateAvatarUrl(senderName),
+        };
+
+        return { 
+            success: true, 
+            updatedMessage: {
+                id: updatedMessageData.id,
+                content: updatedMessageData.content,
+                createdAt: updatedMessageData.created_at,
+                conversationId: updatedMessageData.conversation_id,
+                sender: sender,
+                is_deleted: updatedMessageData.is_deleted,
+            }
+        };
 
     } catch (error: any) {
         console.error('Error deleting message:', error);
