@@ -1,5 +1,4 @@
 
-'use client';
 import { AppLayout } from '@/components/app-layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import type { AppUser } from '@/app/messages/types';
@@ -7,6 +6,11 @@ import type { ClassSchedule } from './actions';
 import { NewScheduleDialog } from '@/components/new-schedule-dialog';
 import { ScheduleList } from '@/components/schedule-list';
 import { Suspense } from 'react';
+import { createClient } from '@/lib/supabase/server';
+import { redirect } from 'next/navigation';
+import { cookies } from 'next/headers';
+import { generateAvatarUrl } from '@/lib/utils';
+import { getClassSchedules } from './actions';
 
 function SchedulePageContent({ currentUser, initialSchedules }: { currentUser: AppUser, initialSchedules: ClassSchedule[] }) {
     const onlineSchedules = initialSchedules.filter(s => s.class_type === 'online');
@@ -49,26 +53,7 @@ function SchedulePageContent({ currentUser, initialSchedules }: { currentUser: A
     );
 }
 
-
-export default function SchedulePageWrapper() {
-    return (
-        <Suspense fallback={
-            <div className="flex min-h-screen w-full items-center justify-center">
-              <div>Loading...</div>
-            </div>
-        }>
-            <SchedulePage />
-        </Suspense>
-    );
-}
-
-async function SchedulePage() {
-    const { createClient } = await import('@/lib/supabase/server');
-    const { redirect } = await import('next/navigation');
-    const { cookies } = await import('next/headers');
-    const { generateAvatarUrl } = await import('@/lib/utils');
-    const { getClassSchedules } = await import('./actions');
-
+export default async function SchedulePage() {
     const cookieStore = cookies();
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -87,7 +72,7 @@ async function SchedulePage() {
 
     const currentUser: AppUser = {
         id: user.id,
-        name: name,
+        name: name!,
         email: user.email!,
         role: role,
         avatarUrl: generateAvatarUrl(name!),
@@ -96,5 +81,13 @@ async function SchedulePage() {
 
     const schedules = await getClassSchedules();
 
-    return <SchedulePageContent currentUser={currentUser} initialSchedules={schedules} />
+    return (
+        <Suspense fallback={
+            <div className="flex min-h-screen w-full items-center justify-center">
+              <div>Loading...</div>
+            </div>
+        }>
+            <SchedulePageContent currentUser={currentUser} initialSchedules={schedules} />
+        </Suspense>
+    );
 }

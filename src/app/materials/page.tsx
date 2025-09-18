@@ -93,50 +93,68 @@ function MaterialsPageContent({ currentUser, initialMaterials }: { currentUser: 
     );
 }
 
-export default function MaterialsPageWrapper() {
-    return (
-        <Suspense fallback={
-            <div className="flex min-h-screen w-full items-center justify-center">
-                <div>Loading materials...</div>
-            </div>
-        }>
-            <MaterialsPage />
-        </Suspense>
-    )
-}
-
-async function MaterialsPage() {
-    const { createClient } = await import('@/lib/supabase/server');
-    const { redirect } = await import('next/navigation');
-    const { cookies } = await import('next/headers');
-    const { generateAvatarUrl } = await import('@/lib/utils');
-    const { getClassMaterials } = await import('./actions');
-    const { AppLayout } = await import('@/components/app-layout');
-
-    const cookieStore = cookies();
-    const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-
-    if (!user) {
-        redirect('/login');
-    }
-
-    const role = user.user_metadata?.role || 'student';
-    const name = user.user_metadata?.full_name || user.email;
-
-    const currentUser: AppUser = {
-        id: user.id,
-        name: name,
-        email: user.email!,
-        role: role,
-        avatarUrl: generateAvatarUrl(name),
-    };
-
-    const materials = await getClassMaterials();
-
+function MaterialsPageWrapper({ currentUser, materials }: { currentUser: AppUser, materials: ClassMaterial[] }) {
     return (
         <AppLayout user={currentUser}>
-            <MaterialsPageContent currentUser={currentUser} initialMaterials={materials} />
+            <Suspense fallback={
+                <div className="flex h-full w-full items-center justify-center">
+                    <div className="text-muted-foreground">Loading materials...</div>
+                </div>
+            }>
+                <MaterialsPageContent currentUser={currentUser} initialMaterials={materials} />
+            </Suspense>
         </AppLayout>
     );
+}
+
+
+export default function MaterialsPage() {
+    const [user, setUser] = useState<AppUser | null>(null);
+    const [materials, setMaterials] = useState<ClassMaterial[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        async function fetchData() {
+            const { createClient } = await import('@/lib/supabase/client');
+            const { generateAvatarUrl } = await import('@/lib/utils');
+            const { getClassMaterials } = await import('./actions');
+            const { redirect } = await import('next/navigation');
+
+            const supabase = createClient();
+            const { data: { user: authUser } } = await supabase.auth.getUser();
+
+            if (!authUser) {
+                redirect('/login');
+                return;
+            }
+
+            const role = authUser.user_metadata?.role || 'student';
+            const name = authUser.user_metadata?.full_name || authUser.email;
+
+            const currentUser: AppUser = {
+                id: authUser.id,
+                name: name!,
+                email: authUser.email!,
+                role: role,
+                avatarUrl: generateAvatarUrl(name),
+            };
+
+            setUser(currentUser);
+            const fetchedMaterials = await getClassMaterials();
+            setMaterials(fetchedMaterials);
+            setLoading(false);
+        }
+
+        fetchData();
+    }, []);
+
+    if (loading || !user) {
+        return (
+            <div className="flex min-h-screen w-full items-center justify-center">
+                <div>Loading...</div>
+            </div>
+        );
+    }
+
+    return <MaterialsPageWrapper currentUser={user} materials={materials} />;
 }
