@@ -57,7 +57,7 @@ function StatusContent() {
 
 export default function AuthStatusPage() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<div className="flex min-h-screen w-full items-center justify-center"><div>Loading...</div></div>}>
       <StatusContent />
     </Suspense>
   )
