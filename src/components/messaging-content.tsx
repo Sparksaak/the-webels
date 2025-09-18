@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useCallback, useEffect, useState, useRef } from 'react';
@@ -129,8 +130,8 @@ export function MessagingContent({
               });
           })
           .on('broadcast', { event: 'message_updated' }, (payload) => {
-                const { updatedMessage } = payload;
-                if (updatedMessage.conversationId === activeConversationId) {
+                const { updatedMessage } = payload.payload;
+                if (updatedMessage && updatedMessage.conversationId === activeConversationId) {
                     setMessages(prev => prev.map(m => m.id === updatedMessage.id ? updatedMessage : m));
                 }
                 fetchAndSetConversations(currentUser.id);
@@ -189,7 +190,7 @@ export function MessagingContent({
              channel.send({
                  type: 'broadcast',
                  event: 'new_message',
-                 payload: result.message,
+                 payload: { payload: result.message },
              });
 
              setConversations(prevConvs => {
@@ -214,7 +215,7 @@ export function MessagingContent({
     const handleDeleteMessage = async (messageId: string) => {
         const originalMessages = [...messages];
         // Optimistically update the message
-        setMessages(prev => prev.map(m => m.id === messageId ? { ...m, is_deleted: true } : m));
+        setMessages(prev => prev.map(m => m.id === messageId ? { ...m, is_deleted: true, content: 'This message was deleted.' } : m));
 
         const result = await deleteMessage(messageId);
         
@@ -232,7 +233,7 @@ export function MessagingContent({
             channel.send({
                 type: 'broadcast',
                 event: 'message_updated',
-                payload: { updatedMessage: result.updatedMessage },
+                payload: { payload: { updatedMessage: result.updatedMessage } },
             });
             // Refetch conversations to update last message preview
             await fetchAndSetConversations(currentUser.id);
