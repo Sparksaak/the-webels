@@ -46,40 +46,42 @@ export default function ForgotPasswordPage() {
     }, [state, toast]);
     
     return (
-        <div className="flex min-h-screen items-center justify-center bg-background p-4">
+        <div className="relative flex min-h-screen flex-col items-center justify-center bg-background">
             <div className="absolute inset-0 -z-10 h-full w-full bg-background bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:14px_24px]"></div>
-            <Card className="w-full max-w-md shadow-xl">
-                <CardHeader className="text-center">
-                    <div className="mx-auto mb-4">
-                        <Logo />
-                    </div>
-                    <CardTitle className="text-2xl">Forgot Password</CardTitle>
-                    <CardDescription>
-                        Enter your email and we'll send you a link to reset your password.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <form action={formAction} className="space-y-4">
-                        <div className="grid gap-2">
-                            <Label htmlFor="email">Email</Label>
-                            <Input
-                                id="email"
-                                name="email"
-                                type="email"
-                                placeholder="m@example.com"
-                                required
-                            />
+            <div className="p-4">
+                <Card className="w-full max-w-md shadow-xl">
+                    <CardHeader className="text-center">
+                        <div className="mx-auto mb-4">
+                            <Logo />
                         </div>
-                        <SubmitButton />
-                    </form>
-                    <div className="mt-4 text-center text-sm">
-                        Remember your password?{' '}
-                        <Link href="/login" className="underline">
-                            Back to Login
-                        </Link>
-                    </div>
-                </CardContent>
-            </Card>
+                        <CardTitle className="text-2xl">Forgot Password</CardTitle>
+                        <CardDescription>
+                            Enter your email and we'll send you a link to reset your password.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <form action={formAction} className="space-y-4">
+                            <div className="grid gap-2">
+                                <Label htmlFor="email">Email</Label>
+                                <Input
+                                    id="email"
+                                    name="email"
+                                    type="email"
+                                    placeholder="m@example.com"
+                                    required
+                                />
+                            </div>
+                            <SubmitButton />
+                        </form>
+                        <div className="mt-4 text-center text-sm">
+                            Remember your password?{' '}
+                            <Link href="/login" className="underline">
+                                Back to Login
+                            </Link>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
         </div>
     );
 }
