@@ -104,7 +104,7 @@ function UpdatePasswordPageContent() {
                         <AlertCircle className="h-4 w-4" />
                         <AlertTitle>Error</AlertTitle>
                         <AlertDescription>
-                            The password reset link is invalid or has expired. Please try again.
+                            {error}
                         </AlertDescription>
                     </Alert>
                     <Button asChild className="w-full mt-4">
@@ -120,8 +120,8 @@ function UpdatePasswordPageContent() {
 
 export default function UpdatePasswordPage() {
     return (
-        <div className="flex min-h-screen w-full items-center justify-center bg-background p-4">
-            <div className="w-full max-w-md">
+        <div className="flex min-h-screen w-full items-center justify-center bg-background">
+            <div className="w-full max-w-md p-4">
                 <Suspense fallback={<div>Loading...</div>}>
                     <UpdatePasswordPageContent />
                 </Suspense>

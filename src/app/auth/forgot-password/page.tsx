@@ -46,8 +46,8 @@ export default function ForgotPasswordPage() {
     }, [state, toast]);
     
     return (
-        <div className="flex min-h-screen w-full items-center justify-center bg-background p-4">
-            <div className="w-full max-w-md">
+        <div className="flex min-h-screen w-full items-center justify-center bg-background">
+            <div className="w-full max-w-md p-4">
                 <Card className="shadow-xl">
                     <CardHeader className="text-center">
                         <div className="mx-auto mb-4">
