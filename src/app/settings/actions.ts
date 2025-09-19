@@ -46,7 +46,6 @@ export async function updateProfile(formData: FormData) {
 
     const fullName = formData.get('fullName') as string;
     const learningPreference = formData.get('learningPreference') as string;
-    const email = formData.get('email') as string;
 
     const userUpdates: { [key: string]: any } = {
         data: {
@@ -58,10 +57,6 @@ export async function updateProfile(formData: FormData) {
     if (user.user_metadata.role === 'student') {
         userUpdates.data.learning_preference = learningPreference;
     }
-    
-    if (email && email !== user.email) {
-        userUpdates.email = email;
-    }
 
     const { error } = await supabase.auth.updateUser(userUpdates);
     
@@ -72,10 +67,6 @@ export async function updateProfile(formData: FormData) {
 
     revalidatePath('/settings');
     revalidatePath('/dashboard'); // Revalidate dashboard to reflect name changes
-    
-    if (email && email !== user.email) {
-        return { success: true, requiresReauthentication: true };
-    }
     
     return { success: true };
 }

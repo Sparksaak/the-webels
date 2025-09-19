@@ -53,19 +53,12 @@ export function ProfileForm({ profile }: { profile: Profile }) {
                 variant: "destructive",
             });
         } else {
-            const message = result.requiresReauthentication 
-                ? "Your profile has been updated. Please check your new email address to confirm the change."
-                : "Your profile has been updated.";
+            const message = "Your profile has been updated.";
             
             toast({
                 title: "Success",
                 description: message,
             });
-            
-            if (result.requiresReauthentication) {
-                // Optionally force a re-login
-                router.push('/login?message=email-change');
-            }
         }
     };
     
@@ -77,8 +70,8 @@ export function ProfileForm({ profile }: { profile: Profile }) {
             </div>
              <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" name="email" type="email" defaultValue={profile.email} required/>
-                 <p className="text-xs text-muted-foreground">Changing your email will require re-verification.</p>
+                <Input id="email" name="email" type="email" defaultValue={profile.email} disabled />
+                 <p className="text-xs text-muted-foreground">Email address cannot be changed.</p>
             </div>
 
             {profile.role === 'student' && (
