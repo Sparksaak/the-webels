@@ -25,7 +25,8 @@ import {
 import { logout } from "@/app/auth/actions"
 import type { AppUser } from "@/app/messages/types";
 import { getInitials } from "@/lib/utils"
-import { Moon, Sun, LogOut } from "lucide-react";
+import { Moon, Sun, LogOut, Settings } from "lucide-react";
+import { LoadingLink } from "./loading-link";
 
 export function UserNav({ user }: { user: AppUser | null }) {
   const { setTheme } = useTheme();
@@ -55,6 +56,12 @@ export function UserNav({ user }: { user: AppUser | null }) {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
+          <DropdownMenuItem asChild>
+              <LoadingLink href="/settings">
+                  <Settings className="mr-2 h-4 w-4" />
+                  <span>Settings</span>
+              </LoadingLink>
+          </DropdownMenuItem>
            <DropdownMenuSub>
             <DropdownMenuSubTrigger>
               <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />

@@ -15,7 +15,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import Link from 'next/link';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { ScrollArea } from './ui/scroll-area';
@@ -24,6 +23,7 @@ import type { Assignment } from '@/app/assignments/actions';
 import { Button } from './ui/button';
 import { getInitials } from '@/lib/utils';
 import { Skeleton } from './ui/skeleton';
+import { LoadingLink } from './loading-link';
 
 interface Student {
     id: string;
@@ -225,16 +225,16 @@ function AssignmentsToGradeList({ assignments, loading }: { assignments: Assignm
                 {assignments.map(assignment => (
                     <li key={assignment.id} className="flex items-center justify-between">
                         <div>
-                            <Link href={`/assignments`} className="font-medium hover:underline">
+                            <LoadingLink href={`/assignments`} className="font-medium hover:underline">
                                 {assignment.title}
-                            </Link>
+                            </LoadingLink>
                             <p className="text-xs text-muted-foreground">
                                 View submissions
                             </p>
                         </div>
-                        <Button asChild variant="secondary" size="sm">
-                            <Link href={`/assignments`}>View</Link>
-                        </Button>
+                        <LoadingLink href={`/assignments`} asButton buttonProps={{variant: "secondary", size: "sm"}}>
+                            View
+                        </LoadingLink>
                     </li>
                 ))}
             </ul>

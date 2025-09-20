@@ -13,6 +13,7 @@ import { login } from '@/app/auth/actions';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
+import { LoadingLink } from '@/components/loading-link';
 
 function AuthButton() {
     const { pending } = useFormStatus();
@@ -99,9 +100,9 @@ export default function LoginPage() {
           </div>
           <div className="mt-4 text-center text-sm">
             Don&apos;t have an account?{' '}
-            <Link href="/signup" className="underline">
+            <LoadingLink href="/signup" className="underline">
               Sign up
-            </Link>
+            </LoadingLink>
           </div>
         </div>
       </div>

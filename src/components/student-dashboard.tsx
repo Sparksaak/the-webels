@@ -7,7 +7,6 @@ import {
   Clock,
   AlertTriangle
 } from 'lucide-react';
-import Link from 'next/link';
 import {
   Card,
   CardContent,
@@ -22,6 +21,7 @@ import { Button } from './ui/button';
 import { format, formatDistanceToNow } from 'date-fns';
 import { type ClassSchedule } from '@/app/schedule/actions';
 import { getInitials } from '@/lib/utils';
+import { LoadingLink } from './loading-link';
 
 interface StudentDashboardProps {
     user: AppUser;
@@ -201,9 +201,9 @@ function AssignmentList({ assignments, loading, emptyMessage }: { assignments: A
             {assignments.map(assignment => (
                 <li key={assignment.id} className="flex items-center justify-between">
                     <div>
-                        <Link href={`/assignments?assignment_id=${assignment.id}`} className="font-medium hover:underline">
+                        <LoadingLink href={`/assignments?assignment_id=${assignment.id}`} className="font-medium hover:underline">
                             {assignment.title}
-                        </Link>
+                        </LoadingLink>
                         <p className="text-xs text-muted-foreground">
                             {assignment.dueDate ? (
                                 <>
@@ -214,9 +214,9 @@ function AssignmentList({ assignments, loading, emptyMessage }: { assignments: A
                             )}
                         </p>
                     </div>
-                     <Button asChild variant="secondary" size="sm">
-                        <Link href={`/assignments`}>View</Link>
-                    </Button>
+                     <LoadingLink href={`/assignments`} asButton buttonProps={{variant: "secondary", size: "sm"}}>
+                        View
+                    </LoadingLink>
                 </li>
             ))}
         </ul>

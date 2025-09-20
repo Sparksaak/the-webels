@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/sidebar';
 import { UserNav } from '@/components/user-nav';
 import { Logo } from '@/components/logo';
+import { LoadingLink } from './loading-link';
 
 type User = {
   id: string;
@@ -53,7 +54,7 @@ function NavItems({ role }: { role: 'teacher' | 'student' }) {
         <SidebarMenu>
             {navItems.map((item) => (
               <SidebarMenuItem key={item.href}>
-                <Link href={`${item.href}`}>
+                <LoadingLink href={`${item.href}`} className='w-full'>
                   <SidebarMenuButton 
                     isActive={isActive(item.href)}
                     tooltip={{children: item.label, side: "right"}}
@@ -62,7 +63,7 @@ function NavItems({ role }: { role: 'teacher' | 'student' }) {
                     <item.icon />
                     <span>{item.label}</span>
                   </SidebarMenuButton>
-                </Link>
+                </LoadingLink>
               </SidebarMenuItem>
             ))}
         </SidebarMenu>

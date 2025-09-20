@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/select';
 import { Logo } from '@/components/logo';
 import { Loader2 } from 'lucide-react';
+import { LoadingLink } from '@/components/loading-link';
 
 function AuthButton() {
     const { pending } = useFormStatus();
@@ -92,9 +93,9 @@ export function SignupForm() {
       </div>
       <div className="mt-4 text-center text-sm">
         Already have an account?{' '}
-        <Link href="/login" className="underline">
+        <LoadingLink href="/login" className="underline">
           Login
-        </Link>
+        </LoadingLink>
       </div>
     </div>);
 }
