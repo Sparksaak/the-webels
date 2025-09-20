@@ -18,7 +18,7 @@ export async function createConversation(formData: FormData) {
     }
 
     const participantIds = formData.getAll('participants') as string[];
-    const name = formData.get('name') as string || null;
+    const name = formData.get('name') as string | null;
     
     if (participantIds.length === 0) {
         return { error: 'You must select at least one participant.' };
@@ -26,6 +26,11 @@ export async function createConversation(formData: FormData) {
     
     const allParticipantIds = [...new Set([user.id, ...participantIds])];
     const type = allParticipantIds.length > 2 ? 'group' : 'direct';
+    
+    if (type === 'group' && !name) {
+        return { error: 'Group name is required for group chats.' };
+    }
+
 
     try {
         if (type === 'direct' && allParticipantIds.length === 2) {

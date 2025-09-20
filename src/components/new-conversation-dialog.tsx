@@ -58,7 +58,15 @@ export function NewConversationDialog({ currentUser, onConversationCreated, chil
         event.preventDefault();
         const formData = new FormData();
         selectedUsers.forEach(id => formData.append('participants', id));
-        if (selectedUsers.length > 1 && groupName) {
+        if (selectedUsers.length > 1) {
+            if (!groupName) {
+                toast({
+                    title: "Group Name Required",
+                    description: "Please provide a name for the group chat.",
+                    variant: "destructive",
+                });
+                return;
+            }
             formData.append('name', groupName);
         }
 
@@ -88,6 +96,9 @@ export function NewConversationDialog({ currentUser, onConversationCreated, chil
         const role = user.role === 'teacher' ? ' (Teacher)' : '';
         return `${user.full_name}${role}`;
     }
+
+    const isGroupChat = selectedUsers.length > 1;
+    const isSubmitDisabled = selectedUsers.length === 0 || (isGroupChat && !groupName);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -176,13 +187,14 @@ export function NewConversationDialog({ currentUser, onConversationCreated, chil
                             value={groupName}
                             onChange={(e) => setGroupName(e.target.value)}
                             className="col-span-3"
-                            placeholder="Optional"
+                            placeholder="Required for group chats"
+                            required
                         />
                     </div>
                 )}
             </div>
             <DialogFooter>
-            <Button type="submit" disabled={selectedUsers.length === 0}>Start Conversation</Button>
+            <Button type="submit" disabled={isSubmitDisabled}>Start Conversation</Button>
             </DialogFooter>
         </form>
       </DialogContent>
