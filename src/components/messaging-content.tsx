@@ -70,7 +70,10 @@ export function MessagingContent({
     };
     
     const handleConversationSelect = useCallback(async (conversationId: string, isNew: boolean = false) => {
-        if (!conversationId || conversationId === activeConversationId) return;
+        if (!conversationId) return;
+
+        // Prevent re-loading if it's already active, unless it's a new one.
+        if (conversationId === activeConversationId && !isNew) return;
 
         if (isNew) {
             setLoadingNewConversation(true);
@@ -127,7 +130,7 @@ export function MessagingContent({
           })
           .subscribe((status, err) => {
               if (status === 'SUBSCRIBED') {
-                console.log(`Successfully subscribed to broadcast channel!`);
+                // console.log(`Successfully subscribed to broadcast channel!`);
               }
               if (status === 'CHANNEL_ERROR' || err) {
                 console.error('Realtime broadcast channel error:', err);
@@ -141,7 +144,7 @@ export function MessagingContent({
     
     useEffect(() => {
         scrollToBottom();
-    }, [messages, activeConversationId]);
+    }, [messages]);
     
 
     const handleSendMessage = async (formData: FormData) => {
@@ -225,7 +228,7 @@ export function MessagingContent({
                         <NewConversationDialog
                             currentUser={currentUser}
                             onConversationCreated={async (conversationId) => {
-                                await fetchAndSetConversations(currentUser.id);
+                                const updatedConversations = await fetchAndSetConversations(currentUser.id);
                                 handleConversationSelect(conversationId, true);
                             }}
                         />
@@ -377,7 +380,7 @@ export function MessagingContent({
                                     <NewConversationDialog
                                         currentUser={currentUser}
                                         onConversationCreated={async (conversationId) => {
-                                            await fetchAndSetConversations(currentUser.id);
+                                            const updatedConversations = await fetchAndSetConversations(currentUser.id);
                                             handleConversationSelect(conversationId, true);
                                         }}
                                     >
