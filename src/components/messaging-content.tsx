@@ -90,6 +90,14 @@ export function MessagingContent({
         }
     }, [router, activeConversationId, toast]);
     
+    const onConversationCreated = useCallback(async (conversationId: string) => {
+        const updatedConversations = await fetchAndSetConversations(currentUser.id);
+        const newConversation = updatedConversations.find(c => c.id === conversationId);
+        if (newConversation) {
+            handleConversationSelect(conversationId);
+        }
+    }, [currentUser.id, fetchAndSetConversations, handleConversationSelect]);
+
     useEffect(() => {
         const channel = supabase.channel(`conversations-channel`);
         
@@ -216,10 +224,7 @@ export function MessagingContent({
                         <h2 className="text-xl font-bold">Chats</h2>
                         <NewConversationDialog
                             currentUser={currentUser}
-                            onConversationCreated={async (conversationId) => {
-                                await fetchAndSetConversations(currentUser.id);
-                                handleConversationSelect(conversationId);
-                            }}
+                            onConversationCreated={onConversationCreated}
                         />
                     </CardHeader>
                     <ScrollArea className="flex-1">
@@ -275,64 +280,58 @@ export function MessagingContent({
                                 </div>
                             </header>
                             <ScrollArea className="flex-1 p-4 md:p-6">
-                                {loadingMessages ? (
-                                    <div className="flex justify-center items-center h-full">
-                                        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                                    </div>
-                                ) : (
-                                    <div className="space-y-6">
-                                        {messages.length === 0 ? (
-                                            <div className="text-center text-muted-foreground py-24">
-                                                <p>This is the beginning of your conversation.</p>
-                                                <p className="text-sm">Send a message to get started!</p>
-                                            </div>
-                                        ) : (
-                                            messages.map((msg) => (
-                                                <div key={msg.id} className={cn('group flex items-end gap-2', msg.sender.id === currentUser.id ? 'justify-end' : 'justify-start')}>
-                                                    {msg.sender.id !== currentUser.id && (
-                                                        <Avatar className="h-8 w-8" data-ai-hint="person portrait">
-                                                            <AvatarImage src={msg.sender.avatarUrl} />
-                                                            <AvatarFallback>{getInitials(msg.sender.name)}</AvatarFallback>
-                                                        </Avatar>
+                                <div className="space-y-6">
+                                    {messages.length === 0 && !loadingMessages ? (
+                                        <div className="text-center text-muted-foreground py-24">
+                                            <p>This is the beginning of your conversation.</p>
+                                            <p className="text-sm">Send a message to get started!</p>
+                                        </div>
+                                    ) : (
+                                        messages.map((msg) => (
+                                            <div key={msg.id} className={cn('group flex items-end gap-2', msg.sender.id === currentUser.id ? 'justify-end' : 'justify-start')}>
+                                                {msg.sender.id !== currentUser.id && (
+                                                    <Avatar className="h-8 w-8" data-ai-hint="person portrait">
+                                                        <AvatarImage src={msg.sender.avatarUrl} />
+                                                        <AvatarFallback>{getInitials(msg.sender.name)}</AvatarFallback>
+                                                    </Avatar>
+                                                )}
+                                                 {msg.sender.id === currentUser.id && !msg.is_deleted && (
+                                                    <AlertDialog>
+                                                        <AlertDialogTrigger asChild>
+                                                            <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive">
+                                                                <Trash2 className="h-4 w-4" />
+                                                            </Button>
+                                                        </AlertDialogTrigger>
+                                                        <AlertDialogContent>
+                                                            <AlertDialogHeader>
+                                                                <AlertDialogTitle>Delete Message?</AlertDialogTitle>
+                                                                <AlertDialogDescription>
+                                                                    This will mark the message as deleted. This action cannot be undone.
+                                                                </AlertDialogDescription>
+                                                            </AlertDialogHeader>
+                                                            <AlertDialogFooter>
+                                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                                <AlertDialogAction onClick={() => handleDeleteMessage(msg.id)} className={buttonVariants({ variant: 'destructive' })}>
+                                                                    Delete
+                                                                </AlertDialogAction>
+                                                            </AlertDialogFooter>
+                                                        </AlertDialogContent>
+                                                    </AlertDialog>
+                                                )}
+                                                <div className={cn('max-w-xs md:max-w-md lg:max-w-lg rounded-lg p-3 text-sm', msg.sender.id === currentUser.id ? 'bg-primary text-primary-foreground' : 'bg-card', msg.is_deleted && 'bg-transparent text-muted-foreground italic border border-dashed')}>
+                                                    {!msg.is_deleted && <p className="font-bold mb-1">{msg.sender.name}</p>}
+                                                    <p>{msg.is_deleted ? 'This message was deleted.' : msg.content}</p>
+                                                    {!msg.is_deleted && (
+                                                        <p className="text-xs opacity-70 mt-1.5 text-right">
+                                                            {format(parseISO(msg.createdAt), 'p')}
+                                                        </p>
                                                     )}
-                                                     {msg.sender.id === currentUser.id && !msg.is_deleted && (
-                                                        <AlertDialog>
-                                                            <AlertDialogTrigger asChild>
-                                                                <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive">
-                                                                    <Trash2 className="h-4 w-4" />
-                                                                </Button>
-                                                            </AlertDialogTrigger>
-                                                            <AlertDialogContent>
-                                                                <AlertDialogHeader>
-                                                                    <AlertDialogTitle>Delete Message?</AlertDialogTitle>
-                                                                    <AlertDialogDescription>
-                                                                        This will mark the message as deleted. This action cannot be undone.
-                                                                    </AlertDialogDescription>
-                                                                </AlertDialogHeader>
-                                                                <AlertDialogFooter>
-                                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                                    <AlertDialogAction onClick={() => handleDeleteMessage(msg.id)} className={buttonVariants({ variant: 'destructive' })}>
-                                                                        Delete
-                                                                    </AlertDialogAction>
-                                                                </AlertDialogFooter>
-                                                            </AlertDialogContent>
-                                                        </AlertDialog>
-                                                    )}
-                                                    <div className={cn('max-w-xs md:max-w-md lg:max-w-lg rounded-lg p-3 text-sm', msg.sender.id === currentUser.id ? 'bg-primary text-primary-foreground' : 'bg-card', msg.is_deleted && 'bg-transparent text-muted-foreground italic border border-dashed')}>
-                                                        {!msg.is_deleted && <p className="font-bold mb-1">{msg.sender.name}</p>}
-                                                        <p>{msg.is_deleted ? 'This message was deleted.' : msg.content}</p>
-                                                        {!msg.is_deleted && (
-                                                            <p className="text-xs opacity-70 mt-1.5 text-right">
-                                                                {format(parseISO(msg.createdAt), 'p')}
-                                                            </p>
-                                                        )}
-                                                    </div>
                                                 </div>
-                                            ))
-                                        )}
-                                        <div ref={messagesEndRef} />
-                                    </div>
-                                )}
+                                            </div>
+                                        ))
+                                    )}
+                                    <div ref={messagesEndRef} />
+                                </div>
                             </ScrollArea>
                             <div className="p-4 border-t bg-background">
                                 <form 
@@ -363,10 +362,7 @@ export function MessagingContent({
                                     <p className="mt-2 text-muted-foreground">You don't have any messages yet.</p>
                                     <NewConversationDialog
                                         currentUser={currentUser}
-                                        onConversationCreated={async (conversationId) => {
-                                            await fetchAndSetConversations(currentUser.id);
-                                            handleConversationSelect(conversationId);
-                                        }}
+                                        onConversationCreated={onConversationCreated}
                                     >
                                         <Button className="mt-4">
                                             <UserPlus className="mr-2 h-4 w-4" /> New Conversation
