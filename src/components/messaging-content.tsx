@@ -70,9 +70,9 @@ export function MessagingContent({
     };
     
     const handleConversationSelect = useCallback(async (conversationId: string, isNew: boolean = false) => {
-        if (!conversationId) return;
-
-        if (conversationId === activeConversationId && !isNew) return;
+        if (!conversationId || (conversationId === activeConversationId && !isNew)) {
+            return;
+        }
 
         if (isNew) {
             setLoadingNewConversation(true);
@@ -92,7 +92,7 @@ export function MessagingContent({
             setMessages([]);
             toast({ title: "Error", description: "Failed to load messages.", variant: "destructive"});
         } finally {
-             if (isNew) {
+            if (isNew) {
                 setLoadingNewConversation(false);
             } else {
                 setLoadingMessages(false);
