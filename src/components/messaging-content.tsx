@@ -72,7 +72,6 @@ export function MessagingContent({
     const handleConversationSelect = useCallback(async (conversationId: string, isNew: boolean = false) => {
         if (!conversationId) return;
 
-        // Prevent re-loading if it's already active, unless it's a new one.
         if (conversationId === activeConversationId && !isNew) return;
 
         if (isNew) {
@@ -93,7 +92,7 @@ export function MessagingContent({
             setMessages([]);
             toast({ title: "Error", description: "Failed to load messages.", variant: "destructive"});
         } finally {
-            if (isNew) {
+             if (isNew) {
                 setLoadingNewConversation(false);
             } else {
                 setLoadingMessages(false);
@@ -228,7 +227,7 @@ export function MessagingContent({
                         <NewConversationDialog
                             currentUser={currentUser}
                             onConversationCreated={async (conversationId) => {
-                                const updatedConversations = await fetchAndSetConversations(currentUser.id);
+                                await fetchAndSetConversations(currentUser.id);
                                 handleConversationSelect(conversationId, true);
                             }}
                         />
@@ -380,7 +379,7 @@ export function MessagingContent({
                                     <NewConversationDialog
                                         currentUser={currentUser}
                                         onConversationCreated={async (conversationId) => {
-                                            const updatedConversations = await fetchAndSetConversations(currentUser.id);
+                                            await fetchAndSetConversations(currentUser.id);
                                             handleConversationSelect(conversationId, true);
                                         }}
                                     >
