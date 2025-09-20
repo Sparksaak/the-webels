@@ -78,6 +78,34 @@ export async function login(prevState: { error?: string; success?: boolean } | n
   return { success: true };
 }
 
+export async function loginWithMagicLink(prevState: { error?: string } | null, formData: FormData) {
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
+  const email = formData.get('email') as string;
+
+  if (!email) {
+    return { error: 'Email is required.' };
+  }
+
+  const origin = headers().get('origin');
+  const redirectUrl = `${origin}/auth/callback`;
+
+  const { error } = await supabase.auth.signInWithOtp({
+    email,
+    options: {
+      emailRedirectTo: redirectUrl,
+    },
+  });
+
+  if (error) {
+    console.error('Magic link error:', error.message);
+    return { error: 'Could not send magic link. Please try again.' };
+  }
+
+  redirect('/auth/confirm-email');
+}
+
+
 export async function logout() {
     const cookieStore = cookies();
     const supabase = createClient(cookieStore);

@@ -9,13 +9,15 @@ import { Label } from '@/components/ui/label';
 import { Logo } from '@/components/logo';
 import { useActionState, useEffect } from 'react';
 import { useFormStatus } from 'react-dom';
-import { login } from '@/app/auth/actions';
+import { login, loginWithMagicLink } from '@/app/auth/actions';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { LoadingLink } from '@/components/loading-link';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
-function AuthButton() {
+function PasswordLoginButton() {
     const { pending } = useFormStatus();
     return (
         <Button type="submit" className="w-full mt-4" disabled={pending}>
@@ -27,8 +29,22 @@ function AuthButton() {
     )
 }
 
+function MagicLinkButton() {
+    const { pending } = useFormStatus();
+    return (
+        <Button type="submit" className="w-full mt-4" disabled={pending}>
+            {pending ? <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Sending...
+            </> : 'Send Magic Link'}
+        </Button>
+    )
+}
+
 export default function LoginPage() {
-  const [state, formAction] = useActionState(login, null);
+  const [passwordState, passwordAction] = useActionState(login, null);
+  const [magicLinkState, magicLinkAction] = useActionState(loginWithMagicLink, null);
+
   const { toast } = useToast();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -53,17 +69,27 @@ export default function LoginPage() {
   }, [searchParams, toast]);
 
   useEffect(() => {
-    if (state?.error) {
+    if (passwordState?.error) {
         toast({
             title: "Error",
-            description: state.error,
+            description: passwordState.error,
             variant: "destructive",
         });
     }
-    if (state?.success) {
+    if (passwordState?.success) {
       router.push('/dashboard');
     }
-  }, [state, toast, router]);
+  }, [passwordState, toast, router]);
+  
+  useEffect(() => {
+    if (magicLinkState?.error) {
+        toast({
+            title: "Error",
+            description: magicLinkState.error,
+            variant: "destructive",
+        });
+    }
+  }, [magicLinkState, toast]);
 
 
   return (
@@ -74,30 +100,71 @@ export default function LoginPage() {
             <Logo className="mx-auto" />
             <h1 className="text-3xl font-bold">Login</h1>
             <p className="text-balance text-muted-foreground">
-              Enter your email below to login to your account
+              Welcome back! Sign in to continue.
             </p>
           </div>
-          <div className="grid gap-4">
-            <form action={formAction}>
-              <div className="grid gap-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  placeholder="m@example.com"
-                  required
-                />
-              </div>
-              <div className="grid gap-2 mt-4">
-                <div className="flex items-center">
-                  <Label htmlFor="password">Password</Label>
-                </div>
-                <Input id="password" name="password" type="password" required />
-              </div>
-              <AuthButton />
-            </form>
-          </div>
+          
+           <Tabs defaultValue="password">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="password">Password</TabsTrigger>
+                <TabsTrigger value="passwordless">Passwordless</TabsTrigger>
+              </TabsList>
+              <TabsContent value="password">
+                 <Card className="border-0 shadow-none">
+                    <CardHeader className="p-2 pt-6">
+                       <CardDescription>
+                          Enter your email and password to log in.
+                       </CardDescription>
+                    </CardHeader>
+                    <CardContent className="p-2">
+                       <form action={passwordAction}>
+                          <div className="grid gap-2">
+                            <Label htmlFor="email">Email</Label>
+                            <Input
+                              id="email"
+                              name="email"
+                              type="email"
+                              placeholder="m@example.com"
+                              required
+                            />
+                          </div>
+                          <div className="grid gap-2 mt-4">
+                            <div className="flex items-center">
+                              <Label htmlFor="password">Password</Label>
+                            </div>
+                            <Input id="password" name="password" type="password" required />
+                          </div>
+                          <PasswordLoginButton />
+                        </form>
+                    </CardContent>
+                 </Card>
+              </TabsContent>
+               <TabsContent value="passwordless">
+                  <Card className="border-0 shadow-none">
+                    <CardHeader className="p-2 pt-6">
+                       <CardDescription>
+                          Enter your email to receive a magic link to sign in.
+                       </CardDescription>
+                    </CardHeader>
+                    <CardContent className="p-2">
+                       <form action={magicLinkAction}>
+                          <div className="grid gap-2">
+                            <Label htmlFor="magic-link-email">Email</Label>
+                            <Input
+                              id="magic-link-email"
+                              name="email"
+                              type="email"
+                              placeholder="m@example.com"
+                              required
+                            />
+                          </div>
+                          <MagicLinkButton />
+                        </form>
+                    </CardContent>
+                 </Card>
+              </TabsContent>
+            </Tabs>
+          
           <div className="mt-4 text-center text-sm">
             Don&apos;t have an account?{' '}
             <LoadingLink href="/signup" className="underline">
