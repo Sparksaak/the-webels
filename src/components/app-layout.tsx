@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Megaphone, MessageSquare, BookOpen, FileText, CalendarClock, Settings } from 'lucide-react';
+import { LayoutDashboard, Megaphone, MessageSquare, BookOpen, FileText, CalendarClock } from 'lucide-react';
 import {
   Sidebar,
   SidebarHeader,
@@ -40,7 +40,6 @@ function NavItems({ role }: { role: 'teacher' | 'student' }) {
         { href: '/materials', label: 'Materials', icon: BookOpen },
         ...(role === 'teacher' ? [{ href: '/schedule', label: 'Schedule', icon: CalendarClock }] : []),
         { href: '/messages', label: 'Messages', icon: MessageSquare },
-        { href: '/settings', label: 'Settings', icon: Settings },
     ];
 
     const isActive = (href: string) => {
