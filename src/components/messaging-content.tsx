@@ -54,7 +54,6 @@ export function MessagingContent({
     const [messages, setMessages] = useState<Message[]>(initialMessages);
     const [activeConversationId, setActiveConversationId] = useState<string | null>(initialActiveConversationId);
     const [loadingMessages, setLoadingMessages] = useState(false);
-    const [loadingNewConversation, setLoadingNewConversation] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -69,17 +68,12 @@ export function MessagingContent({
         setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
     };
     
-    const handleConversationSelect = useCallback(async (conversationId: string, isNew: boolean = false) => {
-        if (!conversationId || (conversationId === activeConversationId && !isNew)) {
+    const handleConversationSelect = useCallback(async (conversationId: string) => {
+        if (!conversationId || conversationId === activeConversationId) {
             return;
         }
 
-        if (isNew) {
-            setLoadingNewConversation(true);
-        } else {
-            setLoadingMessages(true);
-        }
-
+        setLoadingMessages(true);
         router.push(`/messages?conversation_id=${conversationId}`, { scroll: false });
         setActiveConversationId(conversationId);
         
@@ -92,11 +86,7 @@ export function MessagingContent({
             setMessages([]);
             toast({ title: "Error", description: "Failed to load messages.", variant: "destructive"});
         } finally {
-            if (isNew) {
-                setLoadingNewConversation(false);
-            } else {
-                setLoadingMessages(false);
-            }
+            setLoadingMessages(false);
         }
     }, [router, activeConversationId, toast]);
     
@@ -228,7 +218,7 @@ export function MessagingContent({
                             currentUser={currentUser}
                             onConversationCreated={async (conversationId) => {
                                 await fetchAndSetConversations(currentUser.id);
-                                handleConversationSelect(conversationId, true);
+                                handleConversationSelect(conversationId);
                             }}
                         />
                     </CardHeader>
@@ -267,12 +257,7 @@ export function MessagingContent({
                 </Card>
 
                 <div className="w-2/3 flex flex-col bg-muted/30 h-full">
-                    {loadingNewConversation ? (
-                         <div className="flex flex-col items-center justify-center h-full">
-                            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                            <p className="mt-4 text-muted-foreground">Starting conversation...</p>
-                        </div>
-                    ) : activeConversation ? (
+                    {activeConversation ? (
                         <>
                             <header className="flex items-center gap-4 border-b bg-background px-6 h-16">
                                 <Avatar data-ai-hint="person portrait">
@@ -380,7 +365,7 @@ export function MessagingContent({
                                         currentUser={currentUser}
                                         onConversationCreated={async (conversationId) => {
                                             await fetchAndSetConversations(currentUser.id);
-                                            handleConversationSelect(conversationId, true);
+                                            handleConversationSelect(conversationId);
                                         }}
                                     >
                                         <Button className="mt-4">
