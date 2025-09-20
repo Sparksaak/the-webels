@@ -65,15 +65,6 @@ export function MessagingContent({
         return fetchedConversations;
     }, []);
     
-    useEffect(() => {
-        setConversations(initialConversations);
-    }, [initialConversations]);
-    
-    useEffect(() => {
-      setMessages(initialMessages);
-      scrollToBottom();
-    }, [initialMessages]);
-
     const scrollToBottom = () => {
         setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
     };
@@ -83,29 +74,34 @@ export function MessagingContent({
 
         if (isNew) {
             setLoadingNewConversation(true);
+        } else {
+            setLoadingMessages(true);
         }
 
         router.push(`/messages?conversation_id=${conversationId}`, { scroll: false });
         setActiveConversationId(conversationId);
-        setLoadingMessages(true);
+        
         try {
             const fetchedMessages = await getMessages(conversationId);
             setMessages(fetchedMessages);
+            scrollToBottom();
         } catch (error) {
             console.error("Failed to load messages", error)
             setMessages([]);
+            toast({ title: "Error", description: "Failed to load messages.", variant: "destructive"});
         } finally {
-            setLoadingMessages(false);
-             if (isNew) {
+            if (isNew) {
                 setLoadingNewConversation(false);
+            } else {
+                setLoadingMessages(false);
             }
         }
-    }, [router, activeConversationId]);
+    }, [router, activeConversationId, toast]);
     
     useEffect(() => {
-        const channel = supabase.channel(`conversation-${activeConversationId || 'global'}`);
+        const channel = supabase.channel(`conversations-channel`);
         
-        channel
+        const messageSubscription = channel
           .on('broadcast', { event: 'new_message' }, (payload) => {
               const newMessage: Message = payload.payload.payload;
               
@@ -114,28 +110,13 @@ export function MessagingContent({
               if (newMessage.conversationId === activeConversationId) {
                   setMessages(prev => {
                       if (prev.some(m => m.id === newMessage.id)) return prev;
-                      return [...prev, newMessage];
+                      const newMessages = [...prev, newMessage];
+                      scrollToBottom();
+                      return newMessages;
                   });
               }
 
-              setConversations(prevConvs => {
-                const convIndex = prevConvs.findIndex(c => c.id === newMessage.conversationId);
-                if (convIndex === -1) {
-                    fetchAndSetConversations(currentUser.id);
-                    return prevConvs;
-                }
-                const convToUpdate = prevConvs[convIndex];
-                const updatedConv = {
-                    ...convToUpdate,
-                    last_message: {
-                        content: newMessage.is_deleted ? 'This message was deleted.' : newMessage.content,
-                        timestamp: newMessage.createdAt,
-                    }
-                };
-                const newConvs = [...prevConvs];
-                newConvs.splice(convIndex, 1);
-                return [updatedConv, ...newConvs];
-              });
+              fetchAndSetConversations(currentUser.id);
           })
           .on('broadcast', { event: 'message_updated' }, (payload) => {
                 const { updatedMessage } = payload.payload.payload;
@@ -154,24 +135,22 @@ export function MessagingContent({
           });
     
         return () => {
-          supabase.removeChannel(channel);
+          supabase.removeChannel(messageSubscription);
         };
     }, [supabase, activeConversationId, currentUser.id, fetchAndSetConversations]);
     
     useEffect(() => {
         scrollToBottom();
-    }, [messages]);
+    }, [messages, activeConversationId]);
     
 
     const handleSendMessage = async (formData: FormData) => {
         const content = formData.get('content') as string;
         if (!content?.trim() || !activeConversationId) return;
         
-        setIsSubmitting(true);
-        formRef.current?.reset();
-
+        const tempId = `temp-${Date.now()}`;
         const optimisticMessage: Message = {
-            id: `temp-${Date.now()}`,
+            id: tempId,
             content: content,
             createdAt: new Date().toISOString(),
             conversationId: activeConversationId,
@@ -180,42 +159,33 @@ export function MessagingContent({
         };
         
         setMessages(prev => [...prev, optimisticMessage]);
+        scrollToBottom();
+        
+        formRef.current?.reset();
+        setIsSubmitting(true);
         
         formData.set('conversationId', activeConversationId);
         const result = await sendMessage(formData);
         
         if (result?.error) {
              console.error(result.error);
-             setMessages(prev => prev.filter(m => m.id !== optimisticMessage.id));
+             setMessages(prev => prev.filter(m => m.id !== tempId));
              toast({
                 title: "Error sending message",
                 description: result.error,
                 variant: "destructive",
              });
         } else if (result.message) {
-             setMessages(prev => prev.map(m => m.id === optimisticMessage.id ? result.message : m));
+             setMessages(prev => prev.map(m => m.id === tempId ? result.message : m));
              
-             const channel = supabase.channel(`conversation-${activeConversationId}`);
+             const channel = supabase.channel(`conversations-channel`);
              channel.send({
                  type: 'broadcast',
                  event: 'new_message',
                  payload: { payload: result.message },
              });
-
-             setConversations(prevConvs => {
-                const conversationToUpdate = prevConvs.find(c => c.id === result.message.conversationId);
-                if (!conversationToUpdate) return prevConvs;
-
-                const updatedConversation = {
-                    ...conversationToUpdate,
-                    last_message: {
-                        content: result.message.content,
-                        timestamp: result.message.createdAt,
-                    }
-                };
-                const otherConversations = prevConvs.filter(c => c.id !== result.message.conversationId);
-                return [updatedConversation, ...otherConversations];
-             });
+            
+             fetchAndSetConversations(currentUser.id);
         }
         
         setIsSubmitting(false);
@@ -223,13 +193,11 @@ export function MessagingContent({
 
     const handleDeleteMessage = async (messageId: string) => {
         const originalMessages = [...messages];
-        // Optimistically update the message
         setMessages(prev => prev.map(m => m.id === messageId ? { ...m, is_deleted: true, content: 'This message was deleted.' } : m));
 
         const result = await deleteMessage(messageId);
         
         if (result.error) {
-            // Revert on error
             setMessages(originalMessages);
             toast({
                 title: "Error deleting message",
@@ -237,15 +205,13 @@ export function MessagingContent({
                 variant: "destructive",
             });
         } else if (result.success) {
-             // Broadcast the update to other clients
-            const channel = supabase.channel(`conversation-${result.updatedMessage.conversationId}`);
+            const channel = supabase.channel(`conversations-channel`);
             channel.send({
                 type: 'broadcast',
                 event: 'message_updated',
                 payload: { payload: { updatedMessage: result.updatedMessage } },
             });
-            // Refetch conversations to update last message preview
-            await fetchAndSetConversations(currentUser.id);
+            fetchAndSetConversations(currentUser.id);
         }
     };
     
@@ -259,10 +225,8 @@ export function MessagingContent({
                         <NewConversationDialog
                             currentUser={currentUser}
                             onConversationCreated={async (conversationId) => {
-                                if (currentUser) {
-                                    await fetchAndSetConversations(currentUser.id);
-                                    handleConversationSelect(conversationId, true);
-                                }
+                                await fetchAndSetConversations(currentUser.id);
+                                handleConversationSelect(conversationId, true);
                             }}
                         />
                     </CardHeader>
@@ -326,7 +290,7 @@ export function MessagingContent({
                             <ScrollArea className="flex-1 p-4 md:p-6">
                                 {loadingMessages ? (
                                     <div className="flex justify-center items-center h-full">
-                                        <p>Loading messages...</p>
+                                        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                                     </div>
                                 ) : (
                                     <div className="space-y-6">
@@ -413,10 +377,8 @@ export function MessagingContent({
                                     <NewConversationDialog
                                         currentUser={currentUser}
                                         onConversationCreated={async (conversationId) => {
-                                            if (currentUser) {
-                                                await fetchAndSetConversations(currentUser.id);
-                                                handleConversationSelect(conversationId, true);
-                                            }
+                                            await fetchAndSetConversations(currentUser.id);
+                                            handleConversationSelect(conversationId, true);
                                         }}
                                     >
                                         <Button className="mt-4">
