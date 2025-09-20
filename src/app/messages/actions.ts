@@ -29,26 +29,19 @@ export async function createConversation(formData: FormData) {
 
     try {
         if (type === 'direct' && allParticipantIds.length === 2) {
-            const { data: existingConversations, error: existingError } = await supabaseAdmin
-                .from('conversation_participants')
-                .select('conversation_id')
-                .in('user_id', allParticipantIds);
-            
-            if (existingError) throw existingError;
+            const [user1, user2] = allParticipantIds;
+            const { data: existingConversationId, error: rpcError } = await supabaseAdmin.rpc('find_direct_conversation', {
+                user_id1: user1,
+                user_id2: user2,
+            });
 
-            const conversationCounts = existingConversations.reduce((acc, { conversation_id }) => {
-                acc[conversation_id] = (acc[conversation_id] || 0) + 1;
-                return acc;
-            }, {} as Record<string, number>);
+            if (rpcError) {
+                console.error('Error checking for existing conversation:', rpcError);
+                // Don't block, just log the error and proceed to create a new one.
+            }
 
-            const dmConversationId = Object.entries(conversationCounts).find(([, count]) => count === 2)?.[0];
-
-            if (dmConversationId) {
-                // Check if it is indeed a direct conversation
-                const { data: convDetails } = await supabaseAdmin.from('conversations').select('type').eq('id', dmConversationId).single();
-                if (convDetails?.type === 'direct') {
-                    return { success: true, conversationId: dmConversationId };
-                }
+            if (existingConversationId) {
+                return { success: true, conversationId: existingConversationId };
             }
         }
         
