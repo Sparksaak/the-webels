@@ -10,7 +10,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardHeader } from '@/components/ui/card';
-import { Send, UserPlus, MessageSquarePlus, Trash2 } from 'lucide-react';
+import { Send, UserPlus, MessageSquarePlus, Trash2, Loader2 } from 'lucide-react';
 import { cn, generateAvatarUrl, getInitials } from '@/lib/utils';
 import { format, formatDistanceToNow, parseISO } from 'date-fns';
 
@@ -54,6 +54,7 @@ export function MessagingContent({
     const [messages, setMessages] = useState<Message[]>(initialMessages);
     const [activeConversationId, setActiveConversationId] = useState<string | null>(initialActiveConversationId);
     const [loadingMessages, setLoadingMessages] = useState(false);
+    const [loadingNewConversation, setLoadingNewConversation] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -77,8 +78,12 @@ export function MessagingContent({
         setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
     };
     
-    const handleConversationSelect = useCallback(async (conversationId: string) => {
+    const handleConversationSelect = useCallback(async (conversationId: string, isNew: boolean = false) => {
         if (!conversationId || conversationId === activeConversationId) return;
+
+        if (isNew) {
+            setLoadingNewConversation(true);
+        }
 
         router.push(`/messages?conversation_id=${conversationId}`, { scroll: false });
         setActiveConversationId(conversationId);
@@ -91,6 +96,9 @@ export function MessagingContent({
             setMessages([]);
         } finally {
             setLoadingMessages(false);
+             if (isNew) {
+                setLoadingNewConversation(false);
+            }
         }
     }, [router, activeConversationId]);
     
@@ -253,7 +261,7 @@ export function MessagingContent({
                             onConversationCreated={async (conversationId) => {
                                 if (currentUser) {
                                     await fetchAndSetConversations(currentUser.id);
-                                    handleConversationSelect(conversationId);
+                                    handleConversationSelect(conversationId, true);
                                 }
                             }}
                         />
@@ -293,7 +301,12 @@ export function MessagingContent({
                 </Card>
 
                 <div className="w-2/3 flex flex-col bg-muted/30 h-full">
-                    {activeConversation ? (
+                    {loadingNewConversation ? (
+                         <div className="flex flex-col items-center justify-center h-full">
+                            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                            <p className="mt-4 text-muted-foreground">Starting conversation...</p>
+                        </div>
+                    ) : activeConversation ? (
                         <>
                             <header className="flex items-center gap-4 border-b bg-background px-6 h-16">
                                 <Avatar data-ai-hint="person portrait">
@@ -402,7 +415,7 @@ export function MessagingContent({
                                         onConversationCreated={async (conversationId) => {
                                             if (currentUser) {
                                                 await fetchAndSetConversations(currentUser.id);
-                                                handleConversationSelect(conversationId);
+                                                handleConversationSelect(conversationId, true);
                                             }
                                         }}
                                     >
