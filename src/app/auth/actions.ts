@@ -48,7 +48,7 @@ export async function signup(prevState: { error: string } | null, formData: Form
     return { error: signUpError.message };
   }
   
-  redirect(`/auth/confirm-email`);
+  redirect(`/auth/confirm-email?type=signup`);
 }
 
 
@@ -102,7 +102,7 @@ export async function loginWithMagicLink(prevState: { error?: string } | null, f
     return { error: 'Could not send magic link. Please try again.' };
   }
 
-  redirect('/auth/confirm-email');
+  redirect('/auth/confirm-email?type=magic-link');
 }
 
 
