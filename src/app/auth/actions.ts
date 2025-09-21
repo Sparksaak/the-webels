@@ -112,3 +112,65 @@ export async function logout() {
     await supabase.auth.signOut();
     redirect('/login');
 }
+
+export async function requestPasswordReset(origin: string, prevState: { error?: string } | null, formData: FormData) {
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
+  const email = formData.get('email') as string;
+
+  if (!email) {
+    return { error: 'Email is required.' };
+  }
+  
+  const redirectUrl = `${origin}/auth/callback?next=/auth/update-password`;
+
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: redirectUrl,
+  });
+
+  if (error) {
+    console.error('Password reset error:', error.message);
+    // To prevent email enumeration attacks, don't reveal if the email is registered or not.
+    if(error.message.includes('For security purposes, you can only request this once every')) {
+        return { error: "You've requested a password reset recently. Please check your email or wait a few minutes before trying again."}
+    }
+  }
+
+  // Always redirect to a confirmation page, even if the email doesn't exist.
+  redirect('/auth/confirm-email?type=password-reset');
+}
+
+
+export async function updatePasswordWithToken(prevState: { error?: string, success?: boolean } | null, formData: FormData) {
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
+
+  const password = formData.get('password') as string;
+  const confirmPassword = formData.get('confirmPassword') as string;
+
+  if (password !== confirmPassword) {
+    return { error: 'Passwords do not match.' };
+  }
+  if (password.length < 6) {
+    return { error: 'Password must be at least 6 characters long.' };
+  }
+
+  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+  
+  // This should not happen if the user came from a valid magic link, but as a safeguard.
+  if (sessionError || !session) {
+      return { error: 'You are not authenticated. Your password reset link may be invalid or expired.' };
+  }
+  
+  const { error: updateError } = await supabase.auth.updateUser({ password });
+
+  if (updateError) {
+    console.error('Password update error:', updateError.message);
+    return { error: 'Could not update password. Please try again.' };
+  }
+  
+  // Log the user out from all sessions after a password update for security.
+  await supabase.auth.signOut();
+
+  return { success: true };
+}

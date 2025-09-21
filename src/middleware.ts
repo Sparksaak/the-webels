@@ -60,20 +60,26 @@ export async function middleware(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser()
+  
+  const protectedPaths = [
+    '/dashboard',
+    '/announcements',
+    '/assignments',
+    '/materials',
+    '/schedule',
+    '/messages',
+    '/settings',
+  ];
+  
+  const isProtectedPath = protectedPaths.some(p => request.nextUrl.pathname.startsWith(p));
 
   // if user is signed in and the current path is / redirect to dashboard
   if (user && request.nextUrl.pathname === '/') {
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
-  // if user is not signed in and the current path is not / redirect to /
-  if (
-    !user &&
-    !request.nextUrl.pathname.startsWith('/login') &&
-    !request.nextUrl.pathname.startsWith('/signup') &&
-    !request.nextUrl.pathname.startsWith('/auth') &&
-    request.nextUrl.pathname !== '/'
-  ) {
+  // if user is not signed in and tries to access a protected path, redirect to login
+  if (!user && isProtectedPath) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 

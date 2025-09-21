@@ -11,10 +11,28 @@ function ConfirmContent() {
   const searchParams = useSearchParams();
   const type = searchParams.get('type') ?? 'signup';
 
-  const title = type === 'magic-link' ? 'Check your email' : 'Confirm your email';
-  const description = type === 'magic-link' 
-    ? "We've sent a magic link to your email address. Click the link to sign in instantly."
-    : "We've sent a confirmation link to your email address. Please click the link to complete your registration.";
+  const getContent = () => {
+    switch(type) {
+      case 'magic-link':
+        return {
+          title: 'Check your email',
+          description: "We've sent a magic link to your email address. Click the link to sign in instantly."
+        };
+      case 'password-reset':
+        return {
+          title: 'Check your email',
+          description: "We've sent a password reset link to your email address. Please click the link to set a new password."
+        };
+      case 'signup':
+      default:
+         return {
+          title: 'Confirm your email',
+          description: "We've sent a confirmation link to your email address. Please click the link to complete your registration."
+        };
+    }
+  }
+
+  const { title, description } = getContent();
 
   return (
     <div className="w-full max-w-md">
