@@ -15,7 +15,9 @@ export async function GET(request: NextRequest) {
     const { error } = await supabase.auth.exchangeCodeForSession(code)
 
     if (!error) {
-      return NextResponse.redirect(`${origin}/dashboard`);
+      // The original code was returning a redirect to `origin`, which is the base URL.
+      // It should be redirecting to the `next` path, which defaults to '/dashboard'.
+      return NextResponse.redirect(`${origin}${next}`);
     }
   }
 
