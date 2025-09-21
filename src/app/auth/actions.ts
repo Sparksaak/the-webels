@@ -122,7 +122,7 @@ export async function requestPasswordReset(origin: string, prevState: { error?: 
     return { error: 'Email is required.' };
   }
   
-  const redirectUrl = `${origin}/auth/callback?next=/auth/update-password`;
+  const redirectUrl = `${origin}/auth/update-password`;
 
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: redirectUrl,

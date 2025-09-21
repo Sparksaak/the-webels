@@ -11,13 +11,6 @@ export async function GET(request: NextRequest) {
   // It defaults to '/dashboard' for general sign-ins.
   const next = searchParams.get('next') ?? '/dashboard';
 
-  // Handle password recovery flow, which doesn't use a `code`.
-  // The token is in the URL fragment and handled client-side on the update-password page.
-  // If 'next' is for updating the password, just redirect there.
-  if (next.startsWith('/auth/update-password')) {
-      return NextResponse.redirect(`${origin}${next}`);
-  }
-
   if (code) {
     const cookieStore = cookies();
     const supabase = createClient(cookieStore);
