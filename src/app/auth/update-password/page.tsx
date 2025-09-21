@@ -74,20 +74,21 @@ export default function UpdatePasswordPage() {
 
     useEffect(() => {
         if (hasHandledAuth.current) return;
-        hasHandledAuth.current = true;
         
         const supabase = createClient();
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+            // Only run logic once.
+            if (hasHandledAuth.current) return;
+
+            // This event is triggered when the user lands on this page from the reset link.
+            // The session is now available.
             if (event === 'PASSWORD_RECOVERY') {
-                // This event is triggered when the user lands on this page from the reset link.
-                // The session is now available. We don't need to do anything with it here,
-                // as the form submission will use it to authorize the password update.
-            } else if (event === 'SIGNED_IN') {
-                // This handles cases where the user is already signed in.
-                // We should still allow them to proceed if they have a recovery token.
-                // The page is protected by checking the session on submit.
-            } else if (event === 'INITIAL_SESSION') {
+                hasHandledAuth.current = true;
+            } 
+            // This handles cases where the user navigates to the page directly without a token.
+            else if (event === 'INITIAL_SESSION' || event === 'SIGNED_OUT') {
                  if (!session) {
+                    hasHandledAuth.current = true; // Mark as handled to prevent re-triggering
                     toast({
                         title: "Invalid or Expired Link",
                         description: "Your password reset link is either invalid or has expired. Please request a new one.",
