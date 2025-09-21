@@ -73,32 +73,36 @@ export default function UpdatePasswordPage() {
     const hasHandledAuth = useRef(false);
 
     useEffect(() => {
+        // This ref is to prevent the logic from running multiple times on re-renders.
         if (hasHandledAuth.current) return;
-        
-        const supabase = createClient();
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-            // Only run logic once.
-            if (hasHandledAuth.current) return;
 
-            // This event is triggered when the user lands on this page from the reset link.
-            // The session is now available.
+        const supabase = createClient();
+        
+        // This is the key part: when the page loads, Supabase automatically handles the
+        // #access_token from the URL. The `onAuthStateChange` event fires to let us know.
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+            
+            // `PASSWORD_RECOVERY` event means the user has successfully arrived from the link.
+            // A session is now available, and we can allow them to update their password.
             if (event === 'PASSWORD_RECOVERY') {
-                hasHandledAuth.current = true;
-            } 
-            // This handles cases where the user navigates to the page directly without a token.
-            else if (event === 'INITIAL_SESSION' || event === 'SIGNED_OUT') {
-                 if (!session) {
-                    hasHandledAuth.current = true; // Mark as handled to prevent re-triggering
-                    toast({
-                        title: "Invalid or Expired Link",
-                        description: "Your password reset link is either invalid or has expired. Please request a new one.",
-                        variant: "destructive"
-                    });
-                    router.replace('/forgot-password');
-                }
+                hasHandledAuth.current = true; // Mark as handled to prevent further checks.
+            }
+            
+            // `INITIAL_SESSION` is the first event that fires. If it completes and there's
+            // *still* no session, *and* we haven't already handled a PASSWORD_RECOVERY event,
+            // then it's safe to assume the user got here without a valid token.
+            if (event === 'INITIAL_SESSION' && !session && !hasHandledAuth.current) {
+                hasHandledAuth.current = true; // Mark as handled
+                toast({
+                    title: "Invalid or Expired Link",
+                    description: "Your password reset link is either invalid or has expired. Please request a new one.",
+                    variant: "destructive"
+                });
+                router.replace('/forgot-password');
             }
         });
         
+        // Clean up the subscription when the component unmounts.
         return () => {
             subscription?.unsubscribe();
         }
