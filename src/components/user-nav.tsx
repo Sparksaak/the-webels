@@ -3,6 +3,7 @@
 
 import Link from "next/link"
 import { useTheme } from "next-themes";
+import { useTransition } from "react";
 import {
   Avatar,
   AvatarFallback,
@@ -25,8 +26,32 @@ import {
 import { logout } from "@/app/auth/actions"
 import type { AppUser } from "@/app/messages/types";
 import { getInitials } from "@/lib/utils"
-import { Moon, Sun, LogOut, Settings } from "lucide-react";
+import { Moon, Sun, LogOut, Settings, Loader2 } from "lucide-react";
 import { LoadingLink } from "./loading-link";
+
+function LogoutMenuItem() {
+  const [isPending, startTransition] = useTransition();
+
+  return (
+    <DropdownMenuItem
+      disabled={isPending}
+      onSelect={(e) => {
+        e.preventDefault();
+        startTransition(() => {
+          logout();
+        });
+      }}
+      className="cursor-pointer"
+    >
+      {isPending ? (
+        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+      ) : (
+        <LogOut className="mr-2 h-4 w-4" />
+      )}
+      <span>{isPending ? "Logging out..." : "Log out"}</span>
+    </DropdownMenuItem>
+  );
+}
 
 export function UserNav({ user }: { user: AppUser | null }) {
   const { setTheme } = useTheme();
@@ -84,14 +109,7 @@ export function UserNav({ user }: { user: AppUser | null }) {
           </DropdownMenuSub>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <form action={logout}>
-            <DropdownMenuItem asChild>
-                <button className="w-full">
-                    <LogOut className="mr-2 h-4 w-4" />
-                    <span>Log out</span>
-                </button>
-            </DropdownMenuItem>
-        </form>
+        <LogoutMenuItem />
       </DropdownMenuContent>
     </DropdownMenu>
   )
