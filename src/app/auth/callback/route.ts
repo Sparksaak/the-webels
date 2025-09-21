@@ -11,19 +11,6 @@ export async function GET(request: NextRequest) {
   // It defaults to '/dashboard' for general sign-ins.
   const next = searchParams.get('next') ?? '/dashboard';
 
-  if (code) {
-    const cookieStore = cookies();
-    const supabase = createClient(cookieStore);
-    const { error } = await supabase.auth.exchangeCodeForSession(code)
-
-    if (!error) {
-      // For email confirmations and magic links, we can redirect to 'next'.
-      // For password resets, 'next' will be '/auth/update-password',
-      // but Supabase handles the session creation and redirect on the client.
-      return NextResponse.redirect(`${origin}${next}`);
-    }
-  }
-
   // Handle password recovery flow, which doesn't use a `code`.
   // The token is in the URL fragment and handled client-side on the update-password page.
   // If 'next' is for updating the password, just redirect there.
@@ -31,6 +18,16 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(`${origin}${next}`);
   }
 
+  if (code) {
+    const cookieStore = cookies();
+    const supabase = createClient(cookieStore);
+    const { error } = await supabase.auth.exchangeCodeForSession(code)
+
+    if (!error) {
+      // For email confirmations and magic links, we can redirect to 'next'.
+      return NextResponse.redirect(`${origin}${next}`);
+    }
+  }
 
   // Handle errors or invalid requests by redirecting to a generic error page or login.
   console.error("Auth callback error: No code provided or session exchange failed.");
