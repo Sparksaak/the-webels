@@ -12,7 +12,7 @@ export default function SignupPage() {
        <div className="hidden bg-muted lg:block relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/80 via-primary/40 to-accent/70 animate-gradient-xy"></div>
         <Image
-          src="https://placehold.co/1200x900.png"
+          src="https://picsum.photos/seed/signup/1200/900"
           alt="Image"
           width="1920"
           height="1080"
