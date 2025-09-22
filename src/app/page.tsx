@@ -67,7 +67,7 @@ export default function LandingPage() {
       <main className="flex-1">
         <section className="w-full py-20 md:py-32 lg:py-40 xl:py-48 relative overflow-hidden">
           <div className="absolute inset-0 -z-10 h-full w-full bg-background bg-[radial-gradient(theme(colors.primary),transparent_2px)] [background-size:16px_16px] [mask-image:radial-gradient(ellipse_50%_50%_at_50%_50%,#000_70%,transparent_100%)]"></div>
-          <div className="container px-4 md:px-6">
+          <div className="px-4 md:px-6">
             <div className="grid gap-8 lg:grid-cols-2 lg:gap-12">
               <div className="flex flex-col justify-center space-y-6">
                 <div className="space-y-4 text-focus-in">
@@ -103,7 +103,7 @@ export default function LandingPage() {
         </section>
         
         <section ref={el => sectionsRef.current[0] = el} id="story" className="w-full py-16 md:py-24 lg:py-32 bg-secondary/50 fade-in-section">
-            <div className="container px-4 md:px-6">
+            <div className="px-4 md:px-6">
                 <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
                     <div className="space-y-4">
                         <div className="inline-block rounded-lg bg-primary/10 text-primary px-4 py-2 text-sm font-semibold tracking-wider">Our Story</div>
@@ -131,7 +131,7 @@ export default function LandingPage() {
         </section>
 
         <section ref={el => sectionsRef.current[1] = el} id="features" className="w-full py-16 md:py-24 lg:py-32 bg-background fade-in-section">
-          <div className="container px-4 md:px-6">
+          <div className="px-4 md:px-6">
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
               <div className="space-y-3">
                 <div className="inline-block rounded-lg bg-secondary px-4 py-2 text-sm font-semibold tracking-wider text-secondary-foreground">What We Offer</div>
@@ -174,7 +174,7 @@ export default function LandingPage() {
         </section>
 
         <section ref={el => sectionsRef.current[2] = el} id="how-it-works" className="w-full py-16 md:py-24 lg:py-32 bg-secondary/50 fade-in-section">
-            <div className="container px-4 md:px-6">
+            <div className="px-4 md:px-6">
                 <div className="flex flex-col items-center justify-center space-y-4 text-center">
                     <div className="space-y-3">
                         <div className="inline-block rounded-lg bg-primary/10 text-primary px-4 py-2 text-sm font-semibold tracking-wider">How It Works</div>
@@ -220,7 +220,7 @@ export default function LandingPage() {
         </section>
 
         <section ref={el => sectionsRef.current[3] = el} id="testimonials" className="w-full py-16 md:py-24 lg:py-32 fade-in-section">
-            <div className="container px-4 md:px-6">
+            <div className="px-4 md:px-6">
                 <div className="flex flex-col items-center justify-center space-y-4 text-center">
                     <div className="space-y-3">
                         <div className="inline-block rounded-lg bg-secondary px-4 py-2 text-sm font-semibold tracking-wider text-secondary-foreground">Testimonials</div>
@@ -272,7 +272,7 @@ export default function LandingPage() {
         </section>
 
         <section ref={el => sectionsRef.current[4] = el} id="cta" className="w-full py-16 md:py-24 lg:py-32 bg-secondary/50 border-t fade-in-section">
-            <div className="container px-4 md:px-6">
+            <div className="px-4 md:px-6">
                 <div className="flex flex-col items-center space-y-6 text-center bg-gradient-to-r from-primary to-accent p-12 rounded-2xl shadow-2xl">
                     <h2 className="text-4xl font-extrabold tracking-tighter sm:text-5xl text-primary-foreground">Ready to Start Learning?</h2>
                     <p className="max-w-2xl text-primary-foreground/80 md:text-xl">
@@ -288,7 +288,7 @@ export default function LandingPage() {
       </main>
 
       <footer className="bg-background border-t">
-          <div className="container flex flex-col gap-4 sm:flex-row py-6 w-full shrink-0 items-center px-4 md:px-6">
+          <div className="flex flex-col gap-4 sm:flex-row py-6 w-full shrink-0 items-center px-4 md:px-6">
             <p className="text-sm text-muted-foreground">&copy; 2024 The Webels. All rights reserved.</p>
             <nav className="sm:ml-auto flex gap-4 sm:gap-6">
               <LoadingLink href="#" className="text-sm hover:underline underline-offset-4" prefetch={false}>
