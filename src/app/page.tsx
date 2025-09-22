@@ -10,6 +10,7 @@ import { LoadingLink } from '@/components/loading-link';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
+import placeholderImages from '@/app/lib/placeholder-images.json';
 
 export default function LandingPage() {
   const sectionsRef = useRef<Array<HTMLElement | null>>([]);
@@ -72,7 +73,7 @@ export default function LandingPage() {
               <div className="flex flex-col justify-center space-y-6">
                 <div className="space-y-4 text-focus-in">
                   <h1 className="text-5xl font-extrabold tracking-tighter sm:text-6xl xl:text-7xl/none bg-clip-text text-transparent bg-gradient-to-r from-primary to-cyan-400">
-                    Free Student-Led Tutoring in CS and AI
+                    Free Tutoring in CS and AI
                   </h1>
                   <p className="max-w-[600px] text-muted-foreground md:text-xl">
                     The Webels is a student-run, non-profit initiative offering free, high-quality tutoring in AP Computer Science, Web Development, Python, and AI/ML. Join our community to learn and grow together.
@@ -90,12 +91,12 @@ export default function LandingPage() {
               <div className="relative animate-fade-in-up animation-delay-300">
                  <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/50 to-emerald-500/50 rounded-3xl blur-2xl"></div>
                  <Image
-                    src="https://picsum.photos/seed/1/600/400"
-                    width="600"
-                    height="400"
+                    src={placeholderImages.landingHero.src}
+                    width={placeholderImages.landingHero.width}
+                    height={placeholderImages.landingHero.height}
                     alt="Students collaborating on code"
                     className="mx-auto aspect-video overflow-hidden rounded-2xl object-cover sm:w-full lg:order-last shadow-2xl transition-transform hover:scale-105 duration-500"
-                    data-ai-hint="students coding"
+                    data-ai-hint={placeholderImages.landingHero.hint}
                   />
               </div>
             </div>
@@ -118,12 +119,12 @@ export default function LandingPage() {
                     <div className="relative">
                        <div className="absolute -inset-2 bg-gradient-to-tr from-emerald-400 to-orange-400 rounded-3xl blur-xl opacity-50"></div>
                         <Image
-                            src="https://picsum.photos/seed/2/550/310"
-                            width="550"
-                            height="310"
+                            src={placeholderImages.landingStory.src}
+                            width={placeholderImages.landingStory.width}
+                            height={placeholderImages.landingStory.height}
                             alt="A diverse group of students in a classroom"
                             className="relative overflow-hidden rounded-2xl object-cover shadow-xl transition-transform hover:scale-105 duration-500"
-                            data-ai-hint="diverse students"
+                            data-ai-hint={placeholderImages.landingStory.hint}
                         />
                     </div>
                 </div>
@@ -234,8 +235,8 @@ export default function LandingPage() {
                     <Card className="bg-card hover:shadow-xl transition-shadow duration-300">
                         <CardContent className="p-8">
                             <div className="flex items-start gap-6">
-                                <Avatar className="h-16 w-16 border-2 border-primary/50" data-ai-hint="person portrait">
-                                    <AvatarImage src="https://picsum.photos/seed/t1/100/100" />
+                                <Avatar className="h-16 w-16 border-2 border-primary/50" data-ai-hint={placeholderImages.testimonial1.hint}>
+                                    <AvatarImage src={placeholderImages.testimonial1.src} />
                                     <AvatarFallback>JD</AvatarFallback>
                                 </Avatar>
                                 <div className="space-y-4 flex-1">
@@ -252,8 +253,8 @@ export default function LandingPage() {
                     <Card className="bg-card hover:shadow-xl transition-shadow duration-300">
                         <CardContent className="p-8">
                             <div className="flex items-start gap-6">
-                                <Avatar className="h-16 w-16 border-2 border-primary/50" data-ai-hint="person portrait">
-                                    <AvatarImage src="https://picsum.photos/seed/t2/100/100" />
+                                <Avatar className="h-16 w-16 border-2 border-primary/50" data-ai-hint={placeholderImages.testimonial2.hint}>
+                                    <AvatarImage src={placeholderImages.testimonial2.src} />
                                     <AvatarFallback>MO</AvatarFallback>
                                 </Avatar>
                                 <div className="space-y-4 flex-1">
