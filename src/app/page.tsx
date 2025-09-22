@@ -67,7 +67,7 @@ export default function LandingPage() {
 
       <main className="flex-1">
         <section className="w-full py-20 md:py-32 lg:py-40 xl:py-48 relative overflow-hidden">
-          <div className="absolute inset-0 -z-10 h-full w-full bg-background bg-[radial-gradient(theme(colors.primary),transparent_2px)] [background-size:16px_16px] [mask-image:radial-gradient(ellipse_50%_50%_at_50%_50%,#000_70%,transparent_100%)]"></div>
+          <div className="absolute inset-0 -z-10 h-full w-full bg-gradient-to-br from-primary/10 via-cyan-400/10 to-emerald-500/10 animate-gradient-xy"></div>
           <div className="px-4 md:px-6">
             <div className="grid gap-8 lg:grid-cols-2 lg:gap-12">
               <div className="flex flex-col justify-center space-y-6">
@@ -103,7 +103,7 @@ export default function LandingPage() {
           </div>
         </section>
         
-        <section ref={el => sectionsRef.current[0] = el} id="story" className="w-full py-16 md:py-24 lg:py-32 bg-secondary/50 fade-in-section">
+        <section ref={el => sectionsRef.current[0] = el} id="story" className="w-full py-16 md:py-24 lg:py-32 bg-gradient-to-b from-secondary/30 to-background fade-in-section">
             <div className="px-4 md:px-6">
                 <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
                     <div className="space-y-4">
@@ -174,7 +174,7 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section ref={el => sectionsRef.current[2] = el} id="how-it-works" className="w-full py-16 md:py-24 lg:py-32 bg-secondary/50 fade-in-section">
+        <section ref={el => sectionsRef.current[2] = el} id="how-it-works" className="w-full py-16 md:py-24 lg:py-32 bg-gradient-to-b from-secondary/30 to-background fade-in-section">
             <div className="px-4 md:px-6">
                 <div className="flex flex-col items-center justify-center space-y-4 text-center">
                     <div className="space-y-3">
