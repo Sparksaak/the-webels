@@ -70,7 +70,7 @@ export default function LandingPage() {
           <div className="absolute inset-0 -z-10 h-full w-full bg-gradient-to-br from-primary/10 via-cyan-400/10 to-emerald-500/10 animate-gradient-xy"></div>
           <div className="px-4 md:px-6">
             <div className="grid gap-8 lg:grid-cols-2 lg:gap-12">
-              <div className="flex flex-col justify-center space-y-6">
+              <div className="flex flex-col justify-center space-y-6 z-10">
                 <div className="space-y-4 text-focus-in">
                   <h1 className="text-5xl font-extrabold tracking-tighter sm:text-6xl xl:text-7xl/none bg-clip-text text-transparent bg-gradient-to-r from-primary to-cyan-400">
                     Free Tutoring in CS and AI
