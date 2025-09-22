@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/logo';
-import { GraduationCap, BookOpen, Users } from 'lucide-react';
+import { Code, BookOpen, BrainCircuit } from 'lucide-react';
 import Image from 'next/image';
 import { LoadingLink } from '@/components/loading-link';
 
@@ -35,11 +35,10 @@ export default function LandingPage() {
               <div className="flex flex-col justify-center space-y-4">
                 <div className="space-y-2">
                   <h1 className="text-3xl font-bold tracking-tighter sm:text-5xl xl:text-6xl/none bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent">
-                    The Modern Solution for Your Classroom
+                    Free Student-Led Tutoring in CS and AI
                   </h1>
                   <p className="max-w-[600px] text-muted-foreground md:text-xl">
-                    The Webels provides a seamless platform for teachers and students to connect, learn, and grow.
-                    Manage your classes, assignments, and communication all in one place.
+                    The Webels is a student-run, non-profit initiative offering free tutoring in AP Computer Science, Web Development, Python, and AI/ML. Join our community to learn and grow together.
                   </p>
                 </div>
                 <div className="flex flex-col gap-2 min-[400px]:flex-row">
@@ -54,7 +53,7 @@ export default function LandingPage() {
                 height="400"
                 alt="Hero"
                 className="mx-auto aspect-video overflow-hidden rounded-xl object-cover sm:w-full lg:order-last shadow-2xl transition-transform hover:scale-105"
-                data-ai-hint="classroom learning"
+                data-ai-hint="students coding"
               />
             </div>
           </div>
@@ -64,38 +63,38 @@ export default function LandingPage() {
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
               <div className="space-y-2">
                 <div className="inline-block rounded-lg bg-muted px-3 py-1 text-sm">Key Features</div>
-                <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">Everything You Need to Succeed</h2>
+                <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">Learn In-Demand Skills for Free</h2>
                 <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
-                  Our platform is designed to be intuitive and powerful, providing you with the tools to foster a productive learning environment.
+                  Our platform provides everything you need to master topics from AP Computer Science to advanced AI, with both online and in-person options.
                 </p>
               </div>
             </div>
             <div className="mx-auto grid max-w-5xl items-start gap-8 py-12 lg:grid-cols-3 lg:gap-12">
               <div className="flex flex-col items-center text-center p-6 rounded-lg transition-all hover:bg-card hover:shadow-lg">
                 <div className="bg-primary/10 p-4 rounded-full mb-4">
-                  <GraduationCap className="h-8 w-8 text-primary" />
+                  <Code className="h-8 w-8 text-primary" />
                 </div>
-                <h3 className="text-xl font-bold">Student Management</h3>
+                <h3 className="text-xl font-bold">Expert-Led Curriculum</h3>
                 <p className="text-muted-foreground">
-                  Easily manage student records, track progress, and communicate effectively.
+                  Master Web Development, Python, and AP Computer Science with our comprehensive materials.
                 </p>
               </div>
               <div className="flex flex-col items-center text-center p-6 rounded-lg transition-all hover:bg-card hover:shadow-lg">
                 <div className="bg-primary/10 p-4 rounded-full mb-4">
-                  <BookOpen className="h-8 w-8 text-primary" />
+                  <BrainCircuit className="h-8 w-8 text-primary" />
                 </div>
-                <h3 className="text-xl font-bold">Assignments & Announcements</h3>
+                <h3 className="text-xl font-bold">Explore AI & Machine Learning</h3>
                 <p className="text-muted-foreground">
-                  Create, distribute, and grade assignments. Keep everyone informed with announcements.
+                  Dive into the world of Artificial Intelligence with guidance from experienced student tutors.
                 </p>
               </div>
               <div className="flex flex-col items-center text-center p-6 rounded-lg transition-all hover:bg-card hover:shadow-lg">
                  <div className="bg-primary/10 p-4 rounded-full mb-4">
-                    <Users className="h-8 w-8 text-primary" />
+                    <BookOpen className="h-8 w-8 text-primary" />
                 </div>
-                <h3 className="text-xl font-bold">Learning Tracks</h3>
+                <h3 className="text-xl font-bold">Flexible Learning Tracks</h3>
                 <p className="text-muted-foreground">
-                  Separate students into online or in-person classes for tailored education.
+                  Choose between online or in-person tutoring sessions to fit your learning style and schedule.
                 </p>
               </div>
             </div>
