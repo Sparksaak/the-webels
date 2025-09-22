@@ -94,31 +94,31 @@ export default function LoginPage() {
 
   return (
     <div className="w-full lg:grid lg:min-h-screen lg:grid-cols-2 xl:min-h-screen">
-      <div className="flex items-center justify-center py-12">
-        <div className="mx-auto grid w-[350px] gap-6">
-          <div className="grid gap-2 text-center">
-            <Logo className="mx-auto" />
-            <h1 className="text-3xl font-bold">Login</h1>
+      <div className="flex items-center justify-center py-12 bg-background">
+        <div className="mx-auto grid w-[380px] gap-8">
+          <div className="grid gap-4 text-center">
+            <Logo className="mx-auto size-12" />
+            <h1 className="text-4xl font-bold">Login</h1>
             <p className="text-balance text-muted-foreground">
               Welcome back! Sign in to continue.
             </p>
           </div>
           
-           <Tabs defaultValue="password">
+           <Tabs defaultValue="password" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="password">Password</TabsTrigger>
                 <TabsTrigger value="passwordless">Passwordless</TabsTrigger>
               </TabsList>
               <TabsContent value="password">
                  <Card className="border-0 shadow-none">
-                    <CardHeader className="p-2 pt-6">
+                    <CardHeader className="p-2 pt-6 text-center">
                        <CardDescription>
                           Enter your email and password to log in.
                        </CardDescription>
                     </CardHeader>
                     <CardContent className="p-2">
                        <form action={passwordAction}>
-                          <div className="grid gap-2">
+                          <div className="grid gap-3">
                             <Label htmlFor="email">Email</Label>
                             <Input
                               id="email"
@@ -128,12 +128,12 @@ export default function LoginPage() {
                               required
                             />
                           </div>
-                          <div className="grid gap-2 mt-4">
+                          <div className="grid gap-3 mt-4">
                             <div className="flex items-center">
                               <Label htmlFor="password">Password</Label>
                               <Link
                                 href="/forgot-password"
-                                className="ml-auto inline-block text-sm underline"
+                                className="ml-auto inline-block text-sm text-primary hover:underline"
                               >
                                 Forgot your password?
                               </Link>
@@ -147,14 +147,14 @@ export default function LoginPage() {
               </TabsContent>
                <TabsContent value="passwordless">
                   <Card className="border-0 shadow-none">
-                    <CardHeader className="p-2 pt-6">
+                    <CardHeader className="p-2 pt-6 text-center">
                        <CardDescription>
                           Enter your email to receive a magic link to sign in.
                        </CardDescription>
                     </CardHeader>
                     <CardContent className="p-2">
                        <form action={magicLinkAction}>
-                          <div className="grid gap-2">
+                          <div className="grid gap-3">
                             <Label htmlFor="magic-link-email">Email</Label>
                             <Input
                               id="magic-link-email"
@@ -173,26 +173,26 @@ export default function LoginPage() {
           
           <div className="mt-4 text-center text-sm">
             Don&apos;t have an account?{' '}
-            <LoadingLink href="/signup" className="underline">
+            <LoadingLink href="/signup" className="font-semibold text-primary hover:underline">
               Sign up
             </LoadingLink>
           </div>
         </div>
       </div>
-       <div className="hidden bg-muted lg:block relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/80 via-primary/40 to-accent/70 animate-gradient-xy"></div>
+       <div className="hidden lg:block relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary via-cyan-400 to-accent animate-gradient-xy"></div>
         <Image
-          src="https://placehold.co/1200x900.png"
+          src="https://picsum.photos/seed/login/1200/900"
           alt="Image"
           width="1920"
           height="1080"
-          className="h-full w-full object-cover"
+          className="h-full w-full object-cover mix-blend-overlay"
           data-ai-hint="classroom technology"
         />
          <div className="absolute inset-0 flex items-center justify-center p-12">
-          <div className="text-white text-center bg-black bg-opacity-30 p-8 rounded-lg backdrop-blur-sm">
-            <h2 className="mt-4 text-4xl font-bold">Welcome Back</h2>
-            <p className="mt-2 text-xl">Sign in to continue to The Webels.</p>
+          <div className="text-white text-center bg-black/30 p-10 rounded-2xl backdrop-blur-md">
+            <h2 className="mt-4 text-5xl font-bold tracking-tight">Welcome Back</h2>
+            <p className="mt-3 text-xl text-white/80">Sign in to continue to The Webels.</p>
           </div>
         </div>
       </div>

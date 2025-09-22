@@ -66,8 +66,8 @@ export default {
       },
       borderRadius: {
         lg: 'var(--radius)',
-        md: 'calc(var(--radius) - 2px)',
-        sm: 'calc(var(--radius) - 4px)',
+        md: 'calc(var(--radius) - 4px)',
+        sm: 'calc(var(--radius) - 8px)',
       },
       keyframes: {
         'accordion-down': {
@@ -88,7 +88,7 @@ export default {
         },
         'gradient-xy': {
           '0%, 100%': {
-            'background-size': '400% 400%',
+            'background-size': '200% 200%',
             'background-position': 'left center',
           },
           '50%': {
@@ -96,11 +96,22 @@ export default {
             'background-position': 'right center',
           },
         },
+        'fade-in-up': {
+          '0%': {
+            opacity: '0',
+            transform: 'translateY(20px)',
+          },
+          '100%': {
+            opacity: '1',
+            transform: 'translateY(0)',
+          },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
-        'gradient-xy': 'gradient-xy 15s ease infinite',
+        'gradient-xy': 'gradient-xy 10s ease infinite',
+        'fade-in-up': 'fade-in-up 0.8s ease-out forwards',
       },
     },
   },
