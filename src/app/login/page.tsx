@@ -182,7 +182,7 @@ export default function LoginPage() {
        <div className="hidden lg:block relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary via-cyan-400 to-accent animate-gradient-xy"></div>
         <Image
-          src="https://picsum.photos/seed/login/1200/900"
+          src="https://picsum.photos/seed/tech-classroom/1200/900"
           alt="Image"
           width="1920"
           height="1080"
