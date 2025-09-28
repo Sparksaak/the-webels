@@ -72,7 +72,7 @@ export default function LandingPage() {
             <div className="grid gap-8 lg:grid-cols-2 lg:gap-12">
               <div className="flex flex-col justify-center space-y-6 z-10">
                 <div className="space-y-6 text-focus-in">
-                  <h1 className="text-5xl font-extrabold sm:text-5xl xl:text-6xl bg-clip-text text-transparent bg-gradient-to-r from-primary to-cyan-400">
+                  <h1 className="text-5xl font-extrabold sm:text-5xl xl:text-6xl bg-clip-text text-transparent bg-gradient-to-r from-primary to-cyan-400 leading-tight">
                     Free Tutoring in CS and AI
                   </h1>
                   <p className="max-w-[600px] text-muted-foreground md:text-xl">
