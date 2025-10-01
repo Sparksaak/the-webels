@@ -68,7 +68,7 @@ export default function LandingPage() {
       <main className="flex-1">
         <section className="w-full py-20 md:py-32 lg:py-40 xl:py-48 relative overflow-hidden">
           <div className="absolute inset-0 -z-10 h-full w-full bg-gradient-to-br from-primary/10 via-cyan-400/10 to-emerald-500/10 animate-gradient-xy"></div>
-          <div className="pl-8 pr-4 md:pl-12 md:pr-6">
+          <div className="pl-12 pr-4 md:pl-24 md:pr-6">
             <div className="grid gap-8 lg:grid-cols-2 lg:gap-12">
               <div className="flex flex-col justify-center space-y-6 z-10">
                 <div className="space-y-6 text-focus-in">
@@ -88,7 +88,7 @@ export default function LandingPage() {
                   </LoadingLink>
                 </div>
               </div>
-              <div className="relative animate-fade-in-up animation-delay-300">
+              <div className="relative animate-fade-in-up animation-delay-300 hidden lg:block">
                  <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/50 to-emerald-500/50 rounded-3xl blur-2xl"></div>
                  <Image
                     src={placeholderImages.landingHero.src}
@@ -104,7 +104,7 @@ export default function LandingPage() {
         </section>
         
         <section ref={el => sectionsRef.current[0] = el} id="story" className="w-full py-16 md:py-24 lg:py-32 bg-gradient-to-b from-secondary/30 to-background fade-in-section">
-            <div className="pl-8 pr-4 md:pl-12 md:pr-6">
+            <div className="pl-12 pr-4 md:pl-24 md:pr-6">
                 <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
                     <div className="space-y-4">
                         <div className="inline-block rounded-lg bg-primary/10 text-primary px-4 py-2 text-sm font-semibold tracking-wider">Our Story</div>
@@ -116,7 +116,7 @@ export default function LandingPage() {
                             Our non-profit mission drives us to provide completely free, high-quality educational experiences. We're here to break down barriers and build up the next generation of innovators.
                         </p>
                     </div>
-                    <div className="relative">
+                    <div className="relative hidden lg:block">
                        <div className="absolute -inset-2 bg-gradient-to-tr from-emerald-400 to-orange-400 rounded-3xl blur-xl opacity-50"></div>
                         <Image
                             src={placeholderImages.landingStory.src}
