@@ -68,7 +68,7 @@ export default function LandingPage() {
       <main className="flex-1">
         <section className="w-full py-20 md:py-32 lg:py-40 xl:py-48 relative overflow-hidden">
           <div className="absolute inset-0 -z-10 h-full w-full bg-gradient-to-br from-primary/10 via-cyan-400/10 to-emerald-500/10 animate-gradient-xy"></div>
-          <div className="pl-12 pr-4 md:pl-24 md:pr-6">
+          <div className="px-4 md:px-6">
             <div className="grid gap-8 lg:grid-cols-2 lg:gap-12">
               <div className="flex flex-col justify-center space-y-6 z-10">
                 <div className="space-y-6 text-focus-in">
@@ -104,7 +104,7 @@ export default function LandingPage() {
         </section>
         
         <section ref={el => sectionsRef.current[0] = el} id="story" className="w-full py-16 md:py-24 lg:py-32 bg-gradient-to-b from-secondary/30 to-background fade-in-section">
-            <div className="pl-12 pr-4 md:pl-24 md:pr-6">
+            <div className="px-4 md:px-6">
                 <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
                     <div className="space-y-4">
                         <div className="inline-block rounded-lg bg-primary/10 text-primary px-4 py-2 text-sm font-semibold tracking-wider">Our Story</div>
