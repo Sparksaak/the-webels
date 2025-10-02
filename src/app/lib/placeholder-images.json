@@ -1,10 +1,10 @@
 
 {
   "landingHero": {
-    "src": "https://placehold.co/1200x800/1E3A8A/ffffff/png?text=Students+Collaborating",
+    "src": "https://picsum.photos/seed/laptop-code/1200/800",
     "width": 1200,
     "height": 800,
-    "hint": "students collaborating"
+    "hint": "computer code"
   },
   "landingStory": {
     "src": "https://placehold.co/1100x620/10B981/ffffff/png?text=Diverse+Group+of+Learners",
