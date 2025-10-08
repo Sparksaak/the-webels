@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useActionState, useEffect, useRef } from 'react';
+import { useActionState, useEffect, useRef, useState } from 'react';
 import { useFormStatus } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
@@ -13,6 +13,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Logo } from '@/components/logo';
 import { Loader2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { Skeleton } from '@/components/ui/skeleton';
 
 function SubmitButton() {
     const { pending } = useFormStatus();
@@ -70,8 +71,10 @@ export default function UpdatePasswordPage() {
     const { toast } = useToast();
     const router = useRouter();
     const hasHandledAuth = useRef(false);
+    const [isClient, setIsClient] = useState(false);
 
     useEffect(() => {
+        setIsClient(true);
         // This ref is to prevent the logic from running multiple times on re-renders.
         if (hasHandledAuth.current) return;
 
@@ -107,6 +110,19 @@ export default function UpdatePasswordPage() {
         }
     }, [router, toast]);
 
+    const FormSkeleton = () => (
+        <div className="space-y-4">
+            <div className="space-y-2">
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-10 w-full" />
+            </div>
+             <div className="space-y-2">
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-10 w-full" />
+            </div>
+            <Skeleton className="h-10 w-full mt-4" />
+        </div>
+    );
 
   return (
     <div className="flex min-h-screen w-full items-center justify-center bg-background p-4">
@@ -122,7 +138,7 @@ export default function UpdatePasswordPage() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <UpdatePasswordForm />
+                    {!isClient ? <FormSkeleton /> : <UpdatePasswordForm />}
                 </CardContent>
             </Card>
         </div>
