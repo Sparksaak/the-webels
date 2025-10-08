@@ -3,11 +3,10 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { useActionState, useEffect } from 'react';
+import { useActionState, useEffect, useState } from 'react';
 import { useFormStatus } from 'react-dom';
 import { useToast } from '@/hooks/use-toast';
 import { signup } from '@/app/auth/actions';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -22,6 +21,7 @@ import { Loader2 } from 'lucide-react';
 import { LoadingLink } from '@/components/loading-link';
 import { cn } from '@/lib/utils';
 import { buttonVariants } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 
 function AuthButton() {
     const { pending } = useFormStatus();
@@ -38,6 +38,11 @@ function AuthButton() {
 export default function SignupPage() {
   const [state, formAction] = useActionState(signup, null);
   const { toast } = useToast();
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   useEffect(() => {
     if (state?.error) {
@@ -61,6 +66,27 @@ export default function SignupPage() {
             </p>
           </div>
           <div className="grid gap-4">
+          {!isClient ? (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-10 w-full" />
+              </div>
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-10 w-full" />
+              </div>
+               <div className="space-y-2">
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-10 w-full" />
+              </div>
+               <div className="space-y-2">
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-10 w-full" />
+              </div>
+              <Skeleton className="h-10 w-full" />
+            </div>
+          ) : (
             <form action={formAction}>
               <div className="grid gap-2">
                 <Label htmlFor="full-name">Full Name</Label>
@@ -111,6 +137,7 @@ export default function SignupPage() {
               
               <AuthButton />
             </form>
+          )}
           </div>
           <div className="mt-4 text-center text-sm">
             Already have an account?{' '}
