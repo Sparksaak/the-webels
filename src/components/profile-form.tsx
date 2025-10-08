@@ -75,18 +75,34 @@ export function ProfileForm({ profile }: { profile: Profile }) {
             </div>
 
             {profile.role === 'student' && (
-                 <div className="space-y-2">
-                    <Label htmlFor="learningPreference">Learning Preference</Label>
-                    <Select name="learningPreference" defaultValue={profile.learning_preference}>
-                    <SelectTrigger>
-                        <SelectValue placeholder="Select your preference" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="online">Online</SelectItem>
-                        <SelectItem value="in-person">In-Person</SelectItem>
-                    </SelectContent>
-                    </Select>
-                </div>
+                <>
+                    <div className="space-y-2">
+                        <Label htmlFor="learningPreference">Learning Preference</Label>
+                        <Select name="learningPreference" defaultValue={profile.learning_preference}>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Select your preference" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="online">Online</SelectItem>
+                            <SelectItem value="in-person">In-Person</SelectItem>
+                        </SelectContent>
+                        </Select>
+                    </div>
+                     <div className="space-y-2">
+                        <Label htmlFor="subjectOfInterest">Subject of Interest</Label>
+                        <Select name="subjectOfInterest" defaultValue={profile.subject_of_interest}>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Select a subject" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="python">Python</SelectItem>
+                            <SelectItem value="web-development">Web Development</SelectItem>
+                            <SelectItem value="ap-cs">AP Computer Science Tutoring</SelectItem>
+                            <SelectItem value="ai-ml">AI/ML</SelectItem>
+                        </SelectContent>
+                        </Select>
+                    </div>
+                </>
             )}
             
             <div className="flex justify-end">

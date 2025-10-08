@@ -13,6 +13,7 @@ export type Profile = {
     full_name: string;
     role: 'teacher' | 'student';
     learning_preference?: 'online' | 'in-person';
+    subject_of_interest?: string;
 };
 
 export async function getProfile(): Promise<Profile | null> {
@@ -31,6 +32,7 @@ export async function getProfile(): Promise<Profile | null> {
         full_name: user.user_metadata.full_name || '',
         role: user.user_metadata.role || 'student',
         learning_preference: user.user_metadata.learning_preference,
+        subject_of_interest: user.user_metadata.subject_of_interest,
     };
 }
 
@@ -46,6 +48,7 @@ export async function updateProfile(formData: FormData) {
 
     const fullName = formData.get('fullName') as string;
     const learningPreference = formData.get('learningPreference') as string;
+    const subjectOfInterest = formData.get('subjectOfInterest') as string;
 
     const userUpdates: { [key: string]: any } = {
         data: {
@@ -56,6 +59,7 @@ export async function updateProfile(formData: FormData) {
     
     if (user.user_metadata.role === 'student') {
         userUpdates.data.learning_preference = learningPreference;
+        userUpdates.data.subject_of_interest = subjectOfInterest;
     }
 
     const { error } = await supabase.auth.updateUser(userUpdates);

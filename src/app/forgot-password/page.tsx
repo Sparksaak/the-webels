@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Logo } from '@/components/logo';
 import { Loader2, ArrowLeft } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 
 function SubmitButton() {
     const { pending } = useFormStatus();
@@ -60,10 +61,22 @@ function ForgotPasswordForm({ origin }: { origin: string }) {
 
 export default function ForgotPasswordPage() {
     const [origin, setOrigin] = useState('');
+    const [isClient, setIsClient] = useState(false);
 
     useEffect(() => {
         setOrigin(window.location.origin);
-    }, [])
+        setIsClient(true);
+    }, []);
+
+    const FormSkeleton = () => (
+        <div className="space-y-4">
+            <div className="space-y-2">
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-10 w-full" />
+            </div>
+            <Skeleton className="h-10 w-full mt-4" />
+        </div>
+    );
 
   return (
     <div className="flex min-h-screen w-full items-center justify-center bg-background p-4">
@@ -79,11 +92,7 @@ export default function ForgotPasswordPage() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    {origin ? <ForgotPasswordForm origin={origin} /> : 
-                        <div className="flex items-center justify-center">
-                            <Loader2 className="h-6 w-6 animate-spin" />
-                        </div>
-                    }
+                    {!isClient || !origin ? <FormSkeleton /> : <ForgotPasswordForm origin={origin} /> }
                      <div className="mt-4 text-center text-sm">
                         <Link href="/login" className="flex items-center justify-center gap-1 font-medium text-primary hover:underline">
                             <ArrowLeft className="h-4 w-4" />

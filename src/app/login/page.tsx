@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Logo } from '@/components/logo';
-import { useActionState, useEffect } from 'react';
+import { useActionState, useEffect, useState } from 'react';
 import { useFormStatus } from 'react-dom';
 import { login, loginWithMagicLink } from '@/app/auth/actions';
 import { useToast } from '@/hooks/use-toast';
@@ -16,6 +16,7 @@ import { Loader2 } from 'lucide-react';
 import { LoadingLink } from '@/components/loading-link';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 
 function PasswordLoginButton() {
     const { pending } = useFormStatus();
@@ -48,6 +49,11 @@ export default function LoginPage() {
   const { toast } = useToast();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   useEffect(() => {
     const error = searchParams.get('error');
@@ -91,6 +97,23 @@ export default function LoginPage() {
     }
   }, [magicLinkState, toast]);
 
+  const FormSkeleton = () => (
+      <div className="space-y-4">
+        <Skeleton className="h-10 w-full" />
+        <div className="p-2 pt-6 space-y-2">
+            <Skeleton className="h-4 w-48 mx-auto" />
+            <div className="p-2 space-y-3">
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-10 w-full" />
+            </div>
+            <div className="p-2 space-y-3">
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-10 w-full" />
+            </div>
+            <Skeleton className="h-10 w-full mt-4" />
+        </div>
+      </div>
+  );
 
   return (
     <div className="w-full lg:grid lg:min-h-screen lg:grid-cols-2 xl:min-h-screen">
@@ -104,72 +127,74 @@ export default function LoginPage() {
             </p>
           </div>
           
-           <Tabs defaultValue="password" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="password">Password</TabsTrigger>
-                <TabsTrigger value="passwordless">Passwordless</TabsTrigger>
-              </TabsList>
-              <TabsContent value="password">
-                 <Card className="border-0 shadow-none">
+           {!isClient ? <FormSkeleton /> : (
+            <Tabs defaultValue="password" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="password">Password</TabsTrigger>
+                    <TabsTrigger value="passwordless">Passwordless</TabsTrigger>
+                </TabsList>
+                <TabsContent value="password">
+                    <Card className="border-0 shadow-none">
                     <CardHeader className="p-2 pt-6 text-center">
-                       <CardDescription>
-                          Enter your email and password to log in.
-                       </CardDescription>
+                        <CardDescription>
+                            Enter your email and password to log in.
+                        </CardDescription>
                     </CardHeader>
                     <CardContent className="p-2">
-                       <form action={passwordAction}>
-                          <div className="grid gap-3">
-                            <Label htmlFor="email">Email</Label>
-                            <Input
-                              id="email"
-                              name="email"
-                              type="email"
-                              placeholder="m@example.com"
-                              required
-                            />
-                          </div>
-                          <div className="grid gap-3 mt-4">
-                            <div className="flex items-center">
-                              <Label htmlFor="password">Password</Label>
-                              <Link
-                                href="/forgot-password"
-                                className="ml-auto inline-block text-sm text-primary hover:underline"
-                              >
-                                Forgot your password?
-                              </Link>
+                        <form action={passwordAction}>
+                            <div className="grid gap-3">
+                                <Label htmlFor="email">Email</Label>
+                                <Input
+                                id="email"
+                                name="email"
+                                type="email"
+                                placeholder="m@example.com"
+                                required
+                                />
                             </div>
-                            <Input id="password" name="password" type="password" required />
-                          </div>
-                          <PasswordLoginButton />
+                            <div className="grid gap-3 mt-4">
+                                <div className="flex items-center">
+                                <Label htmlFor="password">Password</Label>
+                                <Link
+                                    href="/forgot-password"
+                                    className="ml-auto inline-block text-sm text-primary hover:underline"
+                                >
+                                    Forgot your password?
+                                </Link>
+                                </div>
+                                <Input id="password" name="password" type="password" required />
+                            </div>
+                            <PasswordLoginButton />
                         </form>
                     </CardContent>
-                 </Card>
-              </TabsContent>
-               <TabsContent value="passwordless">
-                  <Card className="border-0 shadow-none">
+                    </Card>
+                </TabsContent>
+                <TabsContent value="passwordless">
+                    <Card className="border-0 shadow-none">
                     <CardHeader className="p-2 pt-6 text-center">
-                       <CardDescription>
-                          Enter your email to receive a magic link to sign in.
-                       </CardDescription>
+                        <CardDescription>
+                            Enter your email to receive a magic link to sign in.
+                        </CardDescription>
                     </CardHeader>
                     <CardContent className="p-2">
-                       <form action={magicLinkAction}>
-                          <div className="grid gap-3">
-                            <Label htmlFor="magic-link-email">Email</Label>
-                            <Input
-                              id="magic-link-email"
-                              name="email"
-                              type="email"
-                              placeholder="m@example.com"
-                              required
-                            />
-                          </div>
-                          <MagicLinkButton />
+                        <form action={magicLinkAction}>
+                            <div className="grid gap-3">
+                                <Label htmlFor="magic-link-email">Email</Label>
+                                <Input
+                                id="magic-link-email"
+                                name="email"
+                                type="email"
+                                placeholder="m@example.com"
+                                required
+                                />
+                            </div>
+                            <MagicLinkButton />
                         </form>
                     </CardContent>
-                 </Card>
-              </TabsContent>
+                    </Card>
+                </TabsContent>
             </Tabs>
+           )}
           
           <div className="mt-4 text-center text-sm">
             Don&apos;t have an account?{' '}
@@ -179,7 +204,7 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
-       <div className="hidden lg:block relative overflow-hidden">
+      <div className="hidden lg:block relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary via-cyan-400 to-accent animate-gradient-xy"></div>
         <Image
           src="https://placehold.co/1200x900/111827/F3F4F6/png?text=Modern+Classroom"
