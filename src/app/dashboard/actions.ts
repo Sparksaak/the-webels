@@ -34,6 +34,7 @@ export async function getDashboardData() {
         email: u.email,
         role: u.user_metadata.role as 'teacher' | 'student',
         learning_preference: u.user_metadata.learning_preference as 'online' | 'in-person' | undefined,
+        subject_of_interest: u.user_metadata.subject_of_interest as string | undefined,
         avatarUrl: generateAvatarUrl(fullName)
       };
   });

@@ -24,12 +24,14 @@ import { Button } from './ui/button';
 import { getInitials } from '@/lib/utils';
 import { Skeleton } from './ui/skeleton';
 import { LoadingLink } from './loading-link';
+import { Badge } from './ui/badge';
 
 interface Student {
     id: string;
     full_name: string;
     email: string;
     learning_preference?: 'online' | 'in-person';
+    subject_of_interest?: string;
     avatarUrl: string;
 }
 
@@ -43,6 +45,13 @@ interface TeacherDashboardProps {
     user: AppUser;
     initialData: any;
 }
+
+const subjectDisplayNames: Record<string, string> = {
+    'python': 'Python',
+    'web-development': 'Web Development',
+    'ap-cs': 'AP Computer Science',
+    'ai-ml': 'AI/ML'
+};
 
 export function TeacherDashboard({ user, initialData }: TeacherDashboardProps) {
   const { students, stats, assignmentsToGrade } = initialData || {};
@@ -187,10 +196,13 @@ function StudentList({ students, loading }: { students: Student[], loading: bool
                             <AvatarImage src={student.avatarUrl} alt={student.full_name} />
                             <AvatarFallback>{getInitials(student.full_name)}</AvatarFallback>
                         </Avatar>
-                        <div>
+                        <div className="flex-1">
                             <p className="font-medium">{student.full_name}</p>
                             <p className="text-sm text-muted-foreground">{student.email}</p>
                         </div>
+                        {student.subject_of_interest && (
+                            <Badge variant="outline">{subjectDisplayNames[student.subject_of_interest] || student.subject_of_interest}</Badge>
+                        )}
                     </div>
                 ))}
             </div>
