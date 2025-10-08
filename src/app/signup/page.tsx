@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from 'next/link';
@@ -32,7 +33,7 @@ function AuthButton() {
     )
 }
 
-function SignupForm() {
+export default function SignupPage() {
   const [state, formAction] = useActionState(signup, null);
   const { toast } = useToast();
 
@@ -47,84 +48,77 @@ function SignupForm() {
   }, [state, toast]);
 
   return (
-    <div className="mx-auto grid w-[400px] gap-6">
-      <div className="grid gap-2 text-center">
-        <Logo className="mx-auto" />
-        <h1 className="text-3xl font-bold">Sign Up</h1>
-        <p className="text-balance text-muted-foreground">
-          Create an account to get started with The Webels.
-        </p>
-      </div>
-      <div className="grid gap-4">
-        <form action={formAction}>
-          <div className="grid gap-2">
-            <Label htmlFor="full-name">Full Name</Label>
-            <Input id="full-name" name="name" placeholder="John Doe" required />
-          </div>
-          <div className="grid gap-2 mt-4">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              name="email"
-              type="email"
-              placeholder="m@example.com"
-              required
-            />
-          </div>
-          <div className="grid gap-2 mt-4">
-            <Label htmlFor="password">Password</Label>
-            <Input id="password" name="password" type="password" required />
-          </div>
-          
-          <div className="grid gap-2 mt-4">
-            <Label htmlFor="subjectOfInterest">Subject of Interest</Label>
-            <Select name="subjectOfInterest" required>
-              <SelectTrigger>
-                <SelectValue placeholder="Select a subject" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="python">Python</SelectItem>
-                <SelectItem value="web-development">Web Development</SelectItem>
-                <SelectItem value="ap-cs">AP Computer Science Tutoring</SelectItem>
-                <SelectItem value="ai-ml">AI/ML</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="grid gap-2 mt-4">
-            <Label htmlFor="learningPreference">Learning Preference</Label>
-            <Select name="learningPreference" required defaultValue="online">
-              <SelectTrigger>
-                <SelectValue placeholder="Select your preference" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="online">Online</SelectItem>
-                <SelectItem value="in-person">In-Person</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <AuthButton />
-        </form>
-      </div>
-      <div className="mt-4 text-center text-sm">
-        Already have an account?{' '}
-        <LoadingLink href="/login" className="underline">
-          Login
-        </LoadingLink>
-      </div>
-    </div>
-  );
-}
-
-
-export default function SignupPage() {
-  return (
     <div className="w-full lg:grid lg:min-h-screen lg:grid-cols-2">
       <div className="flex items-center justify-center py-12">
-        <SignupForm />
+        <div className="mx-auto grid w-[400px] gap-6">
+          <div className="grid gap-2 text-center">
+            <Logo className="mx-auto" />
+            <h1 className="text-3xl font-bold">Sign Up</h1>
+            <p className="text-balance text-muted-foreground">
+              Create an account to get started with The Webels.
+            </p>
+          </div>
+          <div className="grid gap-4">
+            <form action={formAction}>
+              <div className="grid gap-2">
+                <Label htmlFor="full-name">Full Name</Label>
+                <Input id="full-name" name="name" placeholder="John Doe" required />
+              </div>
+              <div className="grid gap-2 mt-4">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  placeholder="m@example.com"
+                  required
+                />
+              </div>
+              <div className="grid gap-2 mt-4">
+                <Label htmlFor="password">Password</Label>
+                <Input id="password" name="password" type="password" required />
+              </div>
+              
+              <div className="grid gap-2 mt-4">
+                <Label htmlFor="subjectOfInterest">Subject of Interest</Label>
+                <Select name="subjectOfInterest" required>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a subject" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="python">Python</SelectItem>
+                    <SelectItem value="web-development">Web Development</SelectItem>
+                    <SelectItem value="ap-cs">AP Computer Science Tutoring</SelectItem>
+                    <SelectItem value="ai-ml">AI/ML</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid gap-2 mt-4">
+                <Label htmlFor="learningPreference">Learning Preference</Label>
+                <Select name="learningPreference" required defaultValue="online">
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select your preference" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="online">Online</SelectItem>
+                    <SelectItem value="in-person">In-Person</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <AuthButton />
+            </form>
+          </div>
+          <div className="mt-4 text-center text-sm">
+            Already have an account?{' '}
+            <LoadingLink href="/login" className="underline">
+              Login
+            </LoadingLink>
+          </div>
+        </div>
       </div>
-       <div className="hidden lg:block relative overflow-hidden">
+      <div className="hidden lg:block relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/80 via-primary/40 to-accent/70 animate-gradient-xy"></div>
         <Image
           src="https://placehold.co/1200x900/10B981/FFFFFF/png?text=Learn+Something+New"
