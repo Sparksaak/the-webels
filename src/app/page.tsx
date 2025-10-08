@@ -4,7 +4,7 @@ import { useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/logo';
-import { Code, BookOpen, BrainCircuit, Quote, ArrowRight } from 'lucide-react';
+import { Code, BookOpen, BrainCircuit, Quote, ArrowRight, Calendar, Users } from 'lucide-react';
 import Image from 'next/image';
 import { LoadingLink } from '@/components/loading-link';
 import { Card, CardContent } from '@/components/ui/card';
@@ -68,7 +68,7 @@ export default function LandingPage() {
       <main className="flex-1">
         <section className="w-full py-20 md:py-32 lg:py-40 xl:py-48 relative overflow-hidden">
           <div className="absolute inset-0 -z-10 h-full w-full bg-gradient-to-br from-primary/10 via-cyan-400/10 to-emerald-500/10 animate-gradient-xy"></div>
-          <div className="px-4 md:px-6">
+          <div className="container mx-auto px-4 md:px-6">
             <div className="grid gap-8 lg:grid-cols-2 lg:gap-12">
               <div className="flex flex-col justify-center space-y-6 z-10">
                 <div className="space-y-6 text-focus-in">
@@ -87,14 +87,32 @@ export default function LandingPage() {
                     Learn More
                   </LoadingLink>
                 </div>
+                <div className="mt-8 pt-6 border-t border-border/50 animate-fade-in-up animation-delay-700">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                        <div className="flex items-center gap-3">
+                            <Calendar className="text-primary size-5" />
+                            <div>
+                                <p className="font-semibold text-foreground">Online Classes: Mondays</p>
+                                <p className="text-muted-foreground">5:30 PM - 6:30 PM</p>
+                            </div>
+                        </div>
+                         <div className="flex items-center gap-3">
+                            <Users className="text-primary size-5" />
+                             <div>
+                                <p className="font-semibold text-foreground">In-Person Classes: Wednesdays</p>
+                                <p className="text-muted-foreground">5:30 PM - 6:30 PM</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
               </div>
-              <div className="relative animate-fade-in-up animation-delay-300 hidden lg:block">
+              <div className="relative hidden lg:block">
                  <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/50 to-emerald-500/50 rounded-3xl blur-2xl"></div>
                  <Image
                     src={placeholderImages.landingHero.src}
                     width={placeholderImages.landingHero.width}
                     height={placeholderImages.landingHero.height}
-                    alt="Students collaborating on code"
+                    alt="Laptop with code on screen"
                     className="relative mx-auto aspect-video overflow-hidden rounded-2xl object-cover sm:w-full lg:order-last shadow-2xl transition-transform hover:scale-105 duration-500"
                     data-ai-hint={placeholderImages.landingHero.hint}
                   />
@@ -104,7 +122,7 @@ export default function LandingPage() {
         </section>
         
         <section ref={el => sectionsRef.current[0] = el} id="story" className="w-full py-16 md:py-24 lg:py-32 bg-gradient-to-b from-secondary/30 to-background fade-in-section">
-            <div className="px-4 md:px-6">
+            <div className="container mx-auto px-4 md:px-6">
                 <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
                     <div className="space-y-4">
                         <div className="inline-block rounded-lg bg-primary/10 text-primary px-4 py-2 text-sm font-semibold tracking-wider">Our Story</div>
@@ -122,7 +140,7 @@ export default function LandingPage() {
                             src={placeholderImages.landingStory.src}
                             width={placeholderImages.landingStory.width}
                             height={placeholderImages.landingStory.height}
-                            alt="A diverse group of students in a classroom"
+                            alt="Students looking at a camera near lockers"
                             className="relative mx-auto aspect-video overflow-hidden rounded-2xl object-cover sm:w-full lg:order-last shadow-2xl transition-transform hover:scale-105 duration-500"
                             data-ai-hint={placeholderImages.landingStory.hint}
                         />
@@ -132,7 +150,7 @@ export default function LandingPage() {
         </section>
 
         <section ref={el => sectionsRef.current[1] = el} id="features" className="w-full py-16 md:py-24 lg:py-32 bg-background fade-in-section">
-          <div className="px-4 md:px-6">
+          <div className="container mx-auto px-4 md:px-6">
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
               <div className="space-y-3">
                 <div className="inline-block rounded-lg bg-secondary px-4 py-2 text-sm font-semibold tracking-wider text-secondary-foreground">What We Offer</div>
@@ -175,7 +193,7 @@ export default function LandingPage() {
         </section>
 
         <section ref={el => sectionsRef.current[2] = el} id="how-it-works" className="w-full py-16 md:py-24 lg:py-32 bg-gradient-to-b from-secondary/30 to-background fade-in-section">
-            <div className="px-4 md:px-6">
+            <div className="container mx-auto px-4 md:px-6">
                 <div className="flex flex-col items-center justify-center space-y-4 text-center">
                     <div className="space-y-3">
                         <div className="inline-block rounded-lg bg-primary/10 text-primary px-4 py-2 text-sm font-semibold tracking-wider">How It Works</div>
@@ -221,7 +239,7 @@ export default function LandingPage() {
         </section>
 
         <section ref={el => sectionsRef.current[3] = el} id="testimonials" className="w-full py-16 md:py-24 lg:py-32 fade-in-section">
-            <div className="px-4 md:px-6">
+            <div className="container mx-auto px-4 md:px-6">
                 <div className="flex flex-col items-center justify-center space-y-4 text-center">
                     <div className="space-y-3">
                         <div className="inline-block rounded-lg bg-secondary px-4 py-2 text-sm font-semibold tracking-wider text-secondary-foreground">Testimonials</div>
@@ -273,7 +291,7 @@ export default function LandingPage() {
         </section>
 
         <section ref={el => sectionsRef.current[4] = el} id="cta" className="w-full py-16 md:py-24 lg:py-32 bg-secondary/50 border-t fade-in-section">
-            <div className="px-4 md:px-6">
+            <div className="container mx-auto px-4 md:px-6">
                 <div className="flex flex-col items-center space-y-6 text-center bg-gradient-to-r from-primary to-accent p-12 rounded-2xl shadow-2xl">
                     <h2 className="text-4xl font-extrabold tracking-tighter sm:text-5xl text-primary-foreground">Ready to Start Learning?</h2>
                     <p className="max-w-2xl text-primary-foreground/80 md:text-xl">
@@ -289,7 +307,7 @@ export default function LandingPage() {
       </main>
 
       <footer className="bg-background border-t">
-          <div className="flex flex-col gap-4 sm:flex-row py-6 w-full shrink-0 items-center px-4 md:px-6">
+          <div className="container mx-auto flex flex-col gap-4 sm:flex-row py-6 w-full shrink-0 items-center px-4 md:px-6">
             <p className="text-sm text-muted-foreground">&copy; 2024 The Webels. All rights reserved.</p>
             <nav className="sm:ml-auto flex gap-4 sm:gap-6">
               <LoadingLink href="#" className="text-sm hover:underline underline-offset-4" prefetch={false}>
@@ -304,3 +322,5 @@ export default function LandingPage() {
     </div>
   );
 }
+
+    

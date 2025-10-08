@@ -76,6 +76,21 @@ export function SignupForm() {
           </div>
           
           <div className="grid gap-2 mt-4">
+            <Label htmlFor="subjectOfInterest">Subject of Interest</Label>
+            <Select name="subjectOfInterest" required>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a subject" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="python">Python</SelectItem>
+                <SelectItem value="web-development">Web Development</SelectItem>
+                <SelectItem value="ap-cs">AP Computer Science Tutoring</SelectItem>
+                <SelectItem value="ai-ml">AI/ML</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid gap-2 mt-4">
             <Label htmlFor="learningPreference">Learning Preference</Label>
             <Select name="learningPreference" required defaultValue="online">
               <SelectTrigger>
@@ -99,3 +114,5 @@ export function SignupForm() {
       </div>
     </div>);
 }
+
+    

@@ -14,6 +14,7 @@ export async function signup(prevState: { error: string } | null, formData: Form
   const password = formData.get('password') as string;
   const role = 'student'; // Force all new signups to be students
   const learningPreference = formData.get('learningPreference') as string | null;
+  const subjectOfInterest = formData.get('subjectOfInterest') as string | null;
 
   if (password.length < 6) {
     return { error: 'Password must be at least 6 characters long.' };
@@ -27,8 +28,13 @@ export async function signup(prevState: { error: string } | null, formData: Form
     role: role,
   };
 
-  if (role === 'student' && learningPreference) {
-    userData.learning_preference = learningPreference;
+  if (role === 'student') {
+    if (learningPreference) {
+      userData.learning_preference = learningPreference;
+    }
+    if (subjectOfInterest) {
+      userData.subject_of_interest = subjectOfInterest;
+    }
   }
 
   const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
@@ -174,3 +180,5 @@ export async function updatePasswordWithToken(prevState: { error?: string, succe
 
   return { success: true };
 }
+
+    
