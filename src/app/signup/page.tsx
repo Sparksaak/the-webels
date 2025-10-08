@@ -20,16 +20,18 @@ import {
 import { Logo } from '@/components/logo';
 import { Loader2 } from 'lucide-react';
 import { LoadingLink } from '@/components/loading-link';
+import { cn } from '@/lib/utils';
+import { buttonVariants } from '@/components/ui/button';
 
 function AuthButton() {
     const { pending } = useFormStatus();
     return (
-        <Button type="submit" className="w-full mt-4" disabled={pending}>
+        <button type="submit" className={cn(buttonVariants(), "w-full mt-4")} disabled={pending}>
              {pending ? <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Creating account...
             </> : 'Create an account'}
-        </Button>
+        </button>
     )
 }
 
