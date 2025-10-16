@@ -72,10 +72,10 @@ export default function LandingPage() {
             <div className="grid gap-8 lg:grid-cols-2 lg:gap-12">
               <div className="flex flex-col justify-center space-y-6 z-10">
                 <div className="space-y-6 text-focus-in">
-                  <h1 className="text-5xl font-extrabold sm:text-5xl xl:text-6xl bg-clip-text text-transparent bg-gradient-to-r from-primary to-cyan-400 leading-normal pb-2">
+                  <h1 className="text-5xl font-extrabold sm:text-5xl xl:text-6xl 2xl:text-7xl bg-clip-text text-transparent bg-gradient-to-r from-primary to-cyan-400 leading-normal pb-2">
                     Free Tutoring in CS and AI
                   </h1>
-                  <p className="max-w-2xl text-muted-foreground md:text-xl">
+                  <p className="max-w-2xl text-muted-foreground md:text-xl 2xl:text-2xl">
                     The Webels is a student-run, non-profit initiative offering free, high-quality tutoring in AP Computer Science, Web Development, Python, and AI/ML. Join our community to learn and grow together.
                   </p>
                 </div>
@@ -88,7 +88,7 @@ export default function LandingPage() {
                   </LoadingLink>
                 </div>
                 <div className="mt-8 pt-6 border-t border-border/50 animate-fade-in-up animation-delay-700">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm 2xl:text-base">
                         <div className="flex items-center gap-3">
                             <Calendar className="text-primary size-5" />
                             <div>
@@ -122,15 +122,15 @@ export default function LandingPage() {
         </section>
         
         <section ref={el => sectionsRef.current[0] = el} id="story" className="w-full py-16 md:py-24 lg:py-32 bg-gradient-to-b from-secondary/30 to-background fade-in-section">
-            <div className="px-4 sm:px-6 lg:px-8 mx-auto">
+            <div className="mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
                     <div className="space-y-4">
-                        <div className="inline-block rounded-lg bg-primary/10 text-primary px-4 py-2 text-sm font-semibold tracking-wider">Our Story</div>
-                        <h2 className="text-4xl font-bold tracking-tighter sm:text-5xl">For Students, By Students</h2>
-                        <p className="max-w-3xl text-muted-foreground md:text-lg/relaxed">
+                        <div className="inline-block rounded-lg bg-primary/10 text-primary px-4 py-2 text-sm font-semibold tracking-wider 2xl:text-base">Our Story</div>
+                        <h2 className="text-4xl font-bold tracking-tighter sm:text-5xl 2xl:text-6xl">For Students, By Students</h2>
+                        <p className="max-w-3xl text-muted-foreground md:text-lg/relaxed 2xl:text-xl/relaxed">
                             The Webels was born from a simple idea: learning to code should be accessible to everyone, regardless of their background. As students who are passionate about technology, we wanted to create a supportive community where peers can help each other succeed. We believe that the best way to learn is by doing and sharing, which is why all our tutoring is led by fellow students who have excelled in these subjects.
                         </p>
-                        <p className="max-w-3xl text-muted-foreground md:text-lg/relaxed">
+                        <p className="max-w-3xl text-muted-foreground md:text-lg/relaxed 2xl:text-xl/relaxed">
                             Our non-profit mission drives us to provide completely free, high-quality educational experiences. We're here to break down barriers and build up the next generation of innovators.
                         </p>
                     </div>
@@ -150,12 +150,12 @@ export default function LandingPage() {
         </section>
 
         <section ref={el => sectionsRef.current[1] = el} id="features" className="w-full py-16 md:py-24 lg:py-32 bg-background fade-in-section">
-          <div className="px-4 sm:px-6 lg:px-8 mx-auto">
+          <div className="mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
               <div className="space-y-3">
                 <div className="inline-block rounded-lg bg-secondary px-4 py-2 text-sm font-semibold tracking-wider text-secondary-foreground">What We Offer</div>
-                <h2 className="text-4xl font-bold tracking-tighter sm:text-5xl">Learn In-Demand Skills for Free</h2>
-                <p className="max-w-3xl text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+                <h2 className="text-4xl font-bold tracking-tighter sm:text-5xl 2xl:text-6xl">Learn In-Demand Skills for Free</h2>
+                <p className="max-w-3xl text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed 2xl:text-2xl/relaxed">
                   Our platform provides everything you need to master topics from AP Computer Science to advanced AI, with both online and in-person options.
                 </p>
               </div>
@@ -165,8 +165,8 @@ export default function LandingPage() {
                 <div className="bg-primary/10 p-4 rounded-full mb-6">
                   <Code className="h-10 w-10 text-primary" />
                 </div>
-                <h3 className="text-2xl font-bold mb-2">Expert-Led Curriculum</h3>
-                <p className="text-muted-foreground">
+                <h3 className="text-2xl font-bold mb-2 2xl:text-3xl">Expert-Led Curriculum</h3>
+                <p className="text-muted-foreground 2xl:text-lg">
                   Master Web Development, Python, and AP Computer Science with our comprehensive materials and dedicated tutors.
                 </p>
               </div>
@@ -174,8 +174,8 @@ export default function LandingPage() {
                 <div className="bg-primary/10 p-4 rounded-full mb-6">
                   <BrainCircuit className="h-10 w-10 text-primary" />
                 </div>
-                <h3 className="text-2xl font-bold mb-2">Explore AI & Machine Learning</h3>
-                <p className="text-muted-foreground">
+                <h3 className="text-2xl font-bold mb-2 2xl:text-3xl">Explore AI & Machine Learning</h3>
+                <p className="text-muted-foreground 2xl:text-lg">
                   Dive into the world of Artificial Intelligence with guidance from experienced student tutors who are passionate about the field.
                 </p>
               </div>
@@ -183,8 +183,8 @@ export default function LandingPage() {
                  <div className="bg-primary/10 p-4 rounded-full mb-6">
                     <BookOpen className="h-10 w-10 text-primary" />
                 </div>
-                <h3 className="text-2xl font-bold mb-2">Flexible Learning Tracks</h3>
-                <p className="text-muted-foreground">
+                <h3 className="text-2xl font-bold mb-2 2xl:text-3xl">Flexible Learning Tracks</h3>
+                <p className="text-muted-foreground 2xl:text-lg">
                   Choose between online or in-person tutoring sessions to fit your learning style and schedule perfectly.
                 </p>
               </div>
@@ -193,12 +193,12 @@ export default function LandingPage() {
         </section>
 
         <section ref={el => sectionsRef.current[2] = el} id="how-it-works" className="w-full py-16 md:py-24 lg:py-32 bg-gradient-to-b from-secondary/30 to-background fade-in-section">
-            <div className="px-4 sm:px-6 lg:px-8 mx-auto">
+            <div className="mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex flex-col items-center justify-center space-y-4 text-center">
                     <div className="space-y-3">
                         <div className="inline-block rounded-lg bg-primary/10 text-primary px-4 py-2 text-sm font-semibold tracking-wider">How It Works</div>
-                        <h2 className="text-4xl font-bold tracking-tighter sm:text-5xl">Getting Started is Easy</h2>
-                        <p className="max-w-2xl text-muted-foreground md:text-xl/relaxed">
+                        <h2 className="text-4xl font-bold tracking-tighter sm:text-5xl 2xl:text-6xl">Getting Started is Easy</h2>
+                        <p className="max-w-2xl text-muted-foreground md:text-xl/relaxed 2xl:text-2xl/relaxed">
                             Join our learning community in just a few simple steps.
                         </p>
                     </div>
@@ -210,8 +210,8 @@ export default function LandingPage() {
                           <div className="bg-background flex items-center justify-center size-20 rounded-full border-4 border-primary shadow-lg">
                               <span className="text-3xl font-bold text-primary">1</span>
                           </div>
-                          <h3 className="text-2xl font-bold">Create an Account</h3>
-                          <p className="text-muted-foreground">
+                          <h3 className="text-2xl font-bold 2xl:text-3xl">Create an Account</h3>
+                          <p className="text-muted-foreground 2xl:text-lg">
                               Sign up for free and tell us your learning preferences.
                           </p>
                       </div>
@@ -219,8 +219,8 @@ export default function LandingPage() {
                           <div className="bg-background flex items-center justify-center size-20 rounded-full border-4 border-primary shadow-lg">
                                <span className="text-3xl font-bold text-primary">2</span>
                           </div>
-                          <h3 className="text-2xl font-bold">Explore Materials</h3>
-                          <p className="text-muted-foreground">
+                          <h3 className="text-2xl font-bold 2xl:text-3xl">Explore Materials</h3>
+                          <p className="text-muted-foreground 2xl:text-lg">
                               Access our curated class materials, assignments, and announcements.
                           </p>
                       </div>
@@ -228,8 +228,8 @@ export default function LandingPage() {
                           <div className="bg-background flex items-center justify-center size-20 rounded-full border-4 border-primary shadow-lg">
                                <span className="text-3xl font-bold text-primary">3</span>
                           </div>
-                          <h3 className="text-2xl font-bold">Join a Session</h3>
-                          <p className="text-muted-foreground">
+                          <h3 className="text-2xl font-bold 2xl:text-3xl">Join a Session</h3>
+                          <p className="text-muted-foreground 2xl:text-lg">
                               Attend live online or in-person tutoring sessions and start learning!
                           </p>
                       </div>
@@ -239,12 +239,12 @@ export default function LandingPage() {
         </section>
 
         <section ref={el => sectionsRef.current[3] = el} id="testimonials" className="w-full py-16 md:py-24 lg:py-32 fade-in-section">
-            <div className="px-4 sm:px-6 lg:px-8 mx-auto">
+            <div className="mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex flex-col items-center justify-center space-y-4 text-center">
                     <div className="space-y-3">
                         <div className="inline-block rounded-lg bg-secondary px-4 py-2 text-sm font-semibold tracking-wider text-secondary-foreground">Testimonials</div>
-                        <h2 className="text-4xl font-bold tracking-tighter sm:text-5xl">What Our Students Say</h2>
-                        <p className="max-w-2xl text-muted-foreground md:text-xl/relaxed">
+                        <h2 className="text-4xl font-bold tracking-tighter sm:text-5xl 2xl:text-6xl">What Our Students Say</h2>
+                        <p className="max-w-2xl text-muted-foreground md:text-xl/relaxed 2xl:text-2xl/relaxed">
                             Hear from students who have grown with The Webels.
                         </p>
                     </div>
@@ -259,10 +259,10 @@ export default function LandingPage() {
                                 </Avatar>
                                 <div className="space-y-4 flex-1">
                                     <Quote className="w-10 h-10 text-primary/50" />
-                                    <p className="text-muted-foreground text-lg">"The Webels made learning AP Computer Science so much more approachable. My tutor was patient and really knew their stuff. I finally understood recursion!"</p>
+                                    <p className="text-muted-foreground text-lg 2xl:text-xl">"The Webels made learning AP Computer Science so much more approachable. My tutor was patient and really knew their stuff. I finally understood recursion!"</p>
                                     <div>
-                                        <p className="font-semibold text-lg">Jessica D.</p>
-                                        <p className="text-sm text-muted-foreground">High School Student</p>
+                                        <p className="font-semibold text-lg 2xl:text-xl">Jessica D.</p>
+                                        <p className="text-sm text-muted-foreground 2xl:text-base">High School Student</p>
                                     </div>
                                 </div>
                             </div>
@@ -277,10 +277,10 @@ export default function LandingPage() {
                                 </Avatar>
                                 <div className="space-y-4 flex-1">
                                     <Quote className="w-10 h-10 text-primary/50" />
-                                    <p className="text-muted-foreground text-lg">"I wanted to learn web development but didn't know where to start. The online sessions were perfect for my schedule, and it was amazing to learn from another student."</p>
+                                    <p className="text-muted-foreground text-lg 2xl:text-xl">"I wanted to learn web development but didn't know where to start. The online sessions were perfect for my schedule, and it was amazing to learn from another student."</p>
                                     <div>
-                                        <p className="font-semibold text-lg">Michael O.</p>
-                                        <p className="text-sm text-muted-foreground">Beginner Developer</p>
+                                        <p className="font-semibold text-lg 2xl:text-xl">Michael O.</p>
+                                        <p className="text-sm text-muted-foreground 2xl:text-base">Beginner Developer</p>
                                     </div>
                                 </div>
                             </div>
@@ -291,13 +291,13 @@ export default function LandingPage() {
         </section>
 
         <section ref={el => sectionsRef.current[4] = el} id="cta" className="w-full py-16 md:py-24 lg:py-32 bg-secondary/50 border-t fade-in-section">
-            <div className="px-4 sm:px-6 lg:px-8 mx-auto">
+            <div className="mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex flex-col items-center space-y-6 text-center bg-gradient-to-r from-primary to-accent p-12 rounded-2xl shadow-2xl">
-                    <h2 className="text-4xl font-extrabold tracking-tighter sm:text-5xl text-primary-foreground">Ready to Start Learning?</h2>
-                    <p className="max-w-2xl text-primary-foreground/80 md:text-xl">
+                    <h2 className="text-4xl font-extrabold tracking-tighter sm:text-5xl 2xl:text-6xl text-primary-foreground">Ready to Start Learning?</h2>
+                    <p className="max-w-2xl text-primary-foreground/80 md:text-xl 2xl:text-2xl">
                         Join our community of passionate learners and tutors today. Create your free account and unlock your potential in tech.
                     </p>
-                    <LoadingLink href="/signup" asButton buttonProps={{size: "lg", variant: "secondary", className: "mt-4 scale-110 hover:scale-125 transition-transform duration-300"}}>
+                    <LoadingLink href="/signup" asButton buttonProps={{size: "lg", variant: "secondary", className: "mt-4 scale-110 hover:scale-125 transition-transform duration-300 2xl:text-lg 2xl:h-14"}}>
                         Sign Up for Free
                         <ArrowRight className="ml-2 h-5 w-5" />
                     </LoadingLink>
@@ -307,7 +307,7 @@ export default function LandingPage() {
       </main>
 
       <footer className="bg-background border-t">
-          <div className="container flex flex-col gap-4 sm:flex-row py-6 w-full shrink-0 items-center">
+          <div className="mx-auto px-4 sm:px-6 lg:px-8 flex flex-col gap-4 sm:flex-row py-6 w-full shrink-0 items-center">
             <p className="text-sm text-muted-foreground">&copy; 2024 The Webels. All rights reserved.</p>
             <nav className="sm:ml-auto flex gap-4 sm:gap-6">
               <LoadingLink href="#" className="text-sm hover:underline underline-offset-4" prefetch={false}>
@@ -322,3 +322,5 @@ export default function LandingPage() {
     </div>
   );
 }
+
+  
