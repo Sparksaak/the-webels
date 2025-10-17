@@ -27,7 +27,8 @@ async function Messaging({ conversationId, currentUser }: { conversationId: stri
 }
 
 export default async function MessagesPage({ searchParams }: { searchParams: { conversation_id?: string } }) {
-    const supabase = createClient();
+    const cookieStore = cookies();
+    const supabase = createClient(cookieStore);
     
     const { data: { user } } = await supabase.auth.getUser();
 

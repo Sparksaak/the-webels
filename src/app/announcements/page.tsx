@@ -91,7 +91,7 @@ function AnnouncementsList({ currentUser, announcements }: { currentUser: AppUse
                                  <Avatar className="h-8 w-8" data-ai-hint="person portrait">
                                     <AvatarImage src={announcement.author.avatarUrl} alt={announcement.author.name} />
                                     <AvatarFallback>{announcement.author.name?.charAt(0)}</AvatarFallback>
-                                </Avatar>
+                                 </Avatar>
                                 <div className="text-sm">
                                     <p className="font-semibold">{announcement.author.name}</p>
                                     <p className="text-muted-foreground">{announcement.author.role}</p>
@@ -107,7 +107,8 @@ function AnnouncementsList({ currentUser, announcements }: { currentUser: AppUse
 }
 
 export default async function AnnouncementsPage() {
-    const supabase = createClient();
+    const cookieStore = cookies();
+    const supabase = createClient(cookieStore);
     
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {

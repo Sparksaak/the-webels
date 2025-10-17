@@ -10,6 +10,7 @@ import { Separator } from '@/components/ui/separator';
 import { ProfileForm } from '@/components/profile-form';
 import { UpdatePasswordForm } from '@/components/update-password-form';
 import { DeleteAccountButton } from '@/components/delete-account-button';
+import { cookies } from 'next/headers';
 
 type AppUser = {
     id: string;
@@ -70,7 +71,8 @@ async function SettingsContent({ user, profile }: { user: AppUser, profile: Prof
 }
 
 export default async function SettingsPage() {
-    const supabase = createClient();
+    const cookieStore = cookies();
+    const supabase = createClient(cookieStore);
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
