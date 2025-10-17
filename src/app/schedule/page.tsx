@@ -18,37 +18,38 @@ function SchedulePageContent({ currentUser, initialSchedules }: { currentUser: A
 
     return (
         <AppLayout user={currentUser}>
-            <div className="flex items-center justify-between mb-8">
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Class Schedule</h1>
-                    <p className="text-muted-foreground">Manage your weekly class schedules.</p>
+            <div className="mx-auto w-full max-w-6xl space-y-8 py-8">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h1 className="text-3xl font-bold tracking-tight">Class Schedule</h1>
+                        <p className="text-muted-foreground">Manage your weekly class schedules.</p>
+                    </div>
+                    {currentUser.role === 'teacher' && (
+                        <NewScheduleDialog />
+                    )}
                 </div>
-                {currentUser.role === 'teacher' && (
-                    <NewScheduleDialog />
-                )}
-            </div>
 
-            <div className="grid gap-8 lg:grid-cols-2">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Online Classes Schedule</CardTitle>
-                        <CardDescription>Schedule for online classes.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                    <ScheduleList schedules={onlineSchedules} user={currentUser} classType="online" />
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader>
-                        <CardTitle>In-Person Classes Schedule</CardTitle>
-                        <CardDescription>Schedule for in-person classes.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <ScheduleList schedules={inPersonSchedules} user={currentUser} classType="in-person" />
-                    </CardContent>
-                </Card>
+                <div className="grid gap-8 lg:grid-cols-2">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Online Classes Schedule</CardTitle>
+                            <CardDescription>Schedule for online classes.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                        <ScheduleList schedules={onlineSchedules} user={currentUser} classType="online" />
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>In-Person Classes Schedule</CardTitle>
+                            <CardDescription>Schedule for in-person classes.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <ScheduleList schedules={inPersonSchedules} user={currentUser} classType="in-person" />
+                        </CardContent>
+                    </Card>
+                </div>
             </div>
-
         </AppLayout>
     );
 }

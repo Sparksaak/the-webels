@@ -20,9 +20,9 @@ type AppUser = {
 
 async function DashboardContent({ currentUser, dashboardData }: { currentUser: AppUser, dashboardData: any }) {
   return (
-      <>
+    <div className="mx-auto w-full max-w-7xl py-8">
         {currentUser.role === 'teacher' ? <TeacherDashboard user={currentUser} initialData={dashboardData} /> : <StudentDashboard user={currentUser} initialData={dashboardData} />}
-      </>
+    </div>
   );
 }
 

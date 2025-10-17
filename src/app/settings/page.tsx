@@ -22,7 +22,7 @@ type AppUser = {
 
 async function SettingsContent({ user, profile }: { user: AppUser, profile: Profile }) {
     return (
-        <div className="space-y-8">
+        <div className="mx-auto w-full max-w-3xl space-y-8 py-8">
             <div>
                 <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
                 <p className="text-muted-foreground">Manage your account and profile settings.</p>

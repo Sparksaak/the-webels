@@ -41,17 +41,19 @@ export default async function AssignmentsPage() {
 
     return (
         <AppLayout user={currentUser}>
-            <div className="flex items-center justify-between mb-8">
-                <div>
-                <h1 className="text-3xl font-bold tracking-tight">Assignments</h1>
-                <p className="text-muted-foreground">
-                    {currentUser.role === 'teacher' ? 'Create and manage assignments for your classes.' : 'View and submit your assignments.'}
-                </p>
+            <div className="mx-auto w-full max-w-7xl space-y-8 py-8">
+                <div className="flex items-center justify-between mb-8">
+                    <div>
+                    <h1 className="text-3xl font-bold tracking-tight">Assignments</h1>
+                    <p className="text-muted-foreground">
+                        {currentUser.role === 'teacher' ? 'Create and manage assignments for your classes.' : 'View and submit your assignments.'}
+                    </p>
+                    </div>
                 </div>
+                <Suspense fallback={<div className="flex h-full w-full items-center justify-center"><div className="text-muted-foreground">Loading assignments...</div></div>}>
+                    <AssignmentsPageContent currentUser={currentUser} initialAssignments={assignments} />
+                </Suspense>
             </div>
-            <Suspense fallback={<div className="flex h-full w-full items-center justify-center"><div className="text-muted-foreground">Loading assignments...</div></div>}>
-                <AssignmentsPageContent currentUser={currentUser} initialAssignments={assignments} />
-            </Suspense>
         </AppLayout>
     );
 }

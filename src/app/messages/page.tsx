@@ -50,9 +50,11 @@ export default async function MessagesPage({ searchParams }: { searchParams: { c
     
     return (
         <AppLayout user={currentUser}>
-            <Suspense fallback={<div className="flex h-full items-center justify-center"><div className="text-muted-foreground">Loading Messaging...</div></div>}>
-              <Messaging conversationId={conversationIdFromUrl} currentUser={currentUser} />
-            </Suspense>
+            <div className="h-[calc(100vh_-_57px)]">
+                <Suspense fallback={<div className="flex h-full items-center justify-center"><div className="text-muted-foreground">Loading Messaging...</div></div>}>
+                  <Messaging conversationId={conversationIdFromUrl} currentUser={currentUser} />
+                </Suspense>
+            </div>
         </AppLayout>
     );
 }
