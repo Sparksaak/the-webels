@@ -49,7 +49,7 @@ export default function LandingPage() {
       <header className="px-4 lg:px-6 h-16 flex items-center shadow-sm bg-background/80 backdrop-blur-sm sticky top-0 z-50">
         <Link href="#" className="flex items-center justify-center" prefetch={false}>
           <Logo />
-          <span className="ml-3 text-2xl font-bold tracking-wider text-foreground">The Webels</span>
+          <span className="hidden sm:inline ml-3 text-2xl font-bold tracking-wider text-foreground">The Webels</span>
         </Link>
         <nav className="ml-auto flex gap-4 sm:gap-6 items-center">
           <LoadingLink
@@ -69,7 +69,7 @@ export default function LandingPage() {
         <section className="w-full py-20 md:py-32 lg:py-40 xl:py-48 relative overflow-hidden">
           <div className="absolute inset-0 -z-10 h-full w-full bg-gradient-to-br from-primary/10 via-cyan-400/10 to-emerald-500/10 animate-gradient-xy"></div>
           <div className="px-4 sm:px-6 lg:px-8">
-            <div className="grid gap-8 lg:grid-cols-2 lg:gap-12">
+            <div className="grid gap-8 grid-cols-1 lg:grid-cols-2 lg:gap-12">
               <div className="flex flex-col justify-center space-y-6 z-10">
                 <div className="space-y-6 text-focus-in">
                   <h1 className="text-5xl font-extrabold sm:text-5xl xl:text-6xl 2xl:text-7xl bg-clip-text text-transparent bg-gradient-to-r from-primary to-cyan-400 leading-normal pb-2">
@@ -124,7 +124,7 @@ export default function LandingPage() {
         </section>
         
         <section ref={el => sectionsRef.current[0] = el} id="story" className="w-full py-16 md:py-24 lg:py-32 bg-gradient-to-b from-secondary/30 to-background fade-in-section">
-            <div className="mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="px-4 sm:px-6 lg:px-8">
                 <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
                     <div className="space-y-4">
                         <div className="inline-block rounded-lg bg-primary/10 text-primary px-4 py-2 text-sm font-semibold tracking-wider 2xl:text-base">Our Story</div>
@@ -154,7 +154,7 @@ export default function LandingPage() {
         </section>
 
         <section ref={el => sectionsRef.current[1] = el} id="features" className="w-full py-16 md:py-24 lg:py-32 bg-background fade-in-section">
-          <div className="mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
               <div className="space-y-3">
                 <div className="inline-block rounded-lg bg-secondary px-4 py-2 text-sm font-semibold tracking-wider text-secondary-foreground">What We Offer</div>
@@ -197,7 +197,7 @@ export default function LandingPage() {
         </section>
 
         <section ref={el => sectionsRef.current[2] = el} id="how-it-works" className="w-full py-16 md:py-24 lg:py-32 bg-gradient-to-b from-secondary/30 to-background fade-in-section">
-            <div className="mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="px-4 sm:px-6 lg:px-8">
                 <div className="flex flex-col items-center justify-center space-y-4 text-center">
                     <div className="space-y-3">
                         <div className="inline-block rounded-lg bg-primary/10 text-primary px-4 py-2 text-sm font-semibold tracking-wider">How It Works</div>
@@ -243,7 +243,7 @@ export default function LandingPage() {
         </section>
 
         <section ref={el => sectionsRef.current[3] = el} id="testimonials" className="w-full py-16 md:py-24 lg:py-32 fade-in-section">
-            <div className="mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="px-4 sm:px-6 lg:px-8">
                 <div className="flex flex-col items-center justify-center space-y-4 text-center">
                     <div className="space-y-3">
                         <div className="inline-block rounded-lg bg-secondary px-4 py-2 text-sm font-semibold tracking-wider text-secondary-foreground">Testimonials</div>
@@ -295,7 +295,7 @@ export default function LandingPage() {
         </section>
 
         <section ref={el => sectionsRef.current[4] = el} id="cta" className="w-full py-16 md:py-24 lg:py-32 bg-secondary/50 border-t fade-in-section">
-            <div className="mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="px-4 sm:px-6 lg:px-8">
                 <div className="flex flex-col items-center space-y-6 text-center bg-gradient-to-r from-primary to-accent p-12 rounded-2xl shadow-2xl">
                     <h2 className="text-4xl font-extrabold tracking-tighter sm:text-5xl 2xl:text-6xl text-primary-foreground">Ready to Start Learning?</h2>
                     <p className="max-w-2xl text-primary-foreground/80 md:text-xl 2xl:text-2xl">

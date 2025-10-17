@@ -85,7 +85,7 @@ export function AppLayout({ children, user }: AppLayoutProps) {
         <SidebarHeader>
           <div className="flex items-center gap-2 p-2">
               <Logo className="size-8" />
-              <span className="font-bold text-lg">The Webels</span>
+              <span className="font-bold text-lg hidden sm:inline">The Webels</span>
           </div>
         </SidebarHeader>
         <SidebarContent className="p-2">
