@@ -18,7 +18,7 @@ function SchedulePageContent({ currentUser, initialSchedules }: { currentUser: A
 
     return (
         <AppLayout user={currentUser}>
-            <div className="mx-auto w-full max-w-6xl space-y-8 py-8">
+            <div className="w-full space-y-8">
                 <div className="flex items-center justify-between">
                     <div>
                         <h1 className="text-3xl font-bold tracking-tight">Class Schedule</h1>

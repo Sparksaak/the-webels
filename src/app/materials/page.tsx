@@ -27,7 +27,7 @@ function MaterialsPageContent({ currentUser, initialMaterials }: { currentUser: 
     const materialsToShow = currentUser.role === 'teacher' ? initialMaterials : publishedMaterials;
 
     return (
-        <div className="mx-auto w-full max-w-7xl space-y-8 py-8">
+        <div className="w-full space-y-8">
             <div className="flex items-center justify-between mb-8">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">Class Materials</h1>

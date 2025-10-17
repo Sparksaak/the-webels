@@ -108,7 +108,7 @@ export function AppLayout({ children, user }: AppLayoutProps) {
               </div>
           </header>
           <div className="flex-1 w-full overflow-y-auto">
-            <main className="p-4 sm:px-6 lg:px-8 h-full">
+            <main className="p-4 sm:p-6 lg:p-8 h-full">
               {children}
             </main>
           </div>

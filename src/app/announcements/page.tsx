@@ -38,7 +38,7 @@ function DeleteButton({ announcementId }: { announcementId: string }) {
 
 function AnnouncementsList({ currentUser, announcements }: { currentUser: AppUser, announcements: Announcement[] }) {
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-8 py-8">
+    <div className="w-full space-y-8">
       <div className="flex items-center justify-between">
             <div>
                 <h1 className="text-3xl font-bold tracking-tight">Announcements</h1>
