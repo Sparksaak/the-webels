@@ -1,4 +1,5 @@
 
+
 import { Suspense } from 'react';
 import { createClient } from '@/lib/supabase/server';
 import { AppLayout } from '@/components/app-layout';
@@ -9,8 +10,8 @@ import { redirect } from 'next/navigation';
 import { getAnnouncements, deleteAnnouncement, type Announcement } from './actions';
 import { NewAnnouncementDialog } from '@/components/new-announcement-dialog';
 import { Button } from '@/components/ui/button';
-import { format } from 'date-fns';
 import { generateAvatarUrl } from '@/lib/utils';
+import { ClientTime } from '@/components/client-time';
 import { cookies } from 'next/headers';
 
 type AppUser = {
@@ -76,7 +77,7 @@ function AnnouncementsList({ currentUser, announcements }: { currentUser: AppUse
                                     <div>
                                         <CardTitle>{announcement.title}</CardTitle>
                                         <CardDescription className="mt-2">
-                                            Posted on {format(new Date(announcement.createdAt), 'MMMM d, yyyy')}
+                                            Posted on <ClientTime timestamp={announcement.createdAt} formatType="date" />
                                         </CardDescription>
                                     </div>
                                     {currentUser.role === 'teacher' && currentUser.id === announcement.author.id && (

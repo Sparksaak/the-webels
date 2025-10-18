@@ -1,5 +1,7 @@
 
 
+
+
 'use client';
 
 import { useCallback, useEffect, useState, useRef } from 'react';
@@ -10,9 +12,9 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardHeader } from '@/components/ui/card';
-import { Send, UserPlus, MessageSquarePlus, Trash2, Loader2 } from 'lucide-react';
+import { Send, UserPlus, MessageSquarePlus, Trash2, Loader2, ArrowLeft } from 'lucide-react';
 import { cn, generateAvatarUrl, getInitials } from '@/lib/utils';
-import { format, formatDistanceToNow, parseISO } from 'date-fns';
+import { ClientTime } from '@/components/client-time';
 
 import { getConversations, getMessages } from '@/app/messages/data';
 import { sendMessage, deleteMessage } from '@/app/messages/actions';
@@ -214,57 +216,74 @@ export function MessagingContent({
             fetchAndSetConversations(currentUser.id);
         }
     };
+
+    const handleBack = () => {
+        setActiveConversationId(null);
+        router.push('/messages', { scroll: false });
+    };
     
     const activeConversation = conversations.find(c => c.id === activeConversationId);
 
     return (
-            <div className="flex h-[calc(100vh_-_3.5rem)]">
-                <Card className="w-1/3 rounded-r-none border-r h-full flex flex-col">
-                    <CardHeader className="flex flex-row items-center justify-between p-4">
-                        <h2 className="text-xl font-bold">Chats</h2>
-                        <NewConversationDialog
-                            currentUser={currentUser}
-                            onConversationCreated={onConversationCreated}
-                        />
-                    </CardHeader>
-                    <ScrollArea className="flex-1">
-                        <div className="p-2 space-y-1">
-                            {conversations.map((conv) => (
-                                <Button
-                                    key={conv.id}
-                                    variant={conv.id === activeConversationId ? 'secondary' : 'ghost'}
-                                    className="w-full justify-start h-auto py-3 px-3"
-                                    onClick={() => handleConversationSelect(conv.id)}
-                                >
-                                    <Avatar className="h-10 w-10 mr-3" data-ai-hint="person portrait">
-                                        <AvatarImage src={conv.type === 'direct' ? conv.participants.find(p=>p.id !== currentUser.id)?.avatarUrl : generateAvatarUrl(conv.name)} />
-                                        <AvatarFallback>{getInitials(conv.name)}</AvatarFallback>
-                                    </Avatar>
-                                    <div className="flex flex-col items-start min-w-0">
-                                        <div className="font-semibold truncate w-full text-left">{conv.name}</div>
-                                        {conv.last_message && (
-                                            <p className="text-xs text-muted-foreground whitespace-normal w-full text-left">
-                                                {conv.last_message.content.length > 97
-                                                    ? `${conv.last_message.content.substring(0, 97)}...`
-                                                    : conv.last_message.content}
-                                            </p>
-                                        )}
-                                    </div>
-                                     {conv.last_message && (
-                                        <div className="text-xs text-muted-foreground ml-auto whitespace-nowrap self-start">
-                                            {formatDistanceToNow(parseISO(conv.last_message.timestamp), { addSuffix: true })}
+            <div className="flex h-full">
+                <div className={cn(
+                    "w-full md:w-1/3 flex-col h-full",
+                    activeConversationId ? "hidden md:flex" : "flex"
+                )}>
+                    <Card className="rounded-none border-0 border-r h-full flex flex-col">
+                        <CardHeader className="flex flex-row items-center justify-between p-4">
+                            <h2 className="text-xl font-bold">Chats</h2>
+                            <NewConversationDialog
+                                currentUser={currentUser}
+                                onConversationCreated={onConversationCreated}
+                            />
+                        </CardHeader>
+                        <ScrollArea className="flex-1">
+                            <div className="p-2 space-y-1">
+                                {conversations.map((conv) => (
+                                    <Button
+                                        key={conv.id}
+                                        variant={conv.id === activeConversationId ? 'secondary' : 'ghost'}
+                                        className="w-full justify-start h-auto py-3 px-3"
+                                        onClick={() => handleConversationSelect(conv.id)}
+                                    >
+                                        <Avatar className="h-10 w-10 mr-3" data-ai-hint="person portrait">
+                                            <AvatarImage src={conv.type === 'direct' ? conv.participants.find(p=>p.id !== currentUser.id)?.avatarUrl : generateAvatarUrl(conv.name)} />
+                                            <AvatarFallback>{getInitials(conv.name)}</AvatarFallback>
+                                        </Avatar>
+                                        <div className="flex flex-col items-start min-w-0">
+                                            <div className="font-semibold truncate w-full text-left">{conv.name}</div>
+                                            {conv.last_message && (
+                                                <p className="text-xs text-muted-foreground whitespace-nowrap w-full text-left">
+                                                    {conv.last_message.content.length > 30
+                                                        ? `${conv.last_message.content.substring(0, 30)}...`
+                                                        : conv.last_message.content}
+                                                </p>
+                                            )}
                                         </div>
-                                    )}
-                                </Button>
-                            ))}
-                        </div>
-                    </ScrollArea>
-                </Card>
+                                         {conv.last_message && (
+                                            <div className="text-xs text-muted-foreground ml-auto whitespace-nowrap self-start">
+                                                <ClientTime timestamp={conv.last_message.timestamp} formatType="distance" />
+                                            </div>
+                                        )}
+                                    </Button>
+                                ))}
+                            </div>
+                        </ScrollArea>
+                    </Card>
+                </div>
 
-                <div className="w-2/3 flex flex-col bg-muted/30 h-full">
+
+                <div className={cn(
+                    "w-full md:w-2/3 flex-col bg-muted/30 h-full",
+                    activeConversationId ? "flex" : "hidden md:flex"
+                )}>
                     {activeConversation ? (
                         <>
                             <header className="flex items-center gap-4 border-b bg-background px-6 h-16">
+                                <Button variant="ghost" size="icon" className="md:hidden" onClick={handleBack}>
+                                    <ArrowLeft className="h-5 w-5" />
+                                </Button>
                                 <Avatar data-ai-hint="person portrait">
                                      <AvatarImage src={activeConversation.type === 'direct' ? activeConversation.participants.find(p=>p.id !== currentUser.id)?.avatarUrl : generateAvatarUrl(activeConversation.name)} />
                                     <AvatarFallback>{getInitials(activeConversation.name)}</AvatarFallback>
@@ -323,7 +342,7 @@ export function MessagingContent({
                                                     <p>{msg.is_deleted ? 'This message was deleted.' : msg.content}</p>
                                                     {!msg.is_deleted && (
                                                         <p className="text-xs opacity-70 mt-1.5 text-right">
-                                                            {format(parseISO(msg.createdAt), 'p')}
+                                                            <ClientTime timestamp={msg.createdAt} formatType="time" />
                                                         </p>
                                                     )}
                                                 </div>

@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Suspense, useState, useEffect } from 'react';
@@ -12,9 +13,9 @@ import { Eye, BookOpen, Pencil, Trash2 } from 'lucide-react';
 import { MaterialViewer } from '@/components/material-viewer';
 import { DeleteMaterialButton } from '@/components/delete-material-button';
 import { Badge } from '@/components/ui/badge';
-import { format } from 'date-fns';
 import { createClient } from '@/lib/supabase/client';
 import { generateAvatarUrl } from '@/lib/utils';
+import { ClientTime } from '@/components/client-time';
 import { redirect } from 'next/navigation';
 
 
@@ -63,7 +64,7 @@ function MaterialsPageContent({ currentUser, initialMaterials }: { currentUser: 
                             </CardContent>
                             <CardFooter className="flex justify-between items-center">
                                 <div className="text-xs text-muted-foreground">
-                                    {material.is_published ? `Published on ${format(new Date(material.created_at), 'MMM d, yyyy')}` : `Created on ${format(new Date(material.created_at), 'MMM d, yyyy')}`}
+                                    {material.is_published ? `Published on ` : `Created on `} <ClientTime timestamp={material.created_at} formatType="date" />
                                 </div>
                                 <div className="flex items-center">
                                     <Button variant="secondary" size="sm" onClick={() => setSelectedMaterial(material)}>

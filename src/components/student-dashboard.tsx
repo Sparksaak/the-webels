@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import {
@@ -18,9 +19,10 @@ import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import type { AppUser } from '@/app/messages/types';
 import { type Assignment } from '@/app/assignments/actions';
 import { Button } from './ui/button';
-import { format, formatDistanceToNow } from 'date-fns';
+import { format } from 'date-fns';
 import { type ClassSchedule } from '@/app/schedule/actions';
 import { getInitials } from '@/lib/utils';
+import { ClientTime } from '@/components/client-time';
 import { LoadingLink } from './loading-link';
 
 interface StudentDashboardProps {
@@ -207,7 +209,7 @@ function AssignmentList({ assignments, loading, emptyMessage }: { assignments: A
                         <p className="text-xs text-muted-foreground">
                             {assignment.dueDate ? (
                                 <>
-                                    Due {formatDistanceToNow(new Date(assignment.dueDate), { addSuffix: true })}
+                                    Due <ClientTime timestamp={assignment.dueDate} formatType="distance" />
                                 </>
                             ) : (
                                 'No due date'

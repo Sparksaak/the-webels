@@ -1,16 +1,18 @@
 
+
 'use client';
 
 import { useState, useMemo, useEffect, useTransition } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { FileText, Trash2, Loader2 } from 'lucide-react';
-import { format, formatDistanceToNow, isPast } from 'date-fns';
+import { format, isPast } from 'date-fns';
 import { deleteAssignment, type Assignment } from '@/app/assignments/actions';
 import { NewAssignmentDialog } from '@/components/new-assignment-dialog';
 import { Badge } from '@/components/ui/badge';
 import { ViewAssignmentSheet } from '@/components/view-assignment-sheet';
 import { cn } from '@/lib/utils';
+import { ClientTime } from '@/components/client-time';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -111,7 +113,7 @@ function AssignmentCard({ assignment, user }: { assignment: Assignment, user: Ap
       </CardContent>
       <CardFooter className="flex justify-between items-center">
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            Posted {formatDistanceToNow(new Date(assignment.createdAt), { addSuffix: true })} by {assignment.teacher.name}
+            Posted <ClientTime timestamp={assignment.createdAt} formatType="distance" /> by {assignment.teacher.name}
              {user.role === 'teacher' && user.id === assignment.teacher.id && (
                 <DeleteAssignmentButton assignmentId={assignment.id} />
             )}
