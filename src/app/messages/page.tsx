@@ -8,8 +8,22 @@ import { getConversations, getMessages } from './data';
 import type { AppUser } from './types';
 import { MessagingContent } from '@/components/messaging-content';
 import { redirect } from 'next/navigation';
-import { generateAvatarUrl } from '@/lib/utils';
 import { cookies } from 'next/headers';
+
+function getInitials(name: string | null | undefined = ''): string {
+    if (!name) return '';
+    const nameParts = name.split(' ');
+    if (nameParts.length > 1) {
+        return (nameParts[0][0] + nameParts[nameParts.length - 1][0]).toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
+}
+
+function generateAvatarUrl(name: string | null | undefined): string {
+    const initials = getInitials(name);
+    return `https://placehold.co/100x100/EFEFEF/333333/png?text=${initials}`;
+}
+
 
 async function Messaging({ conversationId, currentUser }: { conversationId: string | null, currentUser: AppUser }) {
     const [conversations, messages] = await Promise.all([

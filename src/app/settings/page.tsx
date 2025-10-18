@@ -3,7 +3,6 @@ import { Suspense } from 'react';
 import { createClient } from '@/lib/supabase/server';
 import { AppLayout } from '@/components/app-layout';
 import { redirect } from 'next/navigation';
-import { generateAvatarUrl } from '@/lib/utils';
 import { getProfile, type Profile } from './actions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -11,6 +10,21 @@ import { ProfileForm } from '@/components/profile-form';
 import { UpdatePasswordForm } from '@/components/update-password-form';
 import { DeleteAccountButton } from '@/components/delete-account-button';
 import { cookies } from 'next/headers';
+
+function getInitials(name: string | null | undefined = ''): string {
+    if (!name) return '';
+    const nameParts = name.split(' ');
+    if (nameParts.length > 1) {
+        return (nameParts[0][0] + nameParts[nameParts.length - 1][0]).toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
+}
+
+function generateAvatarUrl(name: string | null | undefined): string {
+    const initials = getInitials(name);
+    return `https://placehold.co/100x100/EFEFEF/333333/png?text=${initials}`;
+}
+
 
 type AppUser = {
     id: string;

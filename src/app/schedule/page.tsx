@@ -9,8 +9,22 @@ import { Suspense } from 'react';
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
-import { generateAvatarUrl } from '@/lib/utils';
 import { getClassSchedules } from './actions';
+
+function getInitials(name: string | null | undefined = ''): string {
+    if (!name) return '';
+    const nameParts = name.split(' ');
+    if (nameParts.length > 1) {
+        return (nameParts[0][0] + nameParts[nameParts.length - 1][0]).toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
+}
+
+function generateAvatarUrl(name: string | null | undefined): string {
+    const initials = getInitials(name);
+    return `https://placehold.co/100x100/EFEFEF/333333/png?text=${initials}`;
+}
+
 
 function SchedulePageContent({ currentUser, initialSchedules }: { currentUser: AppUser, initialSchedules: ClassSchedule[] }) {
     const onlineSchedules = initialSchedules.filter(s => s.class_type === 'online');

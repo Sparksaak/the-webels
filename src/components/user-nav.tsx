@@ -25,9 +25,18 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { logout } from "@/app/auth/actions"
 import type { AppUser } from "@/app/messages/types";
-import { getInitials } from "@/lib/utils"
 import { Moon, Sun, LogOut, Settings, Loader2 } from "lucide-react";
 import { LoadingLink } from "./loading-link";
+
+function getInitials(name: string | null | undefined = ''): string {
+    if (!name) return '';
+    const nameParts = name.split(' ');
+    if (nameParts.length > 1) {
+        return (nameParts[0][0] + nameParts[nameParts.length - 1][0]).toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
+}
+
 
 function LogoutMenuItem() {
   const [isPending, startTransition] = useTransition();

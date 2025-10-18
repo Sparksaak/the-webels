@@ -2,6 +2,7 @@
 
 
 
+
 'use client';
 
 import { useCallback, useEffect, useState, useRef } from 'react';
@@ -13,7 +14,7 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardHeader } from '@/components/ui/card';
 import { Send, UserPlus, MessageSquarePlus, Trash2, Loader2, ArrowLeft } from 'lucide-react';
-import { cn, generateAvatarUrl, getInitials } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 import { ClientTime } from '@/components/client-time';
 
 import { getConversations, getMessages } from '@/app/messages/data';
@@ -38,6 +39,20 @@ interface MessagingContentProps {
     initialConversations: Conversation[];
     initialMessages: Message[];
     initialActiveConversationId: string | null;
+}
+
+function getInitials(name: string | null | undefined = ''): string {
+    if (!name) return '';
+    const nameParts = name.split(' ');
+    if (nameParts.length > 1) {
+        return (nameParts[0][0] + nameParts[nameParts.length - 1][0]).toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
+}
+
+function generateAvatarUrl(name: string | null | undefined): string {
+    const initials = getInitials(name);
+    return `https://placehold.co/100x100/EFEFEF/333333/png?text=${initials}`;
 }
 
 export function MessagingContent({ 

@@ -21,10 +21,19 @@ import { ScrollArea } from './ui/scroll-area';
 import type { AppUser } from '@/app/messages/types';
 import type { Assignment } from '@/app/assignments/actions';
 import { Button } from './ui/button';
-import { getInitials } from '@/lib/utils';
 import { Skeleton } from './ui/skeleton';
 import { LoadingLink } from './loading-link';
 import { Badge } from './ui/badge';
+
+function getInitials(name: string | null | undefined = ''): string {
+    if (!name) return '';
+    const nameParts = name.split(' ');
+    if (nameParts.length > 1) {
+        return (nameParts[0][0] + nameParts[nameParts.length - 1][0]).toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
+}
+
 
 interface Student {
     id: string;

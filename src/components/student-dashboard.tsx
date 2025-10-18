@@ -1,5 +1,6 @@
 
 
+
 "use client";
 
 import {
@@ -21,9 +22,18 @@ import { type Assignment } from '@/app/assignments/actions';
 import { Button } from './ui/button';
 import { format } from 'date-fns';
 import { type ClassSchedule } from '@/app/schedule/actions';
-import { getInitials } from '@/lib/utils';
 import { ClientTime } from '@/components/client-time';
 import { LoadingLink } from './loading-link';
+
+function getInitials(name: string | null | undefined = ''): string {
+    if (!name) return '';
+    const nameParts = name.split(' ');
+    if (nameParts.length > 1) {
+        return (nameParts[0][0] + nameParts[nameParts.length - 1][0]).toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
+}
+
 
 interface StudentDashboardProps {
     user: AppUser;
