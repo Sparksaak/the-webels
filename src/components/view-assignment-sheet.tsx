@@ -2,7 +2,7 @@
 
 
 
-"use client";
+'use client';
 
 import { useState, useRef, useEffect } from 'react';
 import { useFormStatus } from 'react-dom';
@@ -457,7 +457,7 @@ function SubmissionCard({ submission, assignment }: { submission: AssignmentSubm
                 </div>
                  <div className="text-right">
                     <p className="text-xs text-muted-foreground">
-                        {format(new Date(submission.submitted_at), 'MMM d, yyyy @ h:mm a zzz')}
+                        <ClientTime timestamp={submission.submitted_at} formatType="date" /> at <ClientTime timestamp={submission.submitted_at} formatType="time" />
                     </p>
                     <div className="mt-1">
                         {getSubmissionStatus()}
