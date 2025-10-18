@@ -3,6 +3,7 @@
 
 
 
+
 'use client';
 
 import { useCallback, useEffect, useState, useRef } from 'react';
@@ -192,7 +193,7 @@ export function MessagingContent({
                 description: result.error,
                 variant: "destructive",
              });
-        } else if (result.message) {
+        } else if (result?.success && result.message) {
              setMessages(prev => prev.map(m => m.id === tempId ? result.message : m));
              
              const channel = supabase.channel(`conversations-channel`);
