@@ -57,7 +57,7 @@ export default function AuthStatusPage() {
   return (
     <div className="flex min-h-screen w-full items-center justify-center bg-background p-4">
         <Suspense fallback={<div className="flex h-full w-full items-center justify-center"><div>Loading...</div></div>}>
-            <div className="w-full max-w-md">
+            <div className="w-full max-w-md px-4">
                 <StatusContent />
             </div>
         </Suspense>
