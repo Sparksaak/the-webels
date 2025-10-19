@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useActionState, useEffect, useState } from 'react';
+import { useActionState, useEffect, useState, Suspense } from 'react';
 import { useFormStatus } from 'react-dom';
 import { login, loginWithMagicLink } from '@/app/auth/actions';
 import { useToast } from '@/hooks/use-toast';
@@ -41,7 +41,7 @@ function MagicLinkButton() {
     )
 }
 
-export default function LoginPage() {
+function LoginForm() {
   const [passwordState, passwordAction] = useActionState(login, null);
   const [magicLinkState, magicLinkAction] = useActionState(loginWithMagicLink, null);
 
@@ -62,6 +62,8 @@ export default function LoginPage() {
         description: error,
         variant: "destructive",
       });
+      // Remove the error from the URL without reloading the page
+      router.replace('/login', { scroll: false });
     }
 
     const message = searchParams.get('message');
@@ -70,8 +72,9 @@ export default function LoginPage() {
             title: "Account Deleted",
             description: "Your account has been successfully deleted.",
         });
+        router.replace('/login', { scroll: false });
     }
-  }, [searchParams, toast]);
+  }, [searchParams, toast, router]);
 
   useEffect(() => {
     if (passwordState?.error) {
@@ -222,4 +225,13 @@ export default function LoginPage() {
       </div>
     </div>
   );
+}
+
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <LoginForm />
+    </Suspense>
+  )
 }
