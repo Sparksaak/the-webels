@@ -116,8 +116,8 @@ export default function LoginPage() {
 
   return (
     <div className="w-full lg:grid lg:min-h-screen lg:grid-cols-2 xl:min-h-screen">
-      <div className="flex items-center justify-center py-12 bg-background">
-        <div className="mx-auto grid w-[380px] gap-8">
+      <div className="flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-background">
+        <div className="mx-auto grid w-full max-w-sm gap-8">
           <div className="grid gap-4 text-center">
             <Image src="/logo.png" alt="The Webels Logo" width={48} height={48} className="mx-auto" />
             <h1 className="text-4xl font-bold">Login</h1>
