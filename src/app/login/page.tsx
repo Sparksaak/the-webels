@@ -6,7 +6,6 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Logo } from '@/components/logo';
 import { useActionState, useEffect, useState } from 'react';
 import { useFormStatus } from 'react-dom';
 import { login, loginWithMagicLink } from '@/app/auth/actions';
@@ -120,7 +119,7 @@ export default function LoginPage() {
       <div className="flex items-center justify-center py-12 bg-background">
         <div className="mx-auto grid w-[380px] gap-8">
           <div className="grid gap-4 text-center">
-            <Logo className="mx-auto size-12" />
+            <Image src="/logo.png" alt="The Webels Logo" width={48} height={48} className="mx-auto" />
             <h1 className="text-4xl font-bold">Login</h1>
             <p className="text-balance text-muted-foreground">
               Welcome back! Sign in to continue.

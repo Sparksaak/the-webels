@@ -3,7 +3,6 @@
 import { useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Logo } from '@/components/logo';
 import { Code, BookOpen, BrainCircuit, Quote, ArrowRight, Calendar, Users } from 'lucide-react';
 import Image from 'next/image';
 import { LoadingLink } from '@/components/loading-link';
@@ -48,7 +47,7 @@ export default function LandingPage() {
     <div className="flex flex-col min-h-screen bg-background text-foreground">
       <header className="px-4 lg:px-6 h-16 flex items-center shadow-sm bg-background/80 backdrop-blur-sm sticky top-0 z-50">
         <Link href="#" className="flex items-center justify-center" prefetch={false}>
-          <Logo />
+          <Image src="/logo.png" alt="The Webels Logo" width={32} height={32} />
           <span className="hidden sm:inline ml-3 text-2xl font-bold tracking-wider text-foreground">The Webels</span>
         </Link>
         <nav className="ml-auto flex gap-4 sm:gap-6 items-center">

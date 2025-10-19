@@ -16,9 +16,9 @@ import {
   SidebarInset,
 } from '@/components/ui/sidebar';
 import { UserNav } from '@/components/user-nav';
-import { Logo } from '@/components/logo';
 import { LoadingLink } from './loading-link';
 import { cn } from '@/lib/utils';
+import Image from 'next/image';
 
 type User = {
   id: string;
@@ -88,7 +88,7 @@ export function AppLayout({ children, user }: AppLayoutProps) {
       <Sidebar collapsible="icon" className="border-r border-border/20">
         <SidebarHeader>
           <div className="flex items-center gap-2 p-2">
-              <Logo className="size-8" />
+              <Image src="/logo.png" alt="The Webels Logo" width={32} height={32} />
               <span className="font-bold text-lg hidden sm:inline">The Webels</span>
           </div>
         </SidebarHeader>

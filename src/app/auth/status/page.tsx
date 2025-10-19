@@ -5,8 +5,8 @@ import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Logo } from '@/components/logo';
 import { CheckCircle2, XCircle } from 'lucide-react';
+import Image from 'next/image';
 
 function StatusContent() {
     const searchParams = useSearchParams();
@@ -18,7 +18,7 @@ function StatusContent() {
         <Card className="w-full max-w-md shadow-xl">
             <CardHeader className="text-center">
                 <div className="mx-auto mb-4">
-                    <Logo />
+                    <Image src="/logo.png" alt="The Webels Logo" width={48} height={48} />
                 </div>
                 <CardTitle className="text-2xl flex items-center justify-center gap-2">
                     {success ? (

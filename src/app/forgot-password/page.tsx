@@ -10,9 +10,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Logo } from '@/components/logo';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import Image from 'next/image';
 
 function SubmitButton() {
     const { pending } = useFormStatus();
@@ -84,7 +84,7 @@ export default function ForgotPasswordPage() {
             <Card className="shadow-xl">
                 <CardHeader className="text-center">
                     <div className="mx-auto mb-4">
-                        <Logo />
+                        <Image src="/logo.png" alt="The Webels Logo" width={48} height={48} />
                     </div>
                     <CardTitle className="text-2xl">Forgot Password?</CardTitle>
                     <CardDescription>

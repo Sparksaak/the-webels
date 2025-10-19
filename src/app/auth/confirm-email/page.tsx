@@ -3,9 +3,9 @@
 
 import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Logo } from '@/components/logo';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import Link from 'next/link';
+import Image from 'next/image';
 
 function ConfirmContent() {
   const searchParams = useSearchParams();
@@ -39,7 +39,7 @@ function ConfirmContent() {
       <Card className="shadow-xl">
         <CardHeader className="text-center">
             <div className="mx-auto mb-4">
-                <Logo />
+                <Image src="/logo.png" alt="The Webels Logo" width={48} height={48} />
             </div>
           <CardTitle className="text-2xl">{title}</CardTitle>
           <CardDescription>

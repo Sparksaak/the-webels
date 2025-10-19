@@ -16,7 +16,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Logo } from '@/components/logo';
 import { Loader2 } from 'lucide-react';
 import { LoadingLink } from '@/components/loading-link';
 import { cn } from '@/lib/utils';
@@ -59,7 +58,7 @@ export default function SignupPage() {
       <div className="flex items-center justify-center py-12">
         <div className="mx-auto grid w-[400px] gap-6">
           <div className="grid gap-2 text-center">
-            <Logo className="mx-auto" />
+            <Image src="/logo.png" alt="The Webels Logo" width={48} height={48} className="mx-auto" />
             <h1 className="text-3xl font-bold">Sign Up</h1>
             <p className="text-balance text-muted-foreground">
               Create an account to get started with The Webels.
