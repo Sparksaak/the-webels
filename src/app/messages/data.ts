@@ -3,21 +3,7 @@
 
 import type { Conversation, Message, AppUser } from './types';
 import { supabaseAdmin } from '@/lib/supabase/admin';
-
-function getInitials(name: string | null | undefined = ''): string {
-    if (!name) return '';
-    const nameParts = name.split(' ');
-    if (nameParts.length > 1) {
-        return (nameParts[0][0] + nameParts[nameParts.length - 1][0]).toUpperCase();
-    }
-    return name.substring(0, 2).toUpperCase();
-}
-
-function generateAvatarUrl(name: string | null | undefined): string {
-    const initials = getInitials(name);
-    return `https://placehold.co/100x100/EFEFEF/333333/png?text=${initials}`;
-}
-
+import { generateAvatarUrl } from '@/lib/utils';
 
 async function getParticipantsForConversations(conversationIds: string[]): Promise<Record<string, AppUser[]>> {
     const { data: participantsData, error: participantsError } = await supabaseAdmin

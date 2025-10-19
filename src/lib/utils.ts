@@ -9,10 +9,13 @@ export function cn(...inputs: ClassValue[]) {
 export function getInitials(name: string | null | undefined = ''): string {
     if (!name) return '';
     const nameParts = name.split(' ');
-    if (nameParts.length > 1) {
+    if (nameParts.length > 1 && nameParts[0] && nameParts[nameParts.length - 1]) {
         return (nameParts[0][0] + nameParts[nameParts.length - 1][0]).toUpperCase();
     }
-    return name.substring(0, 2).toUpperCase();
+    if (name.length > 1) {
+        return name.substring(0, 2).toUpperCase();
+    }
+    return name.toUpperCase();
 }
 
 export function generateAvatarUrl(name: string | null | undefined): string {
