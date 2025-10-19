@@ -5,8 +5,6 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack -p 9002",
-    "genkit:dev": "genkit start -- tsx src/ai/dev.ts",
-    "genkit:watch": "genkit start -- tsx --watch src/ai/dev.ts",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
@@ -44,7 +42,7 @@
     "clsx": "^2.1.1",
     "cmdk": "^1.0.0",
     "date-fns": "^3.6.0",
-    "dotenv": "^16.5.0",
+    "dotenv": "^16.4.5",
     "embla-carousel-react": "^8.6.0",
     "firebase": "^10.12.3",
     "genkit": "^1.14.1",
@@ -71,4 +69,3 @@
     "typescript": "^5"
   }
 }
-
