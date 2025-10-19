@@ -17,7 +17,7 @@
     --secondary-foreground: 220 17% 25%;
     --muted: 220 14% 90%;
     --muted-foreground: 220 9% 45%;
-    --accent: 158 84% 39%; /* Emerald Green */
+    --accent: 190 94% 43%; /* Bright Cyan */
     --accent-foreground: 210 40% 98%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
@@ -26,7 +26,7 @@
     --ring: 225 63% 33%;
     --chart-1: 225 63% 33%;
     --chart-2: 190 94% 43%;
-    --chart-3: 158 84% 39%;
+    --chart-3: 210 90% 55%;
     --chart-4: 25 95% 53%; /* Vibrant Orange */
     --chart-5: 220 17% 12%;
     --radius: 1rem;
@@ -52,7 +52,7 @@
     --secondary-foreground: 220 14% 90%;
     --muted: 220 17% 19%;
     --muted-foreground: 220 14% 60%;
-    --accent: 158 84% 39%; /* Emerald Green */
+    --accent: 225 63% 40%; /* Deeper Blue */
     --accent-foreground: 210 40% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
@@ -61,7 +61,7 @@
     --ring: 190 94% 43%;
     --chart-1: 190 94% 43%;
     --chart-2: 225 63% 33%;
-    --chart-3: 158 84% 39%;
+    --chart-3: 210 90% 55%;
     --chart-4: 25 95% 53%;
     --chart-5: 220 14% 80%;
     --sidebar-background: 220 17% 10%;
