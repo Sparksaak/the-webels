@@ -243,7 +243,7 @@ export function MessagingContent({
     return (
             <div className="flex h-full">
                 <div className={cn(
-                    "w-full md:w-1/3 flex-col h-full",
+                    "w-full md:w-2/5 lg:w-1/3 flex-col h-full",
                     activeConversationId ? "hidden md:flex" : "flex"
                 )}>
                     <Card className="rounded-none border-0 border-r h-full flex flex-col">
@@ -291,7 +291,7 @@ export function MessagingContent({
 
 
                 <div className={cn(
-                    "w-full md:w-2/3 flex-col bg-muted/30 h-full",
+                    "w-full md:w-3/5 lg:w-2/3 flex-col bg-muted/30 h-full",
                     activeConversationId ? "flex" : "hidden md:flex"
                 )}>
                     {activeConversation ? (
