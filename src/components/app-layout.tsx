@@ -111,7 +111,7 @@ export function AppLayout({ children, user }: AppLayoutProps) {
                   <SidebarTrigger />
               </div>
           </header>
-          <div className={cn("flex-1 w-full", isMessagesPage ? 'overflow-hidden' : 'overflow-y-auto')}>
+          <div className="flex-1 w-full overflow-y-auto">
             <main className={cn("h-full", isMessagesPage ? 'p-0' : 'p-4 sm:p-6 lg:p-8')}>
               {children}
             </main>

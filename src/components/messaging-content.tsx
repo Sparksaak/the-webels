@@ -4,6 +4,7 @@
 
 
 
+
 'use client';
 
 import { useCallback, useEffect, useState, useRef } from 'react';
@@ -241,179 +242,179 @@ export function MessagingContent({
     const activeConversation = conversations.find(c => c.id === activeConversationId);
 
     return (
-            <div className="flex h-full">
-                <div className={cn(
-                    "w-full md:w-2/5 lg:w-1/3 flex-col h-full",
-                    activeConversationId ? "hidden md:flex" : "flex"
-                )}>
-                    <Card className="rounded-none border-0 border-r h-full flex flex-col">
-                        <CardHeader className="flex flex-row items-center justify-between p-4">
-                            <h2 className="text-xl font-bold">Chats</h2>
-                            <NewConversationDialog
-                                currentUser={currentUser}
-                                onConversationCreated={onConversationCreated}
-                            />
-                        </CardHeader>
-                        <ScrollArea className="flex-1">
-                            <div className="p-2 space-y-1">
-                                {conversations.map((conv) => (
-                                    <Button
-                                        key={conv.id}
-                                        variant={conv.id === activeConversationId ? 'secondary' : 'ghost'}
-                                        className="w-full justify-start h-auto py-3 px-3"
-                                        onClick={() => handleConversationSelect(conv.id)}
-                                    >
-                                        <Avatar className="h-10 w-10 mr-3" data-ai-hint="person portrait">
-                                            <AvatarImage src={conv.type === 'direct' ? conv.participants.find(p=>p.id !== currentUser.id)?.avatarUrl : generateAvatarUrl(conv.name)} />
-                                            <AvatarFallback>{getInitials(conv.name)}</AvatarFallback>
-                                        </Avatar>
-                                        <div className="flex flex-col items-start min-w-0">
-                                            <div className="font-semibold truncate w-full text-left">{conv.name}</div>
-                                            {conv.last_message && (
-                                                <p className="text-xs text-muted-foreground whitespace-nowrap w-full text-left">
-                                                    {conv.last_message.content.length > 30
-                                                        ? `${conv.last_message.content.substring(0, 30)}...`
-                                                        : conv.last_message.content}
-                                                </p>
-                                            )}
-                                        </div>
-                                         {conv.last_message && (
-                                            <div className="text-xs text-muted-foreground ml-auto whitespace-nowrap self-start">
-                                                <ClientTime timestamp={conv.last_message.timestamp} formatType="distance" />
-                                            </div>
+        <div className="flex h-[calc(100vh_-_theme(spacing.14))]">
+            <div className={cn(
+                "w-full md:w-2/5 lg:w-1/3 flex-col h-full",
+                activeConversationId ? "hidden md:flex" : "flex"
+            )}>
+                <Card className="rounded-none border-0 border-r h-full flex flex-col">
+                    <CardHeader className="flex flex-row items-center justify-between p-4">
+                        <h2 className="text-xl font-bold">Chats</h2>
+                        <NewConversationDialog
+                            currentUser={currentUser}
+                            onConversationCreated={onConversationCreated}
+                        />
+                    </CardHeader>
+                    <ScrollArea className="flex-1">
+                        <div className="p-2 space-y-1">
+                            {conversations.map((conv) => (
+                                <Button
+                                    key={conv.id}
+                                    variant={conv.id === activeConversationId ? 'secondary' : 'ghost'}
+                                    className="w-full justify-start h-auto py-3 px-3"
+                                    onClick={() => handleConversationSelect(conv.id)}
+                                >
+                                    <Avatar className="h-10 w-10 mr-3" data-ai-hint="person portrait">
+                                        <AvatarImage src={conv.type === 'direct' ? conv.participants.find(p=>p.id !== currentUser.id)?.avatarUrl : generateAvatarUrl(conv.name)} />
+                                        <AvatarFallback>{getInitials(conv.name)}</AvatarFallback>
+                                    </Avatar>
+                                    <div className="flex flex-col items-start min-w-0">
+                                        <div className="font-semibold truncate w-full text-left">{conv.name}</div>
+                                        {conv.last_message && (
+                                            <p className="text-xs text-muted-foreground whitespace-nowrap w-full text-left">
+                                                {conv.last_message.content.length > 30
+                                                    ? `${conv.last_message.content.substring(0, 30)}...`
+                                                    : conv.last_message.content}
+                                            </p>
                                         )}
-                                    </Button>
-                                ))}
+                                    </div>
+                                     {conv.last_message && (
+                                        <div className="text-xs text-muted-foreground ml-auto whitespace-nowrap self-start">
+                                            <ClientTime timestamp={conv.last_message.timestamp} formatType="distance" />
+                                        </div>
+                                    )}
+                                </Button>
+                            ))}
+                        </div>
+                    </ScrollArea>
+                </Card>
+            </div>
+
+
+            <div className={cn(
+                "w-full md:w-3/5 lg:w-2/3 flex-col bg-muted/30 h-full",
+                activeConversationId ? "flex" : "hidden md:flex"
+            )}>
+                {activeConversation ? (
+                    <>
+                        <header className="flex-shrink-0 flex items-center gap-4 border-b bg-background px-6 h-16">
+                            <Button variant="ghost" size="icon" className="md:hidden" onClick={handleBack}>
+                                <ArrowLeft className="h-5 w-5" />
+                            </Button>
+                            <Avatar data-ai-hint="person portrait">
+                                 <AvatarImage src={activeConversation.type === 'direct' ? activeConversation.participants.find(p=>p.id !== currentUser.id)?.avatarUrl : generateAvatarUrl(activeConversation.name)} />
+                                <AvatarFallback>{getInitials(activeConversation.name)}</AvatarFallback>
+                            </Avatar>
+                            <div>
+                                <h3 className="text-lg font-semibold">{activeConversation.name}</h3>
+                                <p className="text-sm text-muted-foreground">
+                                    {activeConversation.type === 'group' 
+                                        ? `${activeConversation.participants.length} members`
+                                        : `Direct message`
+                                    }
+                                </p>
+                            </div>
+                        </header>
+                        <ScrollArea className="flex-1 p-4 md:p-6">
+                            <div className="space-y-6">
+                                {messages.length === 0 && !loadingMessages ? (
+                                    <div className="text-center text-muted-foreground py-24">
+                                        <p>This is the beginning of your conversation.</p>
+                                        <p className="text-sm">Send a message to get started!</p>
+                                    </div>
+                                ) : (
+                                    messages.map((msg) => (
+                                        <div key={msg.id} className={cn('group flex items-end gap-2', msg.sender.id === currentUser.id ? 'justify-end' : 'justify-start')}>
+                                            {msg.sender.id !== currentUser.id && (
+                                                <Avatar className="h-8 w-8" data-ai-hint="person portrait">
+                                                    <AvatarImage src={msg.sender.avatarUrl} />
+                                                    <AvatarFallback>{getInitials(msg.sender.name)}</AvatarFallback>
+                                                </Avatar>
+                                            )}
+                                             {msg.sender.id === currentUser.id && !msg.is_deleted && (
+                                                <AlertDialog>
+                                                    <AlertDialogTrigger asChild>
+                                                        <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive">
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    </AlertDialogTrigger>
+                                                    <AlertDialogContent>
+                                                        <AlertDialogHeader>
+                                                            <AlertDialogTitle>Delete Message?</AlertDialogTitle>
+                                                            <AlertDialogDescription>
+                                                                This will mark the message as deleted. This action cannot be undone.
+                                                            </AlertDialogDescription>
+                                                        </AlertDialogHeader>
+                                                        <AlertDialogFooter>
+                                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                            <AlertDialogAction onClick={() => handleDeleteMessage(msg.id)} className={buttonVariants({ variant: 'destructive' })}>
+                                                                Delete
+                                                            </AlertDialogAction>
+                                                        </AlertDialogFooter>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
+                                            )}
+                                            <div className={cn('max-w-xs md:max-w-md lg:max-w-lg rounded-lg p-3 text-sm', msg.sender.id === currentUser.id ? 'bg-primary text-primary-foreground' : 'bg-card', msg.is_deleted && 'bg-transparent text-muted-foreground italic border border-dashed')}>
+                                                {!msg.is_deleted && <p className="font-bold mb-1">{msg.sender.name}</p>}
+                                                <p>{msg.is_deleted ? 'This message was deleted.' : msg.content}</p>
+                                                {!msg.is_deleted && (
+                                                    <p className="text-xs opacity-70 mt-1.5 text-right">
+                                                        <ClientTime timestamp={msg.createdAt} formatType="time" />
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                                <div ref={messagesEndRef} />
                             </div>
                         </ScrollArea>
-                    </Card>
-                </div>
-
-
-                <div className={cn(
-                    "w-full md:w-3/5 lg:w-2/3 flex-col bg-muted/30 h-full",
-                    activeConversationId ? "flex" : "hidden md:flex"
-                )}>
-                    {activeConversation ? (
-                        <>
-                            <header className="flex items-center gap-4 border-b bg-background px-6 h-16">
-                                <Button variant="ghost" size="icon" className="md:hidden" onClick={handleBack}>
-                                    <ArrowLeft className="h-5 w-5" />
+                        <div className="flex-shrink-0 p-4 border-t bg-background">
+                            <form 
+                                ref={formRef}
+                                action={handleSendMessage} 
+                                className="relative"
+                            >
+                                <Input
+                                    name="content"
+                                    placeholder="Type your message..."
+                                    className="pr-12"
+                                    autoComplete="off"
+                                    disabled={isSubmitting}
+                                />
+                                <input type="hidden" name="conversationId" value={activeConversationId || ''} />
+                                <Button type="submit" size="icon" className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8" disabled={isSubmitting}>
+                                    <Send className="h-4 w-4" />
                                 </Button>
-                                <Avatar data-ai-hint="person portrait">
-                                     <AvatarImage src={activeConversation.type === 'direct' ? activeConversation.participants.find(p=>p.id !== currentUser.id)?.avatarUrl : generateAvatarUrl(activeConversation.name)} />
-                                    <AvatarFallback>{getInitials(activeConversation.name)}</AvatarFallback>
-                                </Avatar>
-                                <div>
-                                    <h3 className="text-lg font-semibold">{activeConversation.name}</h3>
-                                    <p className="text-sm text-muted-foreground">
-                                        {activeConversation.type === 'group' 
-                                            ? `${activeConversation.participants.length} members`
-                                            : `Direct message`
-                                        }
-                                    </p>
-                                </div>
-                            </header>
-                            <ScrollArea className="flex-1 p-4 md:p-6">
-                                <div className="space-y-6">
-                                    {messages.length === 0 && !loadingMessages ? (
-                                        <div className="text-center text-muted-foreground py-24">
-                                            <p>This is the beginning of your conversation.</p>
-                                            <p className="text-sm">Send a message to get started!</p>
-                                        </div>
-                                    ) : (
-                                        messages.map((msg) => (
-                                            <div key={msg.id} className={cn('group flex items-end gap-2', msg.sender.id === currentUser.id ? 'justify-end' : 'justify-start')}>
-                                                {msg.sender.id !== currentUser.id && (
-                                                    <Avatar className="h-8 w-8" data-ai-hint="person portrait">
-                                                        <AvatarImage src={msg.sender.avatarUrl} />
-                                                        <AvatarFallback>{getInitials(msg.sender.name)}</AvatarFallback>
-                                                    </Avatar>
-                                                )}
-                                                 {msg.sender.id === currentUser.id && !msg.is_deleted && (
-                                                    <AlertDialog>
-                                                        <AlertDialogTrigger asChild>
-                                                            <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive">
-                                                                <Trash2 className="h-4 w-4" />
-                                                            </Button>
-                                                        </AlertDialogTrigger>
-                                                        <AlertDialogContent>
-                                                            <AlertDialogHeader>
-                                                                <AlertDialogTitle>Delete Message?</AlertDialogTitle>
-                                                                <AlertDialogDescription>
-                                                                    This will mark the message as deleted. This action cannot be undone.
-                                                                </AlertDialogDescription>
-                                                            </AlertDialogHeader>
-                                                            <AlertDialogFooter>
-                                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                                <AlertDialogAction onClick={() => handleDeleteMessage(msg.id)} className={buttonVariants({ variant: 'destructive' })}>
-                                                                    Delete
-                                                                </AlertDialogAction>
-                                                            </AlertDialogFooter>
-                                                        </AlertDialogContent>
-                                                    </AlertDialog>
-                                                )}
-                                                <div className={cn('max-w-xs md:max-w-md lg:max-w-lg rounded-lg p-3 text-sm', msg.sender.id === currentUser.id ? 'bg-primary text-primary-foreground' : 'bg-card', msg.is_deleted && 'bg-transparent text-muted-foreground italic border border-dashed')}>
-                                                    {!msg.is_deleted && <p className="font-bold mb-1">{msg.sender.name}</p>}
-                                                    <p>{msg.is_deleted ? 'This message was deleted.' : msg.content}</p>
-                                                    {!msg.is_deleted && (
-                                                        <p className="text-xs opacity-70 mt-1.5 text-right">
-                                                            <ClientTime timestamp={msg.createdAt} formatType="time" />
-                                                        </p>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        ))
-                                    )}
-                                    <div ref={messagesEndRef} />
-                                </div>
-                            </ScrollArea>
-                            <div className="p-4 border-t bg-background">
-                                <form 
-                                    ref={formRef}
-                                    action={handleSendMessage} 
-                                    className="relative"
-                                >
-                                    <Input
-                                        name="content"
-                                        placeholder="Type your message..."
-                                        className="pr-12"
-                                        autoComplete="off"
-                                        disabled={isSubmitting}
-                                    />
-                                    <input type="hidden" name="conversationId" value={activeConversationId || ''} />
-                                    <Button type="submit" size="icon" className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8" disabled={isSubmitting}>
-                                        <Send className="h-4 w-4" />
-                                    </Button>
-                                </form>
-                            </div>
-                        </>
-                    ) : (
-                        <div className="flex flex-col items-center justify-center h-full text-center">
-                             {conversations.length === 0 ? (
-                                <>
-                                    <MessageSquarePlus className="h-16 w-16 text-muted-foreground" />
-                                    <h2 className="mt-4 text-2xl font-semibold">Start a Conversation</h2>
-                                    <p className="mt-2 text-muted-foreground">You don't have any messages yet.</p>
-                                    <NewConversationDialog
-                                        currentUser={currentUser}
-                                        onConversationCreated={onConversationCreated}
-                                    >
-                                        <Button className="mt-4">
-                                            <UserPlus className="mr-2 h-4 w-4" /> New Conversation
-                                        </Button>
-                                    </NewConversationDialog>
-                                </>
-                            ) : (
-                                 <>
-                                    <MessageSquarePlus className="h-16 w-16 text-muted-foreground" />
-                                    <h2 className="mt-4 text-2xl font-semibold">No Conversation Selected</h2>
-                                    <p className="mt-2 text-muted-foreground">Select a conversation from the list to view messages.</p>
-                                </>
-                            )}
+                            </form>
                         </div>
-                    )}
-                </div>
+                    </>
+                ) : (
+                    <div className="flex flex-col items-center justify-center h-full text-center">
+                         {conversations.length === 0 ? (
+                            <>
+                                <MessageSquarePlus className="h-16 w-16 text-muted-foreground" />
+                                <h2 className="mt-4 text-2xl font-semibold">Start a Conversation</h2>
+                                <p className="mt-2 text-muted-foreground">You don't have any messages yet.</p>
+                                <NewConversationDialog
+                                    currentUser={currentUser}
+                                    onConversationCreated={onConversationCreated}
+                                >
+                                    <Button className="mt-4">
+                                        <UserPlus className="mr-2 h-4 w-4" /> New Conversation
+                                    </Button>
+                                </NewConversationDialog>
+                            </>
+                        ) : (
+                             <>
+                                <MessageSquarePlus className="h-16 w-16 text-muted-foreground" />
+                                <h2 className="mt-4 text-2xl font-semibold">No Conversation Selected</h2>
+                                <p className="mt-2 text-muted-foreground">Select a conversation from the list to view messages.</p>
+                            </>
+                        )}
+                    </div>
+                )}
             </div>
+        </div>
     );
 }
