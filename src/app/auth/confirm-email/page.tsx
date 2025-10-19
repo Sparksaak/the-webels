@@ -35,7 +35,7 @@ function ConfirmContent() {
   const { title, description } = getContent();
 
   return (
-    <div className="w-full max-w-md">
+    <div className="w-full max-w-md px-4">
       <Card className="shadow-xl">
         <CardHeader className="text-center">
             <div className="mx-auto mb-4">
