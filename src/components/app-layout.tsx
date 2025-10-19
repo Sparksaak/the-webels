@@ -18,6 +18,7 @@ import {
 import { UserNav } from '@/components/user-nav';
 import { Logo } from '@/components/logo';
 import { LoadingLink } from './loading-link';
+import { cn } from '@/lib/utils';
 
 type User = {
   id: string;
@@ -71,6 +72,9 @@ function NavItems({ role }: { role: 'teacher' | 'student' }) {
 }
 
 export function AppLayout({ children, user }: AppLayoutProps) {
+  const pathname = usePathname();
+  const isMessagesPage = pathname.startsWith('/messages');
+
   if (!user) {
       return (
           <div className="flex min-h-screen bg-background items-center justify-center">
@@ -107,8 +111,8 @@ export function AppLayout({ children, user }: AppLayoutProps) {
                   <SidebarTrigger />
               </div>
           </header>
-          <div className="flex-1 w-full overflow-y-auto">
-            <main className="p-4 sm:p-6 lg:p-8 h-full">
+          <div className={cn("flex-1 w-full", isMessagesPage ? 'overflow-hidden' : 'overflow-y-auto')}>
+            <main className={cn("h-full", !isMessagesPage && "p-4 sm:p-6 lg:p-8")}>
               {children}
             </main>
           </div>

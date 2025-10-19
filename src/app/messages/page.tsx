@@ -1,6 +1,4 @@
 
-
-
 import { Suspense } from 'react';
 import { createClient } from '@/lib/supabase/server';
 import { AppLayout } from '@/components/app-layout';
@@ -65,7 +63,7 @@ export default async function MessagesPage({ searchParams }: { searchParams: { c
     
     return (
         <AppLayout user={currentUser}>
-            <div className="h-[calc(100vh_-_5rem)] md:h-[calc(100vh_-_3.5rem)]">
+            <div className="h-full">
                 <Suspense fallback={<div className="flex h-full items-center justify-center"><div className="text-muted-foreground">Loading Messaging...</div></div>}>
                   <Messaging conversationId={conversationIdFromUrl} currentUser={currentUser} />
                 </Suspense>
