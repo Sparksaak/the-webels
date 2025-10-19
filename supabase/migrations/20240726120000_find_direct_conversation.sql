@@ -1,4 +1,3 @@
-
 create or replace function find_direct_conversation(user_id1 uuid, user_id2 uuid)
 returns uuid as $$
 declare
