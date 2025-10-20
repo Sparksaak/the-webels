@@ -312,14 +312,7 @@ export default function LandingPage() {
       <footer className="bg-background border-t">
           <div className="mx-auto px-4 sm:px-6 lg:px-8 flex flex-col gap-4 sm:flex-row py-6 w-full shrink-0 items-center">
             <p className="text-sm text-muted-foreground">&copy; 2024 The Webels. All rights reserved.</p>
-            <nav className="sm:ml-auto flex gap-4 sm:gap-6">
-              <LoadingLink href="#" className="text-sm hover:underline underline-offset-4" prefetch={false}>
-                Terms of Service
-              </LoadingLink>
-              <LoadingLink href="#" className="text-sm hover:underline underline-offset-4" prefetch={false}>
-                Privacy
-              </LoadingLink>
-            </nav>
+            <p className="text-sm text-muted-foreground">Made with love by the instructors of The Webels. ❤️</p>
           </div>
       </footer>
     </div>
