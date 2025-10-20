@@ -147,13 +147,21 @@ export default function SignupPage() {
         </div>
       </div>
       <div className="hidden lg:block relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/80 via-primary/40 to-accent/70 animate-gradient-xy"></div>
-        <Image
-          src="https://placehold.co/1200x900/10B981/FFFFFF/png?text=Learn+Something+New"
+        <div className="absolute inset-0"></div>
+        <img
+          src="/learn-something-new-light.png"
           alt="Image"
-          width="1920"
-          height="1080"
-          className="h-full w-full object-cover"
+          width={1920}
+          height={1080}
+          className="h-full w-full object-cover dark:hidden"
+          data-ai-hint="education abstract"
+        />
+        <img
+          src="/learn-something-new-dark.png"
+          alt="Image"
+          width={1920}
+          height={1080}
+          className="h-full w-full object-cover hidden dark:block"
           data-ai-hint="education abstract"
         />
          <div className="absolute inset-0 flex items-center justify-center p-12">
