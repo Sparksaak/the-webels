@@ -207,13 +207,21 @@ function LoginForm() {
         </div>
       </div>
       <div className="hidden lg:block relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary via-cyan-400 to-accent animate-gradient-xy"></div>
-        <Image
-          src="https://placehold.co/1200x900/111827/F3F4F6/png?text=Modern+Classroom"
+        <div className="absolute inset-0"></div>
+        <img
+          src="/modern-classroom-light.png"
           alt="Image"
-          width="1920"
-          height="1080"
-          className="h-full w-full object-cover mix-blend-overlay"
+          width={1920}
+          height={1080}
+          className="h-full w-full object-cover dark:hidden"
+          data-ai-hint="classroom technology"
+        />
+         <img
+          src="/modern-classroom-dark.png"
+          alt="Image"
+          width={1920}
+          height={1080}
+          className="h-full w-full object-cover hidden dark:block"
           data-ai-hint="classroom technology"
         />
          <div className="absolute inset-0 flex items-center justify-center p-12">
