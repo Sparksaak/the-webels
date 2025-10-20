@@ -312,11 +312,11 @@ export default function LandingPage() {
       <footer className="bg-background border-t">
           <div className="mx-auto px-4 sm:px-6 lg:px-8 flex flex-col gap-4 sm:flex-row py-6 w-full shrink-0 items-center">
             <p className="text-sm text-muted-foreground">&copy; 2024 The Webels. All rights reserved.</p>
-            <p className="text-sm text-muted-foreground">Made with love by the instructors of The Webels. ❤️</p>
+            <p className="text-sm text-muted-foreground sm:ml-auto">
+              Made with love by the instructors of The Webels ❤️
+            </p>
           </div>
       </footer>
     </div>
   );
 }
-
-  
