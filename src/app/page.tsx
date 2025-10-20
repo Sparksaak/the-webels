@@ -108,13 +108,21 @@ export default function LandingPage() {
               <div className="relative grid items-center">
                  <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/50 to-emerald-500/50 rounded-3xl blur-2xl"></div>
                  <div className="relative hidden lg:block">
-                    <Image
-                        src={placeholderImages.landingHero.src}
-                        width={placeholderImages.landingHero.width}
-                        height={placeholderImages.landingHero.height}
+                    <img
+                        src="/laptop-with-code-light.png"
+                        width={1200}
+                        height={800}
                         alt="Laptop with code on screen"
-                        className="mx-auto aspect-video overflow-hidden rounded-2xl object-cover sm:w-full lg:order-last shadow-2xl transition-transform hover:scale-105 duration-500"
-                        data-ai-hint={placeholderImages.landingHero.hint}
+                        className="mx-auto aspect-video overflow-hidden rounded-2xl object-cover sm:w-full lg:order-last shadow-2xl transition-transform hover:scale-105 duration-500 dark:hidden"
+                        data-ai-hint="computer code"
+                    />
+                    <img
+                        src="/laptop-with-code-dark.png"
+                        width={1200}
+                        height={800}
+                        alt="Laptop with code on screen"
+                        className="mx-auto aspect-video overflow-hidden rounded-2xl object-cover sm:w-full lg:order-last shadow-2xl transition-transform hover:scale-105 duration-500 hidden dark:block"
+                        data-ai-hint="computer code"
                     />
                  </div>
               </div>
@@ -138,13 +146,21 @@ export default function LandingPage() {
                     <div className="relative grid items-center">
                        <div className="absolute -inset-2 bg-gradient-to-tr from-emerald-400 to-orange-400 rounded-3xl blur-xl opacity-50"></div>
                        <div className="relative hidden lg:block">
-                            <Image
-                                src={placeholderImages.landingStory.src}
-                                width={placeholderImages.landingStory.width}
-                                height={placeholderImages.landingStory.height}
+                            <img
+                                src="/students-at-lockers-light.png"
+                                width={1100}
+                                height={620}
                                 alt="Students looking at a camera near lockers"
-                                className="mx-auto aspect-video overflow-hidden rounded-2xl object-cover sm:w-full lg:order-last shadow-2xl transition-transform hover:scale-105 duration-500"
-                                data-ai-hint={placeholderImages.landingStory.hint}
+                                className="mx-auto aspect-video overflow-hidden rounded-2xl object-cover sm:w-full lg:order-last shadow-2xl transition-transform hover:scale-105 duration-500 dark:hidden"
+                                data-ai-hint="students lockers"
+                            />
+                             <img
+                                src="/students-at-lockers-dark.png"
+                                width={1100}
+                                height={620}
+                                alt="Students looking at a camera near lockers"
+                                className="mx-auto aspect-video overflow-hidden rounded-2xl object-cover sm:w-full lg:order-last shadow-2xl transition-transform hover:scale-105 duration-500 hidden dark:block"
+                                data-ai-hint="students lockers"
                             />
                         </div>
                     </div>
